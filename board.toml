@@ -59,7 +59,7 @@ windows = [
 ]
 
 [kernel]
-defconfig = "nx729j_bringup"
+defconfig = "nx729j_bringup_defconfig"
 # Stage 1 (first console) archive list: only the builders whose inputs live in the
 # base repository. Every driver that needs an evidence artefact is listed in
 # configs/nx729j_bringup_defconfig together with the artefact it needs, and comes
