@@ -31,20 +31,20 @@
 #   ARM_DT_PLATFORM      build/armdt-platform/libArmDTPlatform.a
 #   ARMCPU               build/armcpu/libArmCpu.a
 #   NATIVE_AES           build/native-aes/libNativeAES.a
-#   NATIVE_UFS           build/native-ufs/libNativeUfs.a
 #
-# UFS, AES, the architectural timer and the DPU-less panic region are the SM8550
-# blocks nx729j shares with sheng, so they stay on: they are what makes the
-# kernel reach the storage and the panel instead of panicking on a missing
-# provider. Display, GPU and the PMGR instrument stay off until their evidence
-# stages exist.
+# AES and the architectural timer are the only SM8550 blocks that need no
+# evidence: their builders compile straight out of the tree. UFS is NOT here
+# (see the off list below) even though it is SoC level, because
+# scripts/build-arm-driver.py unconditionally passes -DNATIVE_VERIFIED_BLOCK=1
+# for NativeUfs, which drags in vr_open/vr_verify_block/verified_root_key from
+# the VerifiedRoot kit and IOStorageFamily's class dispatch. Storage comes back
+# once that evidence stage exists; first light does not need a root device.
 
 CONFIG_XNU_BUILD_ARCHIVES=y
 CONFIG_XNU_SOURCE_CORECRYPTO14=y
 CONFIG_XNU_SOURCE_PTHREAD=y
 CONFIG_XNU_ARM_DT_PLATFORM=y
 CONFIG_XNU_ARMCPU=y
-CONFIG_XNU_NATIVE_UFS=y
 CONFIG_XNU_NATIVE_AES=y
 CONFIG_XNU_NATIVE_ARCH_TIMER=y
 CONFIG_XNU_NATIVE_PAN=y
@@ -64,6 +64,11 @@ CONFIG_XNU_EXTRA_LD_ARCHIVES=""
 #   NATIVE_ADRENO          sheng's A740 kit, qualified against a prelink candidate
 #   NATIVE_VIRTIO_BLOCK    no virtio transport on this board, and its binding
 #                          needs the original block-storage class dispatch
+#   NATIVE_UFS             build/native-ufs/libNativeUfs.a. The builder hardcodes
+#                          -DNATIVE_VERIFIED_BLOCK=1, so the object needs
+#                          vr_open/vr_verify_block/vr_xnu_crypto/verified_root_*
+#                          (VerifiedRoot) and IOBlockStorageDevice's vtable
+#                          (IOStorageFamily) even with VERIFIED_ROOT_PROBE=n
 #   NATIVE_RAM_BLOCK       NATIVE_AES plus the same storage audit
 #   NATIVE_VIRTIO_CONSOLE  no virtio transport on this board
 #   SHENG_PMGR             build/sheng-platform-power/libShengPlatformPower.a,
@@ -78,6 +83,7 @@ CONFIG_XNU_NATIVE_LEGACY_DISPLAY=n
 CONFIG_XNU_NATIVE_MOBILE_DISPLAY=n
 CONFIG_XNU_NATIVE_ADRENO=n
 CONFIG_XNU_NATIVE_VIRTIO_BLOCK=n
+CONFIG_XNU_NATIVE_UFS=n
 CONFIG_XNU_NATIVE_RAM_BLOCK=n
 CONFIG_XNU_NATIVE_VIRTIO_CONSOLE=n
 CONFIG_XNU_NATIVE_OFFLINE_GPU=n
