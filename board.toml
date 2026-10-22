@@ -158,58 +158,34 @@ loader = "firmware"
 title = "nx729j first boot: source 4K XNU to console"
 dram_size = "0x400000000"           # [DTB] 16 GiB: ddr-regions 0x80000000/2G + 0x880000000/6G + 0xa00000000/8G
 skip_setup_tool = "scripts/seed-data-skip-setup.py"
-panic_screen = true
+# The panic renderer in scripts/patch-xnu-entry-probe.py patches the kernel by
+# absolute virtual address (PANIC_VA 0xFFFFFFF00BF69B04, VINFO_VA
+# 0xFFFFFFF00C0A2970, entry 0xFFFFFFF00B9D0488). Those are sheng's addresses,
+# measured on a kernel whose __TEXT is large enough to push _panic past 0xB9D0000.
+# This kernel links _panic at 0xFFFFFFF0079799B0 and _start_first_cpu at
+# 0xFFFFFFF0073EE05C, so the tool refuses it ("does not match") instead of
+# patching the wrong bytes. Verify the three sites against a rebuilt kernel
+# before turning this back on.
+panic_screen = false
 trust_cache_sha256 = [
   "7416ca4f8377146626bb284e2133c76bee6cb4e3ee0af5d648b186235a7323a7",
   "8900d6a93d7a59ce1a872a5c081e559f4240a218f97e12d44d22dda46644d68f",
 ]
-# The sheng- prefixed arguments are read by the sheng kit sources this repository
-# reuses; they are not device names. Keep them until the kit is renamed.
+# First light keeps the command line to what this kernel actually links.
+#
+# Every sheng-* / offline-* argument below was removed for a reason, not to make
+# the line short: each one selects a code path inside an archive this defconfig
+# does not build, and payload.py refuses the volume outright when
+# native-ufs-root=1 arrives without a kernel containing _sheng_pmgr_run.
+#
+# Re-add them one at a time, together with the archive that implements them, as
+# the bring-up stages progress.
 kernel_args = [
   "-v",
   "serial=3",
   "debug=0x14e",
   "kt_fixed_zones=120",
-  "offline-legacy-register=1",
-  "offline-legacy-gop=1",
-  "offline-legacy-unit-scale=2",
-  "offline-legacy-pm=1",
-  "offline-legacy-validate=1",
-  "offline-legacy-transfer=1",
-  "offline-legacy-cpu-present=1",
-  "offline-hid-home=1",
-  "offline-hid-input=1",
-  "offline-legacy-phase=4",
-  "offline-mobile-graphics-client=1",
-  "offline-mobile-graphics-load=1",
-  "offline-apfs-load=1",
-  "boot-progress=2",
-  "-apfs_shared_datavolume",
-  "offline-key-events=1",
-  "native-ufs-root=1",
-  "sheng-pmgr=2",
-  "armcpu-diagnostics=1",
-  "sheng-disable-watchdogd=1",
-  "sheng-lite=1",
-  "boot-ui-focus3=Preferences",
-  "boot-ui-focus4=SpringBoard",
-  "sheng-smp=1",
-  "sheng-cpufreq=3",
-  "sheng-touch=4",
-  "sheng-aks=1",
-  "sheng-gpu-power=9",
-  "sheng-gpu-metal=1",
-  "sheng-fb-gpu=1",
-  "sheng-banner=0",
-  "sheng-gpu-perf=8",
-  "sheng-gpu-addon=1",
-  "armcpu-spi-ipi=1",
   "-no_slto_panic",
-  "ml-timeout-lock-panic-scale=40",
-  "sheng-touch-hid=1",
-  "sheng-data-persist=2",
-  "sheng-staged-apps=1",
-  "sheng-vsync=120",
 ]
 
 # Fixups of signed text, applied by the kernel after signature validation; they reach
