@@ -1,0 +1,22 @@
+version = 1
+
+# UniXNU 启动管理器的菜单配置，打进 payload 的 FAT 卷。
+#
+# 菜单项里的 payload 来自 sheng 套件（本仓库从 UniXNU-sheng 派生，见 README）。
+# 在把 package/ 里的 Payloads/ 换成 nx729j 自己的预检程序之前，路径必须保持
+# ShengPreflight.efi，否则菜单会指向一个不存在的文件。
+[boot]
+timeout = 3
+default = "preflight"
+
+[[entry]]
+id = "preflight"
+title = "nx729j boot diagnostics"
+type = "efi"
+path = "Payloads/ShengPreflight.efi"
+
+[[entry]]
+id = "exit"
+title = "Return to firmware"
+type = "action"
+action = "exit"

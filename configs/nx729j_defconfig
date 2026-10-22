@@ -1,0 +1,50 @@
+# Kernel configuration of the nx729j image.
+# CONFIG_XNU_<NAME> becomes XNU_<NAME> for the kernel build.
+#
+# Identical to sheng_defconfig: every option below selects an SM8550 platform
+# component (GIC, arch timer, UFS, AES, DPU/legacy display, Adreno 740) that the
+# RedMagic 8 Pro / 8 Pro+ shares with the Xiaomi Pad 6S Pro. The device specific
+# part of a port is the board data (board.toml, the ADT generator and the panel /
+# touch inputs), not this file.
+
+CONFIG_XNU_BUILD_ARCHIVES=y
+CONFIG_XNU_SOURCE_CORECRYPTO14=y
+CONFIG_XNU_SOURCE_PTHREAD=y
+CONFIG_XNU_ARM_DT_PLATFORM=y
+CONFIG_XNU_ARMCPU=y
+CONFIG_XNU_NATIVE_UFS=y
+CONFIG_XNU_NATIVE_AES=y
+CONFIG_XNU_NATIVE_VIRTIO_BLOCK=y
+CONFIG_XNU_NATIVE_RAM_BLOCK=y
+CONFIG_XNU_TRUST_CACHE_RUNTIME=y
+CONFIG_XNU_SOURCE_MOCKFS=y
+CONFIG_XNU_NATIVE_CS_HASH_CACHE=y
+CONFIG_XNU_VERIFIED_ROOT_PROBE=y
+CONFIG_XNU_OWNER_ROOT_AUDIT=y
+CONFIG_XNU_OWNER_ROOT_TRUST=y
+# PMGR integration lives in the sheng kit; RPMh / AOSS addresses are SoC level.
+CONFIG_XNU_SHENG_PMGR=y
+CONFIG_XNU_OWNER_CACHE_MOUNT=y
+CONFIG_XNU_OWNER_CACHE_STARTUP=y
+CONFIG_XNU_OWNER_BOOT_MANIFEST=y
+CONFIG_XNU_OWNER_DATA_MOUNT=y
+CONFIG_XNU_OWNER_UNION_SYSTEMOS=y
+CONFIG_XNU_DT_PANIC_REGION=y
+CONFIG_XNU_ZONE_PGZ_ALIGNMENT_PROBE=y
+CONFIG_XNU_NATIVE_ARCH_TIMER=y
+CONFIG_XNU_NATIVE_PAN=y
+CONFIG_XNU_BOOT_PROGRESS=y
+CONFIG_XNU_NATIVE_LEGACY_DISPLAY=y
+CONFIG_XNU_NATIVE_ADRENO=y
+
+CONFIG_XNU_CRYPTO_BOOTSTRAP="prelinked"
+# Scratch Data volume identity. It is arbitrary but must match the Data seed the
+# payload step embeds; kept at the sheng value because the seed tooling comes from
+# the sheng kit. Change it only together with the seed.
+CONFIG_XNU_OWNER_DATA_VOLUME_UUID="18AB5557-DC2D-469B-8758-855E60F5B0DF"
+CONFIG_XNU_NATIVE_VIRTIO_BLOCK_ARCHIVE="{tree}/build/native-virtio-block-verified-bundle/libNativeVirtioBlock.a"
+CONFIG_XNU_VERIFIED_ROOT_ARCHIVE="{tree}/build/verified-root-os-xnu-bundle/libVerifiedRootProbe.a"
+CONFIG_XNU_EXTRA_LD_ARCHIVES=""
+# The proven display path is the legacy (DPU) one, as on sheng.
+CONFIG_XNU_NATIVE_MOBILE_DISPLAY=n
+CONFIG_XNU_ARMVIRT_PLATFORM=n
