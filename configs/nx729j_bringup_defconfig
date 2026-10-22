@@ -1,0 +1,102 @@
+# Kernel configuration of the nx729j bring-up image.
+# CONFIG_XNU_<NAME> becomes XNU_<NAME> for the kernel build.
+#
+# This is the FIRST-CONSOLE stage, not the shipping configuration. The sheng
+# defconfig this repository was forked from is the *qualified* end state: almost
+# every switch in it links an archive that an earlier evidence stage has to
+# produce first (a native prelink candidate, the original block-storage class
+# dispatch, a fully verified original system image). None of that evidence
+# exists for a new board, and `unixnu build kernel` does not create it:
+#
+#   build-native-virtio-bindings.py   needs build/storage-abi/interface-audit.json
+#   build-native-legacy-display.py    needs build/native-prelink/*-candidate.macho
+#                                     and build/display-analysis/*-legacy-abi.json
+#   build-sheng-platform-power.py     needs build/native-prelink/*-candidate.macho
+#   build-native-adreno-accelerator.py needs build/native-prelink/*-candidate.macho
+#   libVerifiedRootProbe.a            needs build/verified-root-os/verification.json,
+#                                     i.e. a full C-signature and block verification
+#                                     pass over the original restore image
+#
+# So the switches below are closed under two rules the build script enforces:
+#
+#   ARMCPU            needs SOURCE_CORECRYPTO14
+#   NATIVE_ARCH_TIMER needs ARMCPU
+#   NATIVE_AES        needs CRYPTO_BOOTSTRAP=prelinked and SOURCE_CORECRYPTO14
+#
+# and every switch that is on must have an archive a builder can make from the
+# base repository alone:
+#
+#   SOURCE_CORECRYPTO14  build/corecrypto-2023/libcorecrypto_kernel_noasm-namespaced.a
+#   SOURCE_PTHREAD       build/libpthread-kernel/libpthread_kernel.a
+#   ARM_DT_PLATFORM      build/armdt-platform/libArmDTPlatform.a
+#   ARMCPU               build/armcpu/libArmCpu.a
+#   NATIVE_AES           build/native-aes/libNativeAES.a
+#   NATIVE_UFS           build/native-ufs/libNativeUfs.a
+#
+# UFS, AES, the architectural timer and the DPU-less panic region are the SM8550
+# blocks nx729j shares with sheng, so they stay on: they are what makes the
+# kernel reach the storage and the panel instead of panicking on a missing
+# provider. Display, GPU and the PMGR instrument stay off until their evidence
+# stages exist.
+
+CONFIG_XNU_BUILD_ARCHIVES=y
+CONFIG_XNU_SOURCE_CORECRYPTO14=y
+CONFIG_XNU_SOURCE_PTHREAD=y
+CONFIG_XNU_ARM_DT_PLATFORM=y
+CONFIG_XNU_ARMCPU=y
+CONFIG_XNU_NATIVE_UFS=y
+CONFIG_XNU_NATIVE_AES=y
+CONFIG_XNU_NATIVE_ARCH_TIMER=y
+CONFIG_XNU_NATIVE_PAN=y
+CONFIG_XNU_DT_PANIC_REGION=y
+CONFIG_XNU_TRUST_CACHE_RUNTIME=y
+CONFIG_XNU_NATIVE_CS_HASH_CACHE=y
+
+CONFIG_XNU_CRYPTO_BOOTSTRAP="prelinked"
+CONFIG_XNU_EXTRA_LD_ARCHIVES=""
+
+# Off for this pass. Each line names what it would require:
+#
+#   NATIVE_LEGACY_DISPLAY  build/native-legacy-display/libNativeLegacyDisplay.late.a,
+#                          which is qualified against an exact original
+#                          IOMobileFramebufferLegacy candidate
+#   NATIVE_MOBILE_DISPLAY  sheng's own display provider, same evidence
+#   NATIVE_ADRENO          sheng's A740 kit, qualified against a prelink candidate
+#   NATIVE_VIRTIO_BLOCK    no virtio transport on this board, and its binding
+#                          needs the original block-storage class dispatch
+#   NATIVE_RAM_BLOCK       NATIVE_AES plus the same storage audit
+#   NATIVE_VIRTIO_CONSOLE  no virtio transport on this board
+#   SHENG_PMGR             build/sheng-platform-power/libShengPlatformPower.a,
+#                          which is qualified against a prelink candidate
+#   SOURCE_MOCKFS          a QEMU test fixture, not a device component
+#   VERIFIED_ROOT_PROBE    libVerifiedRootProbe.a, i.e. the original-image
+#                          verification evidence
+#   OWNER_*                the original-userland mount chain; it needs
+#                          VERIFIED_ROOT_PROBE and NATIVE_VIRTIO_BLOCK
+#   BOOT_PROGRESS          needs NATIVE_VIRTIO_BLOCK and OWNER_ROOT_AUDIT
+CONFIG_XNU_NATIVE_LEGACY_DISPLAY=n
+CONFIG_XNU_NATIVE_MOBILE_DISPLAY=n
+CONFIG_XNU_NATIVE_ADRENO=n
+CONFIG_XNU_NATIVE_VIRTIO_BLOCK=n
+CONFIG_XNU_NATIVE_RAM_BLOCK=n
+CONFIG_XNU_NATIVE_VIRTIO_CONSOLE=n
+CONFIG_XNU_NATIVE_OFFLINE_GPU=n
+CONFIG_XNU_SHENG_PMGR=n
+CONFIG_XNU_SOURCE_MOCKFS=n
+CONFIG_XNU_ARMVIRT_PLATFORM=n
+CONFIG_XNU_ZONE_PGZ_ALIGNMENT_PROBE=n
+CONFIG_XNU_VERIFIED_ROOT_PROBE=n
+CONFIG_XNU_OWNER_ROOT_AUDIT=n
+CONFIG_XNU_OWNER_ROOT_TRUST=n
+CONFIG_XNU_OWNER_CACHE_MOUNT=n
+CONFIG_XNU_OWNER_CACHE_STARTUP=n
+CONFIG_XNU_OWNER_BOOT_MANIFEST=n
+CONFIG_XNU_OWNER_DATA_MOUNT=n
+CONFIG_XNU_OWNER_UNION_SYSTEMOS=n
+CONFIG_XNU_BOOT_PROGRESS=n
+
+# Kept because the patch guards read it even when OWNER_DATA_MOUNT is off. The
+# sheng value is deliberately not reused: it names a volume that already exists
+# on their image, and a scratch Data volume must get its own identity once the
+# userland path is enabled.
+CONFIG_XNU_OWNER_DATA_VOLUME_UUID="00000000-0000-0000-0000-000000000000"
