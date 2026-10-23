@@ -96,12 +96,18 @@ archives = [
   # IOBlockStorageDevice lives in the IOStorageFamily kext, not in XNU; NativeUfs derives
   # from it, so the class is compiled out of refer/IOStorageFamily before the link.
   "build-io-storage-family.py",
-  # Refusing stand-ins for the VerifiedRoot policies NativeUfs compiles against (-DNATIVE_VERIFIED_BLOCK=1).
-  "build-verified-root-stub.py",
   # An observer that observes nothing, for the boot_progress_poll NativeUfs declares weak.
   "build-boot-progress-stub.py",
   # The stage-6 component under test: the native SM8550 UFS transport.
   "build-arm-driver.py NativeUfs",
+  # Refusing stand-ins for the VerifiedRoot policies NativeUfs compiles against (-DNATIVE_VERIFIED_BLOCK=1).
+  # This must come after NativeUfs: the script compiles the policies and merges the object into
+  # build/native-ufs/libNativeUfs.a, the archive the kernel link already force-loads. Definitions placed there
+  # are found by construction, because ld resolves a reference from one archive member against the other
+  # members of the same archive. Passing them any other way (a standalone archive on LD_KERNEL_ARCHIVES, or
+  # the bare object path) produced an undefined-symbol link even though the object and its symbol table were
+  # verified correct, so this no longer depends on how the extra link inputs reach the linker at all.
+  "build-verified-root-stub.py",
 ]
 
 [kernel.prelink]
