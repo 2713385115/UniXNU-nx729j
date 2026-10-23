@@ -69,7 +69,7 @@ lba_bytes = 4096
 # off-runner. `ufsBuildRootPlan()` refuses to build a root plan unless the SHNGROOT
 # manifest carries both "OS" and "SystemOS", so the finished image always has both.
 windows = [
-  { name = "SystemOS", component = "Cryptex1,SystemOS" },
+  { name = "OS", component = "OS" },
 ]
 
 [kernel]
@@ -119,14 +119,17 @@ archives = [
   "build-boot-progress-stub.py",
   # The stage-6 component under test: the native SM8550 UFS transport.
   "build-arm-driver.py NativeUfs",
-  # Refusing stand-ins for the VerifiedRoot policies NativeUfs compiles against (-DNATIVE_VERIFIED_BLOCK=1).
-  # This must come after NativeUfs: the script compiles the policies and merges the object into
-  # build/native-ufs/libNativeUfs.a, the archive the kernel link already force-loads. Definitions placed there
-  # are found by construction, because ld resolves a reference from one archive member against the other
-  # members of the same archive. Passing them any other way (a standalone archive on LD_KERNEL_ARCHIVES, or
-  # the bare object path) produced an undefined-symbol link even though the object and its symbol table were
-  # verified correct, so this no longer depends on how the extra link inputs reach the linker at all.
-  "build-verified-root-stub.py",
+  # The owner-signed policies NativeUfs authenticates every root window against
+  # (-DNATIVE_VERIFIED_BLOCK=1). Both envelopes and the anchor come from
+  # build/verified-root-inputs, which the CI run fetches from the owner-policy
+  # release before the build; they are signed over the exact SHNGROOT windows of
+  # the userdata image that gets flashed, so a read the kernel authenticates is a
+  # read of the original image. This must come after NativeUfs: the script merges
+  # its objects into build/native-ufs/libNativeUfs.a, the archive the kernel link
+  # already force-loads, because definitions placed there are found by
+  # construction - a separate archive on LD_KERNEL_ARCHIVES was tried twice and
+  # produced an undefined-symbol link both times.
+  "build-verified-root-bundle.py",
 ]
 
 [kernel.prelink]
