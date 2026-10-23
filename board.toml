@@ -65,31 +65,41 @@ defconfig = "nx729j_defconfig"
 # reused unchanged; only the identity, panel and touch inputs are device specific.
 # Replace build-sheng-platform-power.py / build-native-legacy-display.py with nx729j
 # variants once the panel timings are known.
+# Every entry here is built on every kernel build, whether or not the selected
+# defconfig links it, so the list is exactly the set the current configuration
+# needs. The sheng kit's remaining archives are withheld until their qualification
+# inputs exist, because they cannot be built without them:
+#
+#   build-native-virtio-bindings.py (both components)   needs build/storage-abi/interface-audit.json,
+#       a 190-slot vtable audit of the original IOBlockStorageDevice that only a
+#       live lldb snapshot stopped at _bsd_init on this phone can produce.
+#   build-arm-driver.py NativeVirtioBlock / NativeRamBlock   link against that audit.
+#   build-sheng-platform-power.py   needs kits/sheng/ShengPlatformPower.cpp, which no published
+#       repository contains. The equivalent effect (skipping AMFI's AON latch) is a binary patch.
+#   build-arm-driver.py NativeAdreno, build-native-adreno-kits.py,
+#   build-native-adreno-accelerator.py, build-native-legacy-display.py
+#       need an exact original GPU/framebuffer candidate.
+#   build-mockfs-fixture.py   a QEMU fixture, not a device component.
 archives = [
   "build-corecrypto-14.py",
   "build-corecrypto-14.py --namespace",
   "build-arm-driver.py ArmDTPlatform",
   "build-arm-driver.py ArmCpu",
+  # NATIVE_UFS requires NATIVE_AES, which requires the corecrypto archives above.
   "build-arm-driver.py NativeAES",
   "build-native-aes-bindings.py",
-  # IOBlockStorageDevice lives in the IOStorageFamily kext, not in XNU; the block drivers below derive
-  # from it, so the class is compiled out of refer/IOStorageFamily before they are linked.
+  # CONFIG_XNU_SOURCE_PTHREAD=y links build/libpthread-kernel/libpthread_kernel.a.
+  "build-libpthread-kernel.py",
+  # IOBlockStorageDevice lives in the IOStorageFamily kext, not in XNU; NativeUfs derives
+  # from it, so the class is compiled out of refer/IOStorageFamily before the link.
   "build-io-storage-family.py",
   # Refusing stand-ins for the VerifiedRoot policies NativeUfs compiles against (-DNATIVE_VERIFIED_BLOCK=1).
   "build-verified-root-stub.py",
+  # The stage-6 component under test: the native SM8550 UFS transport.
   "build-arm-driver.py NativeUfs",
-  "build-arm-driver.py NativeVirtioBlock",
-  "build-arm-driver.py NativeRamBlock",
-  "build-native-virtio-bindings.py --component NativeRamBlock --directory build/native-ram-block",
-  "build-native-virtio-bindings.py --component NativeVirtioBlock",
-  "build-mockfs-fixture.py",
-  "build-sheng-platform-power.py",
+  # build-xnu-4k-baseline.sh rebuilds this helper object itself (line 70); the archive entry
+  # only turns a broken recipe into an error that names the archive step.
   "build-boot-progress.py",
-  "build-libpthread-kernel.py",
-  "build-arm-driver.py NativeAdreno",
-  "build-native-adreno-kits.py",
-  "build-native-adreno-accelerator.py",
-  "build-native-legacy-display.py",
 ]
 
 [kernel.prelink]
@@ -204,6 +214,10 @@ kernel_args = [
   "-apfs_shared_datavolume",
   "offline-key-events=1",
   "native-ufs-root=1",
+  # Stage 6, first look: read-only check before anything is flashed. hostBringUp, LUN 0 GPT,
+  # the "userdata" entry and its first block, then a panic that carries the result, so the
+  # answer is readable on the boot page instead of needing a serial port.
+  "native-ufs-probe=10",
   "sheng-pmgr=2",
   "armcpu-diagnostics=1",
   "sheng-disable-watchdogd=1",
