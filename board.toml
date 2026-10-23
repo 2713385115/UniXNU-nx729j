@@ -72,7 +72,10 @@ defconfig = "nx729j_defconfig"
 #
 #   build-native-virtio-bindings.py (both components)   needs build/storage-abi/interface-audit.json,
 #       a 190-slot vtable audit of the original IOBlockStorageDevice that only a
-#       live lldb snapshot stopped at _bsd_init on this phone can produce.
+#       live lldb snapshot stopped at _bsd_init on this phone can produce. The
+#       nx729j UFS transport does not use it: build-storage-bindings.py binds the
+#       same 190 slots from scripts/prelink-storage-bindings.json, measured
+#       statically out of a build (scripts/scan-prelink-storage.py).
 #   build-arm-driver.py NativeVirtioBlock / NativeRamBlock   link against that audit.
 #   build-sheng-platform-power.py   needs kits/sheng/ShengPlatformPower.cpp, which no published
 #       repository contains. The equivalent effect (skipping AMFI's AON latch) is a binary patch.
@@ -93,9 +96,11 @@ archives = [
   "build-native-aes-bindings.py",
   # CONFIG_XNU_SOURCE_PTHREAD=y links build/libpthread-kernel/libpthread_kernel.a.
   "build-libpthread-kernel.py",
-  # IOBlockStorageDevice lives in the IOStorageFamily kext, not in XNU; NativeUfs derives
-  # from it, so the class is compiled out of refer/IOStorageFamily before the link.
-  "build-io-storage-family.py",
+  # IOBlockStorageDevice lives in the prelinked IOStorageFamily kext, not in XNU. Compiling the class in
+  # as well registers it twice, and the boot stops with "OSMetaClass: Kext com.apple.iokit.IOStorageFamily
+  # class IOBlockStorageDevice is a duplicate; kext __kernel__ already has a class by that name." This
+  # archive instead binds NativeUfs's inherited slots to the original kext code with absolute symbols.
+  "build-storage-bindings.py",
   # An observer that observes nothing, for the boot_progress_poll NativeUfs declares weak.
   "build-boot-progress-stub.py",
   # The stage-6 component under test: the native SM8550 UFS transport.
