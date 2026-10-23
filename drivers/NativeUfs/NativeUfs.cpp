@@ -1316,40 +1316,74 @@ volatile uint64_t native_ufs_verify_ticks = 0, native_ufs_read_ticks = 0;
 static inline uint64_t timerTicks (void) {uint64_t v; __asm__ volatile ("isb\n\tmrs %0, cntpct_el0" : "=r" (v)); return v;}
 volatile uint32_t native_ufs_integrity_failures = 0;
 
+// Read `blocks` 4096-byte blocks at a byte offset inside the userdata partition (offset 0 == the
+// SHNGROOT header). The VerifiedRoot envelopes live there, after the windows, so they are no longer
+// linked into the kernel. The absolute LBA is gStoreGeometry.first + offset/4096, read in
+// kDataMax-sized chunks because a 47 MiB envelope exceeds a single DMA transfer. This is NOT
+// native_ufs_store_read: that reads the Data-store overlay (opened by native_ufs_store_open), not a
+// fixed offset in the partition; the envelopes sit at a constant POLICY_BASE instead.
+static bool readPolicyData (uint64_t offset, uint32_t blocks, void *dst)
+{
+  if (!gStoreGeometry.valid || !gHost.ready || !dst || (offset & 4095)) return false;
+  uint64_t lba = gStoreGeometry.first + offset / 4096;
+  uint8_t *out = static_cast<uint8_t *> (dst);
+  while (blocks) {
+    uint32_t chunk = blocks > kDataMax / 4096 ? static_cast<uint32_t> (kDataMax / 4096) : blocks;
+    if (hostRead4k (0, lba, chunk, out) != kIOReturnSuccess) return false;
+    out += chunk * 4096ULL;
+    lba += chunk;
+    blocks -= chunk;
+  }
+  return true;
+}
+
 bool NativeUfsBlock::configureVerification ()
 {
   gRootDiagnostic.stage = "policy selection";
   gRootDiagnostic.windowBytes = bytes;
   gRootDiagnostic.policyCount = verified_root_policy_count;
   gRootDiagnostic.verify = 0xffffffff;
-  // Select the one policy whose signed image size equals this window; two matches are refused.
-  const uint8_t *manifest = nullptr;
+  // The envelopes live in the `userdata` image (after the SystemOS window), not in the
+  // kernel: linking the 74 MiB of block hashes into __DATA_CONST blew the kernel up and the
+  // ABL-loaded boot image stalled right after entry. Each table entry records the envelope's
+  // byte offset into `userdata` plus its length; the anchor key stays in-kernel and still
+  // authenticates whatever is read back. Select the one policy whose signed image size equals
+  // this window by reading only its 544-byte header from UFS; two matches are refused.
+  uint64_t manifestOffset = 0;
   uint64_t manifestBytes = 0;
   if (!verified_root_policy_count || verified_root_policy_count > 16) {
     gRootDiagnostic.stage = "policy count invalid";
     return false;
   }
+  uint8_t probe[4096];
   for (uint64_t index = 0; index < verified_root_policy_count; ++index) {
     const NativeVerifiedBlockPolicy &policy = verified_root_policies[index];
-    if (!policy.manifest || policy.manifestBytes < VR_HEADER_BYTES + VR_SIGNATURE_BYTES) {
+    uint64_t offset = reinterpret_cast<uintptr_t> (policy.manifest);  // userdata byte offset
+    if (!offset || policy.manifestBytes < VR_HEADER_BYTES + VR_SIGNATURE_BYTES) {
       gRootDiagnostic.stage = "policy envelope invalid";
+      return false;
+    }
+    // Read just the fixed header; the image size sits at byte 24 (little-endian). The buffer is a
+    // full 4 KiB block because readPolicyData reads whole blocks, never partial ones.
+    if (!readPolicyData (offset, 1, probe)) {
+      gRootDiagnostic.stage = "policy header read failed";
       return false;
     }
     uint64_t imageBytes = 0;
     for (unsigned i = 0; i < 8; ++i) {
-      imageBytes |= static_cast<uint64_t> (policy.manifest[24 + i]) << (8 * i);
+      imageBytes |= static_cast<uint64_t> (probe[24 + i]) << (8 * i);
     }
     if (imageBytes != bytes) {
       continue;
     }
-    if (manifest) {
+    if (manifestOffset) {
       gRootDiagnostic.stage = "duplicate capacity-matching policy";
       return false;
     }
-    manifest = policy.manifest;
+    manifestOffset = offset;
     manifestBytes = policy.manifestBytes;
   }
-  if (!manifest) {
+  if (!manifestOffset) {
     gRootDiagnostic.stage = "no capacity-matching policy";
     return false;
   }
@@ -1365,7 +1399,14 @@ bool NativeUfsBlock::configureVerification ()
                   static_cast<kma_flags_t> (KMA_KOBJECT | KMA_DATA), VM_KERN_MEMORY_SECURITY) != KERN_SUCCESS) {
     return false;
   }
-  memcpy (reinterpret_cast<void *> (verifiedStorage), manifest, manifestBytes);
+  // Read the whole envelope from UFS into the protected buffer.
+  if (!readPolicyData (manifestOffset, (manifestBytes + 4095) / 4096,
+                       reinterpret_cast<void *> (verifiedStorage))) {
+    gRootDiagnostic.stage = "policy read failed";
+    kmem_free (kernel_map, verifiedStorage, verifiedStorageBytes);
+    verifiedStorage = 0;
+    return false;
+  }
   uint8_t *key = reinterpret_cast<uint8_t *> (verifiedStorage + tableBytes);
   memcpy (key, verified_root_key, VR_KEY_BYTES);
   gRootDiagnostic.stage = "policy read-only protection";
