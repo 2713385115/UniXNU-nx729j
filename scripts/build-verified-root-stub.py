@@ -177,16 +177,20 @@ if not UFS_ARCHIVE.is_file():
                      'after "build-arm-driver.py NativeUfs" in the board archives list')
 subprocess.run(['xcrun', 'ar', 'rs', str(UFS_ARCHIVE), str(destination)], check=True)
 
-# Verify the merged archive, not just the object: that is what the kernel link reads. Only
-# defined symbols count -- an entry of type "U" is this object asking for the name, not providing it.
+# Verify the merged archive, not just the object: that is what the kernel link reads.
+# nm prints a defined symbol as "0000000000000000 D _name" (three fields) and an
+# undefined one as "                 U _name" (two fields), so a two-field-only
+# parser reads every definition as absent.
 global_symbols = subprocess.run(['xcrun', 'nm', '-g', str(UFS_ARCHIVE)],
                                 capture_output=True, text=True, check=True).stdout
-merged = set()
+merged = {}
 for line in global_symbols.splitlines():
     parts = line.split()
-    if len(parts) == 2 and parts[0] != 'U':
-        merged.add(parts[1])
-absent = needed - merged
+    if len(parts) >= 3 and parts[-2] != 'U':
+        merged[parts[-1]] = parts[-2]
+absent = needed - set(merged)
 if absent:
     raise SystemExit('libNativeUfs.a still lacks %s' % ', '.join(sorted(absent)))
-print('VerifiedRootStub: merged into libNativeUfs.a; all %d symbols read back as defined' % len(needed))
+print('VerifiedRootStub: merged into libNativeUfs.a; read back as defined: %s' %
+      ' '.join('%s(%s)' % (name.lstrip('_'), kind) for name, kind in sorted(merged.items())
+               if name in needed))
