@@ -57,11 +57,13 @@ int refuseSignature (const uint8_t[VR_KEY_BYTES], const uint8_t[32], const uint8
 extern "C" {
 
 // Zero policies: configureVerification() refuses before it reads any manifest.
-const NativeVerifiedBlockPolicy verified_root_policies[1] = { { nullptr, 0 } };
-const uint64_t verified_root_policy_count = 0;
-const uint8_t verified_root_key[VR_KEY_BYTES] = {};
+// Every one of these is reached only through NativeUfs, which lives in another
+// object of the same link, so each definition is marked used.
+__attribute__((used)) const NativeVerifiedBlockPolicy verified_root_policies[1] = { { nullptr, 0 } };
+__attribute__((used)) const uint64_t verified_root_policy_count = 0;
+__attribute__((used)) const uint8_t verified_root_key[VR_KEY_BYTES] = {};
 
-const struct vr_crypto vr_xnu_crypto = { refuseHash, refuseSignature };
+__attribute__((used)) const struct vr_crypto vr_xnu_crypto = { refuseHash, refuseSignature };
 
 int vr_open (const uint8_t *, size_t, const uint8_t[VR_KEY_BYTES], uint64_t,
              const struct vr_crypto *, struct vr_view *)
@@ -98,7 +100,7 @@ while index < len(arguments):
         command.append(value)
     index += 1
 
-command.extend(['-Wall', '-Wextra', '-Werror', '-Wno-unused-parameter',
+command.extend(['-Wall', '-Wextra', '-Werror', '-Wno-unused-parameter', '-Wno-unused-const-variable',
                 '-I', str(ROOT / 'kits/VerifiedRoot/include'),
                 '-I', str(ROOT / 'drivers/NativeVirtioBlock')])
 
