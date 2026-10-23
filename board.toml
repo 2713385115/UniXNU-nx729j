@@ -42,20 +42,28 @@ fetch = ["KernelCache", "DeviceTree", "StaticTrustCache", "Cryptex1,SystemTrustC
 #
 # [MEASURE] last_lba still has to come from the phone, because QUALCOMM packages
 # describe "userdata" as "the rest of the disk" (num_partition_sectors="0") and do
-# not record the disk size. Fill it in with, on the connected phone:
-#     python tools/nx729j.py measure --write UniXNU-nx729j/board.toml
-# which reads /sys/block/sda/size and stores total_sectors_in_4k - 6, exactly what
-# patch0.xml asks the flash tool to write. The value is only used to check that the
-# built image fits (scripts/unixnu/userdata.py: capacity = (last-first+1)*lba_bytes),
-# so an unset value fails the preflight instead of writing anything wrong.
+# not record the disk size. The value is only used to check that the built image
+# fits (scripts/unixnu/userdata.py: capacity = (last-first+1)*lba_bytes), so an
+# unset value fails the preflight instead of writing anything wrong.
+#
+# [DEVICE] 2026-10-23, measured twice and they agree:
+#   * fastboot getvar partition-size:userdata = 0x718BCD3000 = 487676784640 B
+#     = 119061715 * 4096, i.e. the entry spans 119061715 sectors;
+#   * the phone's own GPT, read by the driver (native-ufs-probe=10):
+#     userdata first=0x296328 last=0x7421FFA, which is exactly
+#     0x296328 + 119061715 - 1.
+# An earlier value, 0x718bccd, was the sector *count* minus 6 used as if it were a
+# last LBA; it understated the partition by 14 GB. The GPT number above is the truth.
 [userdata]
 first_lba = 0x296328              # 2712360, 4 KiB sectors  [FW]
-last_lba = 0x718bccd              # [DEVICE] 实测 2026-10-22：partition-size:userdata = 0x718BCD3000
-                                  #          = 487676784640 B / 4096 = 119061715 扇区，末位 -6
+last_lba = 0x7421ffa              # [DEVICE] GPT entry + fastboot partition-size
 lba_bytes = 4096
+# Bring-up order: mount the root volume first, which is the "OS" window. The
+# "SystemOS" cryptex window is added back when userland needs it (stage 7); it is
+# left out here because the two IPSW disk images plus the assembled image do not
+# fit next to each other in the macOS runner's 14 GB of scratch space.
 windows = [
   { name = "OS", component = "OS" },
-  { name = "SystemOS", component = "Cryptex1,SystemOS" },
 ]
 
 [kernel]
@@ -227,10 +235,9 @@ kernel_args = [
   "-apfs_shared_datavolume",
   "offline-key-events=1",
   "native-ufs-root=1",
-  # Stage 6, first look: read-only check before anything is flashed. hostBringUp, LUN 0 GPT,
-  # the "userdata" entry and its first block, then a panic that carries the result, so the
-  # answer is readable on the boot page instead of needing a serial port.
-  "native-ufs-probe=10",
+  # The read-only check (probe=10) answered on 2026-10-23: hostBringUp succeeded, LUN 0's GPT
+  # parsed with both CRCs, "userdata" is first=0x296328 last=0x7421FFA, and its first block read
+  # back. It stays out of the command line now, because it panics before the root path runs.
   "sheng-pmgr=2",
   "armcpu-diagnostics=1",
   "sheng-disable-watchdogd=1",
