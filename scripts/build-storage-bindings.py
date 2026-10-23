@@ -222,6 +222,8 @@ def main() -> int:
     (OUT / 'bindings.json').write_text(json.dumps(report, indent=2) + '\n')
     print('PASS: %s -> %d absolute bindings over %d kext-owned slots (%s)'
           % (archive.name, len(bindings), len(owned), pin['kext']))
+    for name in sorted(bindings):
+        print('    %s -> %#x' % (name, bindings[name]))
     return 0
 
 
