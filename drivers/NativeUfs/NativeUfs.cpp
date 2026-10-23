@@ -1188,6 +1188,122 @@ extern "C" int native_ufs_log_sync (void)
   return gLogRegionBlocks && hostSyncCache () == kIOReturnSuccess;
 }
 
+// ---- Minimal boot log writer (sheng-log=1) ------------------------------------------------------------------------
+// The full writer lives in kits/sheng/BootLog.c, which this board cannot build (kits/sheng is not published, and the
+// real BootProgress monitor that would call boot_log_tick is replaced by boot-progress-stub). That left the diagnostic
+// log window that native_ufs_log_open/write/sync already provide completely unused, so every early-boot failure could
+// only be read back by photographing the frame buffer.
+//
+// This is a self-contained stand-in: it opens the same 32 MiB log window at the end of userdata and, every two seconds,
+// writes the kernel message buffer (the one true kprintf log, the same bytes the frame buffer shows) plus a tiny header
+// into it. The layout reuses BootLog.c's SHLOG001 format block-for-block, so scripts/read-sheng-log.py --decode turns the
+// window straight back into msgbuf.txt without any change on the reader side. Only the fields the reader actually reads
+// are filled in; the diagnostic-page slots are left as one small text slot instead of the full board-page snapshot.
+//
+// Layout (4096-byte blocks): 0 header, 1..32 the kernel message buffer (oldest first), 33..40 one text slot (8 blocks).
+// The header is written last each round so a reader never trusts a slot the header does not count yet.
+struct boot_log_msgbuf { int msg_magic, msg_size, msg_bufx, msg_bufr; char *msg_bufc; };
+extern "C" struct boot_log_msgbuf *msgbufp;
+extern "C" unsigned native_ufs_store_gpt_check (void);
+
+enum { BootLogMsgFirst = 1, BootLogMsgBlocks = 32, BootLogSlotFirst = 33, BootLogSlotBlocks = 8, BootLogPeriodMs = 2000 };
+struct boot_log_header {
+  char magic[8];                 // "SHLOG001"
+  uint32_t version, header_bytes;
+  uint64_t boot_id;              // CNTPCT when the writer started
+  uint64_t first_lba;            // absolute 4096-byte LBA of block 0 on LUN 0
+  uint32_t window_blocks, msg_first, msg_blocks, msg_bytes, slot_first, slot_blocks, slot_count, slots_written;
+  uint32_t uptime_s, rounds, write_errors, gpt_open, gpt_last, state;
+  char tag[32];
+  uint32_t export_first, export_blocks, export_bytes, export_generation;
+  uint32_t export_below;
+};
+
+static uint64_t boot_log_ticks (void) { uint64_t v; __asm__ volatile ("isb\n\tmrs %0, cntpct_el0" : "=r" (v)); return v; }
+
+// Copy the kernel message buffer oldest byte first into out (BootLogMsgBlocks blocks, NUL-padded); returns bytes copied.
+static uint32_t boot_log_copy_msgbuf (uint8_t *out)
+{
+  memset (out, 0, BootLogMsgBlocks * 4096);
+  struct boot_log_msgbuf *m = msgbufp;
+  if (!m || !m->msg_bufc || m->msg_size <= 0) return 0;
+  int size = m->msg_size, x = m->msg_bufx;
+  if (x < 0 || x >= size) x = 0;
+  uint32_t n = 0;
+  for (int i = 0; i < size && n < BootLogMsgBlocks * 4096; ++i) {
+    char c = m->msg_bufc[(x + i) % size];
+    if (c) out[n++] = static_cast<uint8_t> (c);
+  }
+  return n;
+}
+
+static void bootLogThread (void *, wait_result_t)
+{
+  thread_set_thread_name (current_thread (), "boot_log");
+  uint64_t first = 0, blocks = 0;
+  const char *why = "";
+  // The window exists once root layout is parsed; until then the open is refused ("no root layout").
+  while (!native_ufs_log_open (&first, &blocks, &why)) {
+    if (strcmp (why, "no root layout")) return;
+    IOSleep (1000);
+  }
+  uint8_t *buffer = static_cast<uint8_t *> (IOMallocAligned (BootLogMsgBlocks * 4096, 4096));
+  if (!buffer) return;
+  const uint32_t slot_count = static_cast<uint32_t> ((blocks - BootLogSlotFirst) / BootLogSlotBlocks);
+  struct boot_log_header h;
+  memset (&h, 0, sizeof h);
+  memcpy (h.magic, "SHLOG001", 8);
+  h.version = 3;
+  h.header_bytes = sizeof h;
+  // No export region is produced: the render-server pipeline caches that would fill it do not
+  // exist on this board. export_bytes stays 0, so the reader never looks below the window.
+  h.boot_id = boot_log_ticks ();
+  h.first_lba = first;
+  h.window_blocks = static_cast<uint32_t> (blocks);
+  h.msg_first = BootLogMsgFirst;
+  h.msg_blocks = BootLogMsgBlocks;
+  h.slot_first = BootLogSlotFirst;
+  h.slot_blocks = BootLogSlotBlocks;
+  h.slot_count = slot_count;
+  h.gpt_open = h.gpt_last = native_ufs_store_gpt_check ();
+  strlcpy (h.tag, "nx729j", sizeof h.tag);
+  uint64_t f = 0; __asm__ volatile ("mrs %0, cntfrq_el0" : "=r" (f)); if (!f) f = 19200000;
+  const uint64_t start = boot_log_ticks ();
+  uint32_t errors = 0;
+  for (;;) {
+    const unsigned now = static_cast<unsigned> ((boot_log_ticks () - start) / f);
+    int ok = 1;
+    // One text slot with a short header line, then the message buffer, then the header that makes both visible.
+    memset (buffer, 0, BootLogSlotBlocks * 4096);
+    snprintf (reinterpret_cast<char *> (buffer), BootLogSlotBlocks * 4096,
+              "#slot %u t=%us tag=%s\n", h.slots_written, now, h.tag);
+    ok &= native_ufs_log_write (BootLogSlotFirst + static_cast<uint64_t> (h.slots_written % slot_count) * BootLogSlotBlocks,
+                                BootLogSlotBlocks, buffer);
+    h.msg_bytes = boot_log_copy_msgbuf (buffer);
+    ok &= native_ufs_log_write (BootLogMsgFirst, BootLogMsgBlocks, buffer);
+    if (ok) ++h.slots_written; else ++h.write_errors;
+    h.uptime_s = now;
+    h.rounds++;
+    h.state = 2;
+    if (!(h.rounds % 30)) h.gpt_last = native_ufs_store_gpt_check ();
+    memset (buffer, 0, 4096);
+    memcpy (buffer, &h, sizeof h);
+    ok &= native_ufs_log_write (0, 1, buffer);
+    ok &= native_ufs_log_sync ();
+    if (!ok) { ++errors; if (errors >= 3) return; } else errors = 0;
+    IOSleep (BootLogPeriodMs);
+  }
+}
+
+// Start the boot log writer once root layout is available and sheng-log=1. Called from startRoot on success.
+static void native_ufs_start_log (void)
+{
+  uint32_t mode = 0;
+  if (!PE_parse_boot_argn ("sheng-log", &mode, sizeof (mode)) || mode != 1) return;
+  thread_t thread = nullptr;
+  if (kernel_thread_start (bootLogThread, nullptr, &thread) == KERN_SUCCESS) thread_deallocate (thread);
+}
+
 // Re-read the GPT header and entry array and compare their CRCs with what was recorded at root start. 0 = unchanged.
 extern "C" unsigned native_ufs_store_gpt_check (void)
 {
@@ -1998,6 +2114,7 @@ bool NativeUfs::startRoot (IOService *provider)
                           "root window preparation failed");
     return false;
   }
+  native_ufs_start_log ();
   return true;
 }
 
