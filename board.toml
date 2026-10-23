@@ -59,7 +59,7 @@ windows = [
 ]
 
 [kernel]
-defconfig = "nx729j_bringup_defconfig"
+defconfig = "nx729j_defconfig"
 # Stage 1 (first console) archive list: only the builders whose inputs live in the
 # base repository. Every driver that needs an evidence artefact is listed in
 # configs/nx729j_bringup_defconfig together with the artefact it needs, and comes
@@ -72,7 +72,19 @@ archives = [
   "build-arm-driver.py ArmCpu",
   "build-arm-driver.py NativeAES",
   "build-native-aes-bindings.py",
+  "build-arm-driver.py NativeUfs",
+  "build-arm-driver.py NativeVirtioBlock",
+  "build-arm-driver.py NativeRamBlock",
+  "build-native-virtio-bindings.py --component NativeRamBlock --directory build/native-ram-block",
+  "build-native-virtio-bindings.py --component NativeVirtioBlock",
+  "build-mockfs-fixture.py",
+  "build-sheng-platform-power.py",
+  "build-boot-progress.py",
   "build-libpthread-kernel.py",
+  "build-arm-driver.py NativeAdreno",
+  "build-native-adreno-kits.py",
+  "build-native-adreno-accelerator.py",
+  "build-native-legacy-display.py",
 ]
 
 [kernel.prelink]
@@ -153,9 +165,21 @@ BUILDID_STRING = "nx729j-research"
 # trust cache and Data seed. DarwinBoot itself lives in the firmware volume.
 [payload]
 volume = "NX729JESP"
-size_mib = 192
+# 52 MiB holds kernel.macho (49.5 MiB) + adt + trust cache with ~2.4 MiB spare,
+# and keeps the boot image at ~54.3 MiB. The sheng value of 192 existed for its
+# Data seed; with that seed absent the extra space is only padding.
+#
+# The size is a hard constraint, not a preference: the NX729J ABL stops ACKing
+# the download when the boot image is too large and `fastboot boot` hangs
+# forever in "Sending 'boot.img'" (reproduced twice with a 66.2 MiB image,
+# while `fastboot getvar` answers in 5 ms and adb pushes the same 69,443,584
+# bytes at 140 MB/s, so the cable and port are not involved).
+size_mib = 53
 loader = "firmware"
 title = "nx729j first boot: source 4K XNU to console"
+# 3 秒太短：菜单一闪而过，崩溃前的日志来不及拍到。10 秒给拍照/录像留出窗口；
+# 倒计时结束仍会自动启动 default 项，所以不影响"自动跑起来"这个目标。
+timeout = 10
 dram_size = "0x400000000"           # [DTB] 16 GiB: ddr-regions 0x80000000/2G + 0x880000000/6G + 0xa00000000/8G
 skip_setup_tool = "scripts/seed-data-skip-setup.py"
 # The panic renderer in scripts/patch-xnu-entry-probe.py patches the kernel by
@@ -193,6 +217,9 @@ kernel_args = [
   "serial=3",
   "debug=0x14e",
   "kt_fixed_zones=120",
+  "native-ufs-root=1",
+  "sheng-pmgr=2",
+  "boot-progress=2",
   "-no_slto_panic",
 ]
 
