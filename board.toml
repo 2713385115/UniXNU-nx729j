@@ -62,8 +62,14 @@ lba_bytes = 4096
 # "SystemOS" cryptex window is added back when userland needs it (stage 7); it is
 # left out here because the two IPSW disk images plus the assembled image do not
 # fit next to each other in the macOS runner's 14 GB of scratch space.
+#
+# [ONE WINDOW PER RUN] The comment above is why this list holds a single entry at
+# a time: the runner cannot stage both IPSW disk images and the assembled image at
+# once. Set the window that this run should extract; the images are joined
+# off-runner. `ufsBuildRootPlan()` refuses to build a root plan unless the SHNGROOT
+# manifest carries both "OS" and "SystemOS", so the finished image always has both.
 windows = [
-  { name = "OS", component = "OS" },
+  { name = "SystemOS", component = "SystemOS" },
 ]
 
 [kernel]
