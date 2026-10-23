@@ -56,9 +56,21 @@ int refuseSignature (const uint8_t[VR_KEY_BYTES], const uint8_t[32], const uint8
 
 extern "C" {
 
-// Zero policies: configureVerification() refuses before it reads any manifest.
 // Every one of these is reached only through NativeUfs, which lives in another
 // object of the same link, so each definition is marked used.
+//
+// The declarations below are not decoration: a namespace-scope const object in
+// C++ has internal linkage by default, and extern "C" only changes the name
+// mangling, not the linkage. Without an extern declaration first, these four
+// objects would be local symbols that the linker cannot see, and the kernel link
+// would fail with "_verified_root_key referenced from configureVerification()"
+// while this archive sat in the link with the symbol present but invisible.
+extern const NativeVerifiedBlockPolicy verified_root_policies[];
+extern const uint64_t verified_root_policy_count;
+extern const uint8_t verified_root_key[];
+extern const struct vr_crypto vr_xnu_crypto;
+
+// Zero policies: configureVerification() refuses before it reads any manifest.
 __attribute__((used)) const NativeVerifiedBlockPolicy verified_root_policies[1] = { { nullptr, 0 } };
 __attribute__((used)) const uint64_t verified_root_policy_count = 0;
 __attribute__((used)) const uint8_t verified_root_key[VR_KEY_BYTES] = {};
@@ -123,7 +135,10 @@ for _ in range(count):
 if deployment != (2, 0x110000):
     raise SystemExit('Stub requires the iOS 17 deployment target')
 
-# Every symbol NativeUfs.cpp asks for must actually be present.
+# Every symbol NativeUfs.cpp asks for must be present *and externally visible*.
+# N_TYPE == N_SECT (0x0e) is not enough: a local definition satisfies that, and a
+# local definition cannot resolve the kernel's reference. N_EXT (0x01) is what
+# makes it a symbol the link can use, so the mask below demands 0x0f exactly.
 needed = {'_vr_open', '_vr_verify_block', '_vr_xnu_crypto', '_verified_root_key',
           '_verified_root_policies', '_verified_root_policy_count'}
 offset, found = 32, set()
@@ -133,16 +148,45 @@ for _ in range(count):
         symoff, nsyms, stroff, _ = struct.unpack_from('<4I', data, offset + 8)
         for i in range(nsyms):
             ix, kind, _, _, _ = struct.unpack_from('<IBBHQ', data, symoff + i * 16)
-            if kind & 0x0e != 0x0e:
+            if kind & 0xff != 0x0f:
                 continue
             found.add(data[stroff + ix:data.index(b'\0', stroff + ix)].decode())
     offset += length
 missing = needed - found
 if missing:
-    raise SystemExit('Stub is missing %s' % ', '.join(sorted(missing)))
+    raise SystemExit('Stub is missing externally visible %s' % ', '.join(sorted(missing)))
 
 archive = OUT / 'libVerifiedRootStub.a'
 archive.unlink(missing_ok=True)
 subprocess.run(['xcrun', 'ar', 'rcs', archive, destination], check=True)
+
 print('VerifiedRootStub: refusing policy provider linked as a placeholder '
       '(policy_count=0, no block device can publish)')
+print('VerifiedRootStub: %s exports %d external symbols; %s' %
+      (destination, len(found), archive.name))
+
+# Both symbols the kernel link reported missing are referenced by NativeUfs.o, so the surest place for their
+# definitions is the archive that object already lives in: an archive member is pulled to satisfy a reference
+# from a sibling member. Two earlier attempts failed for reasons outside this file -- -Wl,-force_load of the
+# standalone archive, and the bare object path on LD_KERNEL_ARCHIVES -- and the compile record, the object and
+# its symbol table were all verified correct each time, so this stops depending on how the build script's
+# extra link inputs reach the linker at all.
+UFS_ARCHIVE = ROOT / 'build/native-ufs/libNativeUfs.a'
+if not UFS_ARCHIVE.is_file():
+    raise SystemExit('build/native-ufs/libNativeUfs.a not built yet; build-verified-root-stub.py must run '
+                     'after "build-arm-driver.py NativeUfs" in the board archives list')
+subprocess.run(['xcrun', 'ar', 'rs', str(UFS_ARCHIVE), str(destination)], check=True)
+
+# Verify the merged archive, not just the object: that is what the kernel link reads. Only
+# defined symbols count -- an entry of type "U" is this object asking for the name, not providing it.
+global_symbols = subprocess.run(['xcrun', 'nm', '-g', str(UFS_ARCHIVE)],
+                                capture_output=True, text=True, check=True).stdout
+merged = set()
+for line in global_symbols.splitlines():
+    parts = line.split()
+    if len(parts) == 2 and parts[0] != 'U':
+        merged.add(parts[1])
+absent = needed - merged
+if absent:
+    raise SystemExit('libNativeUfs.a still lacks %s' % ', '.join(sorted(absent)))
+print('VerifiedRootStub: merged into libNativeUfs.a; all %d symbols read back as defined' % len(needed))
