@@ -224,6 +224,7 @@ def main() -> int:
           % (archive.name, len(bindings), len(owned), pin['kext']))
     for name in sorted(bindings):
         print('    %s -> %#x' % (name, bindings[name]))
+    print(listing.stdout or '')
     return 0
 
 
