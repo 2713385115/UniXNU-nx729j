@@ -80,6 +80,9 @@ defconfig = "nx729j_defconfig"
 #   build-native-adreno-accelerator.py, build-native-legacy-display.py
 #       need an exact original GPU/framebuffer candidate.
 #   build-mockfs-fixture.py   a QEMU fixture, not a device component.
+#   build-boot-progress.py    needs kits/sheng/BootProgress.c, same missing kit as the power stub.
+#       The kernel script only calls it when XNU_BOOT_PROGRESS=1, which requires
+#       NATIVE_UFS && OWNER_ROOT_AUDIT && NATIVE_VIRTIO_BLOCK && SOURCE_CORECRYPTO14 all at once.
 archives = [
   "build-corecrypto-14.py",
   "build-corecrypto-14.py --namespace",
@@ -97,9 +100,6 @@ archives = [
   "build-verified-root-stub.py",
   # The stage-6 component under test: the native SM8550 UFS transport.
   "build-arm-driver.py NativeUfs",
-  # build-xnu-4k-baseline.sh rebuilds this helper object itself (line 70); the archive entry
-  # only turns a broken recipe into an error that names the archive step.
-  "build-boot-progress.py",
 ]
 
 [kernel.prelink]
