@@ -244,6 +244,12 @@ kernel_args = [
   "-apfs_shared_datavolume",
   "offline-key-events=1",
   "native-ufs-root=1",
+  # Persist the kernel message buffer to the last 32 MiB of userdata every 2 s (NativeUfs
+  # log window, read back by scripts/read-sheng-log.py over the linux-log reader). This is
+  # the nx729j stand-in for /sys/fs/pstore: the XNU message buffer is the one true kprintf
+  # log, so a run that stalls before mountroot can be read back verbatim instead of
+  # photographed from the frame buffer.
+  "sheng-log=1",
   # The read-only check (probe=10) answered on 2026-10-23: hostBringUp succeeded, LUN 0's GPT
   # parsed with both CRCs, "userdata" is first=0x296328 last=0x7421FFA, and its first block read
   # back. It stays out of the command line now, because it panics before the root path runs.
