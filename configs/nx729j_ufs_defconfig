@@ -34,6 +34,15 @@
 # the per-read signature check is not linked. Once a verified original image
 # exists, that flag comes off and the same driver runs the verified path.
 
+# NativeUfs compiles with -DNATIVE_VERIFIED_BLOCK=1, exactly like the qualified
+# configuration, so the driver's read path is the real one. Before an original
+# image has been verified there is no VerifiedRoot archive to link against, so
+# scripts/build-verified-root-stub.py supplies refusing placeholders and
+# CONFIG_XNU_EXTRA_LD_ARCHIVES links them. Its policy count is zero, so
+# NativeUfsBlock::configureVerification() refuses immediately and the verified
+# block device is never published; the raw transport used by native-ufs-probe
+# is unaffected.
+
 CONFIG_XNU_BUILD_ARCHIVES=y
 CONFIG_XNU_SOURCE_CORECRYPTO14=y
 CONFIG_XNU_SOURCE_PTHREAD=y
@@ -48,7 +57,7 @@ CONFIG_XNU_TRUST_CACHE_RUNTIME=y
 CONFIG_XNU_NATIVE_CS_HASH_CACHE=y
 
 CONFIG_XNU_CRYPTO_BOOTSTRAP="prelinked"
-CONFIG_XNU_EXTRA_LD_ARCHIVES=""
+CONFIG_XNU_EXTRA_LD_ARCHIVES="{tree}/build/verified-root-stub/libVerifiedRootStub.a"
 
 CONFIG_XNU_NATIVE_LEGACY_DISPLAY=n
 CONFIG_XNU_NATIVE_MOBILE_DISPLAY=n
