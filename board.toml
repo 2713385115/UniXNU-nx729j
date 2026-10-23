@@ -69,7 +69,7 @@ lba_bytes = 4096
 # off-runner. `ufsBuildRootPlan()` refuses to build a root plan unless the SHNGROOT
 # manifest carries both "OS" and "SystemOS", so the finished image always has both.
 windows = [
-  { name = "SystemOS", component = "SystemOS" },
+  { name = "SystemOS", component = "Cryptex1,SystemOS" },
 ]
 
 [kernel]
