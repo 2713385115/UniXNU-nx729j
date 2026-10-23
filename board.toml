@@ -59,7 +59,7 @@ windows = [
 ]
 
 [kernel]
-defconfig = "nx729j_defconfig"
+defconfig = "nx729j_ufs_defconfig"
 # Stage 1 (first console) archive list: only the builders whose inputs live in the
 # base repository. Every driver that needs an evidence artefact is listed in
 # configs/nx729j_bringup_defconfig together with the artefact it needs, and comes
@@ -72,19 +72,8 @@ archives = [
   "build-arm-driver.py ArmCpu",
   "build-arm-driver.py NativeAES",
   "build-native-aes-bindings.py",
-  "build-arm-driver.py NativeUfs",
-  "build-arm-driver.py NativeVirtioBlock",
-  "build-arm-driver.py NativeRamBlock",
-  "build-native-virtio-bindings.py --component NativeRamBlock --directory build/native-ram-block",
-  "build-native-virtio-bindings.py --component NativeVirtioBlock",
-  "build-mockfs-fixture.py",
-  "build-sheng-platform-power.py",
-  "build-boot-progress.py",
+  "build-arm-driver.py NativeUfs --no-verified-block",
   "build-libpthread-kernel.py",
-  "build-arm-driver.py NativeAdreno",
-  "build-native-adreno-kits.py",
-  "build-native-adreno-accelerator.py",
-  "build-native-legacy-display.py",
 ]
 
 [kernel.prelink]
@@ -217,9 +206,7 @@ kernel_args = [
   "serial=3",
   "debug=0x14e",
   "kt_fixed_zones=120",
-  "native-ufs-root=1",
-  "sheng-pmgr=2",
-  "boot-progress=2",
+  "native-ufs-probe=10",
   "-no_slto_panic",
 ]
 
