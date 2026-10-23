@@ -37,10 +37,12 @@
 # is unaffected.
 #
 # The block drivers derive from IOBlockStorageDevice, which belongs to the
-# IOStorageFamily kext rather than to XNU: the tree only carries its public
-# headers, so the link needs scripts/build-io-storage-family.py, which compiles
-# the class out of refer/IOStorageFamily. Both archives are force-loaded by
-# scripts/build-xnu-4k-baseline.sh, so nothing has to be named here.
+# IOStorageFamily kext rather than to XNU. That kext is already in the kernel
+# image as a prelinked kext, so the class must not be compiled in as well: two
+# registrations of one class name stop the boot. scripts/build-storage-bindings.py
+# binds the driver's inherited slots to the original kext code instead, using the
+# addresses in scripts/prelink-storage-bindings.json. The kernel script
+# force-loads that archive, so nothing has to be named here.
 
 CONFIG_XNU_BUILD_ARCHIVES=y
 CONFIG_XNU_SOURCE_CORECRYPTO14=y
