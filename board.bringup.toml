@@ -1,0 +1,227 @@
+# Board description of the Nubia RedMagic 8 Pro / 8 Pro+ (nx729j, SM8550).
+#
+# Values marked [DTB] are read from Resources/DTBs/nx729j.dts in UniXNU/uefi-sheng,
+# which is the device tree the stock ABL hands to the payload on this phone.
+# Values marked [TODO] cannot be derived from any public source and must be
+# measured on the device; scripts/collect-nx729j.py fills them in.
+
+[board]
+name = "nx729j"
+soc = "SM8550"
+description = "Nubia RedMagic 8 Pro / 8 Pro+"
+kit = "nx729j"                     # package/ of this repository appears as kits/nx729j in the build tree
+
+# Same target image as sheng: the unchanged iPad7,1 iPadOS 17.7.11 restore image.
+# Nothing here is device specific except where the kernel runs; the IPSW identity is
+# what makes the original userland bootable, so keep product/build/board_id in sync.
+[ipsw]
+url = "https://updates.cdn-apple.com/2025SpringFCS/fullrestores/122-77166/DCA6CFE8-90E9-4B92-880D-3DE171798E40/iPad_Pro_HFR_17.7.11_21H461_Restore.ipsw"
+product = "iPad7,1"
+version = "17.7.11"
+build = "21H461"
+device_class = "j120ap"
+chip_id = 0x8011
+board_id = 12
+fetch = ["KernelCache", "DeviceTree", "StaticTrustCache", "Cryptex1,SystemTrustCache"]
+
+[ipsw.sha256]
+"044-76040-038.dmg" = "3f99b859c9728379110b66657c7b15285bcb1925ad8b5726542e2cdcf8b1028d"
+"044-76034-038.dmg" = "b4908cde41d23e6bc05e6af51a2c9eeb00cf0f863a6a18b1600c96a3fd70414f"
+
+# The raw image written to the phone's userdata partition.
+#
+# [FW] first_lba is read out of the stock fastboot package for this exact model:
+#   * gpt_main0.bin, partition entry 11 (label "userdata"), first_lba = 2712360
+#   * rawprogram0.xml, <program label="userdata" start_sector="2712360">
+#   * patch0.xml, "Update last partition 12 'userdata' with actual size in Primary
+#     Header" -> last_lba = NUM_DISK_SECTORS-6
+# Both files agree, and the partition is 4096-byte addressed, hence lba_bytes = 4096
+# (the stock UFS LUN 0 is formatted with 4 KiB logical blocks, not 512).
+#
+# first_lba is therefore exact and device independent.
+#
+# [MEASURE] last_lba still has to come from the phone, because QUALCOMM packages
+# describe "userdata" as "the rest of the disk" (num_partition_sectors="0") and do
+# not record the disk size. Fill it in with, on the connected phone:
+#     python tools/nx729j.py measure --write UniXNU-nx729j/board.toml
+# which reads /sys/block/sda/size and stores total_sectors_in_4k - 6, exactly what
+# patch0.xml asks the flash tool to write. The value is only used to check that the
+# built image fits (scripts/unixnu/userdata.py: capacity = (last-first+1)*lba_bytes),
+# so an unset value fails the preflight instead of writing anything wrong.
+[userdata]
+first_lba = 0x296328              # 2712360, 4 KiB sectors  [FW]
+last_lba = 0x718bccd              # [DEVICE] 实测 2026-10-22：partition-size:userdata = 0x718BCD3000
+                                  #          = 487676784640 B / 4096 = 119061715 扇区，末位 -6
+lba_bytes = 4096
+windows = [
+  { name = "OS", component = "OS" },
+  { name = "SystemOS", component = "Cryptex1,SystemOS" },
+]
+
+[kernel]
+defconfig = "nx729j_bringup_defconfig"
+# Stage 1 (first console) archive list: only the builders whose inputs live in the
+# base repository. Every driver that needs an evidence artefact is listed in
+# configs/nx729j_bringup_defconfig together with the artefact it needs, and comes
+# back in the next stage. The defconfig this board is built with must stay closed
+# under "switch on => its archive is buildable here".
+archives = [
+  "build-corecrypto-14.py",
+  "build-corecrypto-14.py --namespace",
+  "build-arm-driver.py ArmDTPlatform",
+  "build-arm-driver.py ArmCpu",
+  "build-arm-driver.py NativeAES",
+  "build-native-aes-bindings.py",
+  "build-libpthread-kernel.py",
+]
+
+[kernel.prelink]
+tool = "kits/NativePrelink/emit_prelink.py"
+kernel = "build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/mach.development.bcm2837.unstripped.noctf"
+kernelcache_sha256 = "f18b4df865405f2a287b84977d7aca745e056d656d9fc9df1662970ce2969de7"
+slide = "-0x1000000"
+early_security_init = "com.apple.driver.AppleMobileFileIntegrity=0xfffffff005ab4ae0"
+roots = [
+  "com.apple.AppleFSCompression.AppleFSCompressionTypeZlib",
+  "com.apple.driver.AppleARMPlatform",
+  "com.apple.driver.AppleARMWatchdogTimer",
+  "com.apple.driver.AppleAudioClockLibs",
+  "com.apple.driver.AppleEffaceableStorage",
+  "com.apple.driver.AppleIISController",
+  "com.apple.driver.AppleM2ScalerCSCDriver",
+  "com.apple.driver.AppleMobileFileIntegrity",
+  "com.apple.driver.ApplePMGR",
+  "com.apple.driver.IODARTFamily",
+  "com.apple.filesystems.apfs",
+  "com.apple.iokit.CoreAnalyticsFamily",
+  "com.apple.iokit.IOAVFamily",
+  "com.apple.iokit.IOAudio2Family",
+  "com.apple.iokit.IOCECFamily",
+  "com.apple.iokit.IOCryptoAcceleratorFamily",
+  "com.apple.iokit.IOGPUFamily",
+  "com.apple.iokit.IOHDCPFamily",
+  "com.apple.iokit.IOMobileGraphicsFamily",
+  "com.apple.iokit.IOReportFamily",
+  "com.apple.iokit.IOSlowAdaptiveClockingFamily",
+  "com.apple.iokit.IOStorageFamily",
+  "com.apple.iokit.IOSurface",
+  "com.apple.kec.Libm",
+  "com.apple.kec.corecrypto",
+  "com.apple.kext.AppleMatch",
+  "com.apple.kext.CoreTrust",
+  "com.apple.security.AppleImage4",
+  "com.apple.security.sandbox",
+  "com.apple.iokit.IOHIDFamily",
+  "com.apple.iokit.IOHIDEventDriver",
+]
+
+# The UEFI firmware port for this phone already exists upstream, in
+# UniXNU/uefi-sheng, as Platforms/ZTE/nx729jPkg. That repository is a Mu-Silicium
+# tree with one package per board, so no separate uefi-nx729j repository is needed:
+# clone uefi-sheng and point --uefi at it.
+[firmware]
+config = "nx729j"                  # Resources/Configs/nx729j.toml of the uefi-sheng checkout
+dsc = "Platforms/ZTE/nx729jPkg/nx729j.dsc"
+fd = "Build/nx729jPkg/{target}_CLANGPDB/FV/SILICIUM_UEFI.fd"
+preflight = ["scripts/check-nx729j.py"]
+submodules = ["Common/Mu", "Common/Mu_OEM_Sample", "Silicium-ACPI", "Silicon/Silicium/OpensslPkg/Library/OpensslLib/openssl"]
+patches = ["Resources/MuPatches/Gic-Spurious.patch"]
+packages = [
+  "{uefi}",
+  "{uefi}/Platforms/ZTE",
+  "{tree}/package",
+  "{tree}/drivers/DarwinBoot",
+  "{edk2}",
+  "{uefi}/Common/Mu",
+  "{uefi}/Common/Mu_OEM_Sample",
+  "{uefi}/Silicon/Qualcomm",
+  "{uefi}/Silicon/Silicium",
+  "{uefi}/Silicium-ACPI",
+  "{uefi}/Silicium-ACPI/Platforms/ZTE",
+  "{uefi}/Silicium-ACPI/Silicon/Qualcomm",
+]
+
+[firmware.defines]
+ENABLE_SECUREBOOT = "1"
+DEVICE_MODEL = "nx729j"
+MEMORY_PROTECTION = "TRUE"
+SHIP_MODE = "FALSE"
+BUILDID_STRING = "nx729j-research"
+
+# The ramdisk of the boot image: a FAT volume with the UniXNU config, the kernel,
+# its device tree (Resources/DTBs/nx729j.dtb from uefi-sheng) and the optional
+# trust cache and Data seed. DarwinBoot itself lives in the firmware volume.
+[payload]
+volume = "NX729JESP"
+size_mib = 192
+loader = "firmware"
+title = "nx729j first boot: source 4K XNU to console"
+dram_size = "0x400000000"           # [DTB] 16 GiB: ddr-regions 0x80000000/2G + 0x880000000/6G + 0xa00000000/8G
+skip_setup_tool = "scripts/seed-data-skip-setup.py"
+# The panic renderer in scripts/patch-xnu-entry-probe.py patches the kernel by
+# absolute virtual address (PANIC_VA 0xFFFFFFF00BF69B04, VINFO_VA
+# 0xFFFFFFF00C0A2970, entry 0xFFFFFFF00B9D0488). Those are sheng's addresses,
+# measured on a kernel whose __TEXT is large enough to push _panic past 0xB9D0000.
+# This kernel links _panic at 0xFFFFFFF0079799B0 and _start_first_cpu at
+# 0xFFFFFFF0073EE05C, so the tool refuses it ("does not match") instead of
+# patching the wrong bytes. Verify the three sites against a rebuilt kernel
+# before turning this back on.
+panic_screen = false
+# Trust caches of THIS board's IPSW (iPad7,1 / 17.7.11 / 21H461). The three sheng
+# values this block originally carried belong to another iPad model, so
+# payload.py rejected the correct file as "not one of the trust caches this board
+# accepts". Recomputed with `unixnu ipsw fetch StaticTrustCache` on the device:
+#   Firmware/044-76040-038.dmg.trustcache   StaticTrustCache
+#   Firmware/044-76034-038.dmg.trustcache   Cryptex1,SystemTrustCache
+# A trust cache is only accepted here after its bytes are hashed, so re-run the
+# fetch and `sha256sum` if the IPSW ever changes.
+trust_cache_sha256 = [
+  "4563bdbf6ed8f72237d45dbba3ccde432634338f95c10d79d5d4631678a97c7c",
+  "9742f3d566369e6c48f63b3dc0740b06c243d13c6650e25bbf44616e13d6d097",
+]
+# First light keeps the command line to what this kernel actually links.
+#
+# Every sheng-* / offline-* argument below was removed for a reason, not to make
+# the line short: each one selects a code path inside an archive this defconfig
+# does not build, and payload.py refuses the volume outright when
+# native-ufs-root=1 arrives without a kernel containing _sheng_pmgr_run.
+#
+# Re-add them one at a time, together with the archive that implements them, as
+# the bring-up stages progress.
+kernel_args = [
+  "-v",
+  "serial=3",
+  "debug=0x14e",
+  "kt_fixed_zones=120",
+  "-no_slto_panic",
+]
+
+# Fixups of signed text, applied by the kernel after signature validation; they reach
+# it as /chosen/text-fixups, not on the command line. Each entry is
+# <file name>,<file offset>,<original>,<replacement>, in hex. The offsets belong to
+# the 21H461 shared caches, which this board uses unchanged.
+text_fixups = [
+  "dyld_shared_cache_arm64.15,421e8bc,28ad1bb0008544f9,c0035fd6008544f9",
+  "dyld_shared_cache_arm64.13,1b05bec,44008052,24008052",
+  "dyld_shared_cache_arm64.13,1b05b08,44008052,24008052",
+  "BTAudioHALPlugin,38bec,ffc300d1f44f01a9,000080d2c0035fd6",
+]
+
+[payload.adt]
+tool = "scripts/make-nx729j-adt.py"
+chip_id = "207"                     # [DTB] qcom,msm-id 0x207 (SM8550-AB); same value sheng uses
+owned_memory_size = "0x130000000"
+root_match_volume_uuid = "04769D26-2CA0-4825-B443-E2E5F88300F2"
+cpu_regs = "0,0x100,0x200,0x300,0x400,0x500,0x600,0x700"   # [DTB] /cpus reg 0x00..0x700
+packed_data_ramdisk = true
+persistent_data = true
+ipad_identity = true
+unique_chip_id = "required"         # the platform seed is not stored in any repository
+
+# No [[bootimg.dtb_node]] here, unlike sheng.
+#
+# [DTB] nx729j.dts already carries /reserved-memory/splash_region
+# (label cont_splash_region, reg 0x0 0xb8000000 0x0 0x2b00000), so the stock ABL
+# finds the region it expects and does not power the panel off. Adding a second node
+# with the same path would collide. Verify after the first boot that the panel stays
+# on; if it does not, re-check the region in the DTB before adding anything here.
