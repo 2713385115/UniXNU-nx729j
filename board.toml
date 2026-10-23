@@ -98,6 +98,8 @@ archives = [
   "build-io-storage-family.py",
   # Refusing stand-ins for the VerifiedRoot policies NativeUfs compiles against (-DNATIVE_VERIFIED_BLOCK=1).
   "build-verified-root-stub.py",
+  # An observer that observes nothing, for the boot_progress_poll NativeUfs declares weak.
+  "build-boot-progress-stub.py",
   # The stage-6 component under test: the native SM8550 UFS transport.
   "build-arm-driver.py NativeUfs",
 ]
