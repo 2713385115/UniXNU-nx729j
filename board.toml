@@ -72,7 +72,8 @@ archives = [
   "build-arm-driver.py ArmCpu",
   "build-arm-driver.py NativeAES",
   "build-native-aes-bindings.py",
-  "build-arm-driver.py NativeUfs --no-verified-block",
+  "build-arm-driver.py NativeUfs",
+  "build-verified-root-stub.py",
   "build-libpthread-kernel.py",
 ]
 
