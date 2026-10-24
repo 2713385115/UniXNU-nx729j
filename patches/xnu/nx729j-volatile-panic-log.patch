@@ -1,0 +1,44 @@
+--- a/pexpert/arm/pe_init.c
++++ b/pexpert/arm/pe_init.c
+@@ -63,6 +63,9 @@
+ vm_offset_t gPanicBase = 0;
+ unsigned int gPanicSize;
+ struct embedded_panic_header *panic_info = NULL;
++#if defined(XNU_NX729J_VOLATILE_PANIC_LOG) && XNU_NX729J_VOLATILE_PANIC_LOG
++static uint8_t nx729j_volatile_panic_log[128 * 1024] __attribute__((aligned(4096)));
++#endif
+ 
+ #if (DEVELOPMENT || DEBUG) && defined(XNU_TARGET_OS_BRIDGE)
+ /*
+@@ -102,6 +105,18 @@
+ 	uintptr_t const *reg_prop;
+ 	uint32_t const *panic_region_length;
+ 
++#if defined(XNU_NX729J_VOLATILE_PANIC_LOG) && XNU_NX729J_VOLATILE_PANIC_LOG
++	/*
++	 * The nx729j device tree has no Apple PRAM reservation, so the standard
++	 * embedded panic machinery would silently drop every panic.  Keep it valid
++	 * with kernel-owned RAM instead; the contents are intentionally volatile and
++	 * never advertised to firmware as persistent.  The *persistent* record is the
++	 * ramoops console mirror in nx729j_ramoops_console.h, which already captured
++	 * the console output (including the panic backtrace) before it happened.
++	 */
++	gPanicBase = (vm_offset_t)nx729j_volatile_panic_log;
++	gPanicSize = sizeof(nx729j_volatile_panic_log);
++	panic_text_len = gPanicSize - sizeof(struct embedded_panic_header);
++	goto nx729j_panic_region_ready;
++#endif
++
+ 	/*
+ 	 * DT properties for the panic region are populated by UpdateDeviceTree() in iBoot:
+ 	 *
+@@ -164,6 +180,9 @@
+ #endif /* DEVELOPMENT && defined(XNU_TARGET_OS_BRIDGE) */
+ 
+ #endif
++#if defined(XNU_NX729J_VOLATILE_PANIC_LOG) && XNU_NX729J_VOLATILE_PANIC_LOG
++nx729j_panic_region_ready:
++#endif
+ 	panic_info = (struct embedded_panic_header *)gPanicBase;
+ 
+ 	/* Check if a shared memory console is running in the panic buffer */

@@ -1,0 +1,181 @@
+--- a/osfmk/arm/arm_init.c
++++ b/osfmk/arm/arm_init.c
+@@ -90,6 +90,10 @@
+ #if HIBERNATION
+ #include <IOKit/IOPlatformExpert.h>
+ #endif /* HIBERNATION */
++
++#if defined(XNU_NX729J_RAMOOPS_CONSOLE) && XNU_NX729J_RAMOOPS_CONSOLE
++#include <arm64/nx729j_ramoops_console.h>
++#endif
+ 
+ extern void     patch_low_glo(void);
+ extern int      serial_init(void);
+@@ -524,6 +528,10 @@
+ #endif  /* __ARM_PAN_AVAILABLE__ */
+ 
+ 	arm_vm_init(xmaxmem, args);
++
++#if defined(XNU_NX729J_RAMOOPS_CONSOLE) && XNU_NX729J_RAMOOPS_CONSOLE
++	(void)nx729j_ramoops_console_init();
++#endif
+ 
+ 	if (debug_boot_arg) {
+ 		patch_low_glo();
+--- a/osfmk/console/serial_console.c
++++ b/osfmk/console/serial_console.c
+@@ -509,9 +509,16 @@
+  * @param str The string of characters to print.
+  * @param size The number of characters in `str` to print.
+  */
++#if defined(XNU_NX729J_RAMOOPS_CONSOLE) && XNU_NX729J_RAMOOPS_CONSOLE
++extern void nx729j_ramoops_console_write(const char *, int);
++#endif
++
+ void
+ console_write(char *str, int size)
+ {
++#if defined(XNU_NX729J_RAMOOPS_CONSOLE) && XNU_NX729J_RAMOOPS_CONSOLE
++	nx729j_ramoops_console_write(str, size);
++#endif
+ 	assert(str != NULL);
+ 
+ 	char *write_ptr = NULL;
+@@ -590,6 +597,9 @@
+ void
+ console_write_unbuffered(char c)
+ {
++#if defined(XNU_NX729J_RAMOOPS_CONSOLE) && XNU_NX729J_RAMOOPS_CONSOLE
++	nx729j_ramoops_console_write(&c, 1);
++#endif
+ 	_cnputc(c, true);
+ }
+ 
+--- /dev/null
++++ b/osfmk/arm64/nx729j_ramoops_console.h
+@@ -0,0 +1,111 @@
++/* SPDX-License-Identifier: BSD-2-Clause-Patent */
++/* Minimal persistent console mirror for the RedMagic 8 Pro / 8 Pro+ (nx729j).
++ *
++ * This is the XNU equivalent of Linux ramoops + /sys/fs/pstore.  It mirrors every
++ * console_write() byte into a carve-out of the SM8550 "PIL Reserved" region, which
++ * the nx729j UEFI MemoryMapLib already publishes as reserved (never handed to the
++ * kernel), so it survives a cold reboot.  After a crash the bootloader / 9008
++ * QFIL can read the 2 MiB window back from physical 0x8A800000 to recover the full
++ * boot log, including the last lines before a panic.
++ *
++ * It does not touch VBAR, TTBR, the framebuffer, scheduler state, IOKit, or storage,
++ * so it is safe to call from the synchronous console path even while a panic is in
++ * progress.
++ */
++#include <arm/caches_internal.h>
++#include <machine/machine_routines.h>
++
++/* 2 MiB carve-out at the start of the SM8550 PIL Reserved region.  The firmware
++ * maps the whole 0x8A800000..0xA2A80000 span reserved, so stealing the first 2 MiB
++ * for the console mirror is free of any memory-map conflict. */
++#define NX729J_RAMOOPS_PHYS_BASE 0x8A800000ULL
++#define NX729J_RAMOOPS_CONSOLE_BYTES 0x00200000U
++#define NX729J_RAMOOPS_HEADER_BYTES 12U
++#define NX729J_RAMOOPS_MAGIC 0x4E58384AU /* "NX8J" */
++#define NX729J_RAMOOPS_DATA_BYTES (NX729J_RAMOOPS_CONSOLE_BYTES - NX729J_RAMOOPS_HEADER_BYTES)
++
++struct nx729j_ramoops_header {
++	volatile uint32_t sig;   /* NX729J_RAMOOPS_MAGIC once the window is initialized */
++	volatile uint32_t start; /* ring offset of the oldest byte */
++	volatile uint32_t size;  /* number of valid bytes currently in the ring */
++};
++
++static vm_offset_t nx729j_ramoops_base;
++static uint32_t nx729j_ramoops_start;
++static uint32_t nx729j_ramoops_size;
++static volatile uint32_t nx729j_ramoops_busy;
++
++void nx729j_ramoops_console_write(const char *, int);
++void
++nx729j_ramoops_console_write(const char *text, int length)
++{
++	if (!text || length <= 0 || !nx729j_ramoops_base ||
++	    __atomic_exchange_n(&nx729j_ramoops_busy, 1, __ATOMIC_ACQUIRE)) {
++		return;
++	}
++
++	const uint32_t capacity = NX729J_RAMOOPS_DATA_BYTES;
++	uint32_t old_size = nx729j_ramoops_size;
++	uint32_t write_at = old_size < capacity ?
++	    (nx729j_ramoops_start + old_size) % capacity : nx729j_ramoops_start;
++	uint32_t count = (uint32_t)length;
++	uint32_t skip = 0;
++	if (count > capacity) {
++		skip = count - capacity;
++		count = capacity;
++	}
++	uint32_t data_at = (write_at + skip) % capacity;
++	const char *source = text + skip;
++	volatile uint8_t *data = (volatile uint8_t *)(uintptr_t)
++	    (nx729j_ramoops_base + NX729J_RAMOOPS_HEADER_BYTES);
++	uint32_t first = capacity - data_at;
++	if (first > count) {
++		first = count;
++	}
++	for (uint32_t i = 0; i < first; i++) {
++		data[data_at + i] = (uint8_t)source[i];
++	}
++	uint32_t second = count - first;
++	for (uint32_t i = 0; i < second; i++) {
++		data[i] = (uint8_t)source[first + i];
++	}
++
++	if (first) {
++		CleanPoC_DcacheRegion_Force((vm_offset_t)(uintptr_t)(data + data_at), first);
++	}
++	if (second) {
++		CleanPoC_DcacheRegion_Force((vm_offset_t)(uintptr_t)data, second);
++	}
++	__asm__ volatile("dsb sy" ::: "memory");
++
++	uint64_t total = (uint64_t)old_size + (uint32_t)length;
++	uint32_t new_size = total >= capacity ? capacity : (uint32_t)total;
++	uint32_t new_start = total > capacity ?
++	    (uint32_t)((nx729j_ramoops_start + total - capacity) % capacity) : nx729j_ramoops_start;
++	struct nx729j_ramoops_header *header =
++	    (struct nx729j_ramoops_header *)(uintptr_t)nx729j_ramoops_base;
++	header->start = new_start;
++	header->size = new_size;
++	__asm__ volatile("dsb sy" ::: "memory");
++	CleanPoC_DcacheRegion_Force(nx729j_ramoops_base, NX729J_RAMOOPS_HEADER_BYTES);
++	__asm__ volatile("dsb sy" ::: "memory");
++	nx729j_ramoops_start = new_start;
++	nx729j_ramoops_size = new_size;
++	__atomic_store_n(&nx729j_ramoops_busy, 0, __ATOMIC_RELEASE);
++}
++
++int
++nx729j_ramoops_console_init(void)
++{
++	if (nx729j_ramoops_base) {
++		return 1;
++	}
++	vm_offset_t mapped = ml_io_map_wcomb(NX729J_RAMOOPS_PHYS_BASE,
++	    NX729J_RAMOOPS_CONSOLE_BYTES);
++	if (!mapped) {
++		return 0;
++	}
++
++	struct nx729j_ramoops_header *header =
++	    (struct nx729j_ramoops_header *)(uintptr_t)mapped;
++	header->sig = 0;
++	header->start = 0;
++	header->size = 0;
++	__asm__ volatile("dsb sy" ::: "memory");
++	CleanPoC_DcacheRegion_Force(mapped, NX729J_RAMOOPS_HEADER_BYTES);
++	header->sig = NX729J_RAMOOPS_MAGIC;
++	__asm__ volatile("dsb sy" ::: "memory");
++	CleanPoC_DcacheRegion_Force(mapped, NX729J_RAMOOPS_HEADER_BYTES);
++	__asm__ volatile("dsb sy" ::: "memory");
++
++	nx729j_ramoops_start = 0;
++	nx729j_ramoops_size = 0;
++	nx729j_ramoops_base = mapped;
++	return 1;
++}
