@@ -1,0 +1,19 @@
+diff --git a/bsd/sys/make_symbol_aliasing.sh b/bsd/sys/make_symbol_aliasing.sh
+index 24fb244..6ed5d1b 100644
+--- a/bsd/sys/make_symbol_aliasing.sh
++++ b/bsd/sys/make_symbol_aliasing.sh
+@@ -36,6 +36,14 @@ OUTPUT="$2"
+ 
+ AVAILABILITY_PL="${SDKROOT}/${DRIVERKITROOT}/usr/local/libexec/availability.pl"
+ 
++# UniXNU builds availability.pl itself (from AvailabilityVersions) and installs it
++# into the fakeroot (DSTROOT), not into the Xcode SDK pointed to by SDKROOT.  Prefer
++# that explicit location when the driver provides it, otherwise fall back to the
++# SDK-relative path.
++if [ -n "${XNU_AVAILABILITY_PL:-}" ] && [ -x "${XNU_AVAILABILITY_PL}" ]; then
++	AVAILABILITY_PL="${XNU_AVAILABILITY_PL}"
++fi
++
+ if [ ! -x "${AVAILABILITY_PL}" ] ; then
+     echo "Unable to locate ${AVAILABILITY_PL} (or not executable)" >&2
+     exit 1
