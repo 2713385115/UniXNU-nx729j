@@ -115,6 +115,10 @@ archives = [
   # class IOBlockStorageDevice is a duplicate; kext __kernel__ already has a class by that name." This
   # archive instead binds NativeUfs's inherited slots to the original kext code with absolute symbols.
   "build-storage-bindings.py",
+  # RAM block transport: publishes an IOMedia from the packed Data seed the payload hands
+  # over, so mountroot has something to match before any real disk driver works. It only
+  # implements IOBlockStorageDevice, so it needs the storage bindings above and nothing else.
+  "build-arm-driver.py NativeRamBlock",
   # An observer that observes nothing, for the boot_progress_poll NativeUfs declares weak.
   "build-boot-progress-stub.py",
   # The stage-6 component under test: the native SM8550 UFS transport.
