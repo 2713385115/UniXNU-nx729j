@@ -166,7 +166,10 @@ skip_setup_tool = "scripts/seed-data-skip-setup.py"
 # 0xFFFFFFF0073EE05C, so the tool refuses it ("does not match") instead of
 # patching the wrong bytes. Verify the three sites against a rebuilt kernel
 # before turning this back on.
-panic_screen = false
+# 2026-10-24 真机验证：patch-xnu-entry-probe.py 现在会自动探测站点地址
+# （本次实跑定位到 panic 0xfffffff0073ec5c0 / funnel 0xfffffff007271520），
+# 不再依赖下面注释里 sheng 的绝对地址，所以可以安全打开。
+panic_screen = true
 # Trust caches of THIS board's IPSW (iPad7,1 / 17.7.11 / 21H461). The three sheng
 # values this block originally carried belong to another iPad model, so
 # payload.py rejected the correct file as "not one of the trust caches this board
