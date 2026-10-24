@@ -48,6 +48,11 @@ CONFIG_XNU_ARMCPU=y
 CONFIG_XNU_NATIVE_AES=y
 CONFIG_XNU_NATIVE_ARCH_TIMER=y
 CONFIG_XNU_NATIVE_PAN=y
+# Mountroot needs at least one IOMedia to match. NativeRamBlock publishes the packed
+# Data seed the payload hands over (PackedRAMDisk in /chosen/memory-map), so the kernel
+# gets a root device before any real disk transport is qualified. It only inherits
+# IOBlockStorageDevice, which the storage bindings resolve against the prelinked kext.
+CONFIG_XNU_NATIVE_RAM_BLOCK=y
 CONFIG_XNU_DT_PANIC_REGION=y
 CONFIG_XNU_NX729J_RAMOOPS_CONSOLE=y
 CONFIG_XNU_NX729J_VOLATILE_PANIC_LOG=y
@@ -86,7 +91,6 @@ CONFIG_XNU_NATIVE_MOBILE_DISPLAY=n
 CONFIG_XNU_NATIVE_ADRENO=n
 CONFIG_XNU_NATIVE_VIRTIO_BLOCK=n
 CONFIG_XNU_NATIVE_UFS=n
-CONFIG_XNU_NATIVE_RAM_BLOCK=n
 CONFIG_XNU_NATIVE_VIRTIO_CONSOLE=n
 CONFIG_XNU_NATIVE_OFFLINE_GPU=n
 CONFIG_XNU_SHENG_PMGR=n
