@@ -48,3 +48,8 @@ CONFIG_XNU_EXTRA_LD_ARCHIVES=""
 # The proven display path is the legacy (DPU) one, as on sheng.
 CONFIG_XNU_NATIVE_MOBILE_DISPLAY=n
 CONFIG_XNU_ARMVIRT_PLATFORM=n
+
+# Persistent console mirror (ramoops) into the PIL Reserved carve-out at 0x8A800000.
+# After a crash the bootloader / 9008 QFIL reads the 2 MiB window back from physical memory.
+CONFIG_XNU_NX729J_RAMOOPS_CONSOLE=y
+CONFIG_XNU_NX729J_VOLATILE_PANIC_LOG=y
