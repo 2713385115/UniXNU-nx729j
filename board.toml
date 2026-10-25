@@ -138,6 +138,12 @@ archives = [
   # construction - a separate archive on LD_KERNEL_ARCHIVES was tried twice and
   # produced an undefined-symbol link both times.
   "build-verified-root-bundle.py",
+  # The native_verified_block_* queries the owner-root patches call. Upstream they
+  # live in NativeVirtioBlock; this board's verified block device is NativeUfsBlock,
+  # so the answers come from the policy table linked in above. Must come after both
+  # NativeUfs and build-verified-root-bundle.py: it merges into libNativeUfs.a and
+  # reads the policy count.
+  "build-owner-verified-block.py",
 ]
 
 [kernel.prelink]
