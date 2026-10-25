@@ -738,6 +738,7 @@ Boot (
     Status = EFI_COMPROMISED_DATA;
     goto Fail;
   }
+  Nx729jDiag (Root);
   Status = ReadBootVideo (Video);
   if (EFI_ERROR (Status)) { goto Fail; }
   Status = AllocateWindow (&Kernel, WindowSize, &Address);
@@ -793,7 +794,6 @@ Boot (
   FreePool (Image); Image = NULL;
   FreePool (Tree); Tree = NULL;
   FreePool (TreePath); TreePath = NULL;
-  Nx729jDiag (Root);
   Root->Close (Root); Root = NULL;
   Status = GetMap (&Map, &Capacity, &MapSize, &Key, &Stride);
   if (EFI_ERROR (Status)) { goto Fail; }
