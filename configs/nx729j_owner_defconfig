@@ -1,0 +1,76 @@
+# Kernel configuration of the nx729j owner-root image (stage 6: publish the block
+# device, mount the root volume, start launchd).
+#
+# Why this file exists
+# --------------------
+# nx729j_storage_defconfig only carries the UFS *transport*. NativeUfsBlock is
+# compiled in, but NativeUfsBlock::configureVerification() refuses every root
+# window while the VerifiedRoot policy count is 0, so no block device is ever
+# published to IOStorageFamily. Without a published block device there is no
+# partition table, no OS/SystemOS volume and no device for vfs_mountroot to
+# mount -- i.e. stage 6 checks 2, 3 and 4 are unreachable by construction, no
+# matter how long the kernel is left running. The kernel does not hang; the
+# chain it would need is simply not linked in.
+#
+# This file is nx729j_storage_defconfig plus the owner-signed verified-root
+# chain. It is the smallest configuration that can reach "root volume mounted".
+#
+# Still off, and why:
+#
+#   NATIVE_VIRTIO_BLOCK   no virtio transport on this board
+#   NATIVE_RAM_BLOCK      no RAM disk in this image
+#   SHENG_PMGR            build/sheng-platform-power/libShengPlatformPower.a
+#                         needs kits/sheng/ShengPlatformPower.cpp, which no
+#                         published repository contains
+#   BOOT_PROGRESS         build/boot-progress/libBootProgress.a needs
+#                         kits/sheng/BootProgress.c, also unpublished. Until it
+#                         exists this image links build/boot-progress-stub,
+#                         whose whole body is an empty boot_progress_poll(), so
+#                         the 48x120 diagnostic page, the stage history, the
+#                         last-PC field and the pulse bar are all absent.
+#   OWNER_UNION_SYSTEMOS  the SystemOS cryptex window is a stage 7 need; board.toml
+#                         joins it back once userland asks for it
+#   OWNER_DATA_MOUNT      the Data volume is a stage 7 need as well
+#   NATIVE_LEGACY_DISPLAY / NATIVE_ADRENO
+#                         need an exact original framebuffer/GPU candidate
+#   SOURCE_MOCKFS         a QEMU test fixture, not a device component
+
+CONFIG_XNU_BUILD_ARCHIVES=y
+CONFIG_XNU_SOURCE_CORECRYPTO14=y
+CONFIG_XNU_SOURCE_PTHREAD=y
+CONFIG_XNU_ARM_DT_PLATFORM=y
+CONFIG_XNU_ARMCPU=y
+CONFIG_XNU_NATIVE_AES=y
+CONFIG_XNU_NATIVE_UFS=y
+CONFIG_XNU_NATIVE_ARCH_TIMER=y
+CONFIG_XNU_NATIVE_PAN=y
+CONFIG_XNU_DT_PANIC_REGION=y
+CONFIG_XNU_TRUST_CACHE_RUNTIME=y
+CONFIG_XNU_NATIVE_CS_HASH_CACHE=y
+
+# --- the owner-signed verified-root chain: this is what was missing ---
+CONFIG_XNU_VERIFIED_ROOT_PROBE=y
+CONFIG_XNU_OWNER_ROOT_AUDIT=y
+CONFIG_XNU_OWNER_ROOT_TRUST=y
+CONFIG_XNU_OWNER_CACHE_MOUNT=y
+CONFIG_XNU_OWNER_CACHE_STARTUP=y
+CONFIG_XNU_OWNER_BOOT_MANIFEST=y
+CONFIG_XNU_CRYPTO_BOOTSTRAP="prelinked"
+CONFIG_XNU_VERIFIED_ROOT_ARCHIVE="{tree}/build/verified-root-bundle/libVerifiedRootBundle.a"
+CONFIG_XNU_EXTRA_LD_ARCHIVES=""
+
+CONFIG_XNU_NATIVE_LEGACY_DISPLAY=n
+CONFIG_XNU_NATIVE_MOBILE_DISPLAY=n
+CONFIG_XNU_NATIVE_ADRENO=n
+CONFIG_XNU_NATIVE_VIRTIO_BLOCK=n
+CONFIG_XNU_NATIVE_RAM_BLOCK=n
+CONFIG_XNU_NATIVE_VIRTIO_CONSOLE=n
+CONFIG_XNU_NATIVE_OFFLINE_GPU=n
+CONFIG_XNU_SHENG_PMGR=n
+CONFIG_XNU_SOURCE_MOCKFS=n
+CONFIG_XNU_ARMVIRT_PLATFORM=n
+CONFIG_XNU_ZONE_PGZ_ALIGNMENT_PROBE=n
+CONFIG_XNU_BOOT_PROGRESS=n
+CONFIG_XNU_OWNER_UNION_SYSTEMOS=n
+CONFIG_XNU_OWNER_DATA_MOUNT=n
+CONFIG_XNU_OWNER_DATA_VOLUME_UUID="00000000-0000-0000-0000-000000000000"
