@@ -223,10 +223,28 @@ loader = "firmware"
 title = "nx729j first boot: source 4K XNU to console"
 dram_size = "0x400000000"           # [DTB] 16 GiB: ddr-regions 0x80000000/2G + 0x880000000/6G + 0xa00000000/8G
 skip_setup_tool = "scripts/seed-data-skip-setup.py"
-panic_screen = true
+# The panic renderer in scripts/patch-xnu-entry-probe.py rewrites the kernel by
+# absolute virtual address (PANIC_VA 0xFFFFFFF00BF69B04, VINFO_VA
+# 0xFFFFFFF00C0A2970, entry 0xFFFFFFF00B9D0488). Those are sheng's addresses, from
+# a kernel whose __TEXT is big enough to push _panic past 0xB9D0000. This kernel
+# links _panic at 0xFFFFFFF0079799B0 and _start_first_cpu at 0xFFFFFFF0073EE05C,
+# so the tool refuses instead of patching the wrong bytes, and the payload build
+# stops there. Turn it back on only after verifying the three sites against a
+# rebuilt kernel. The console log now travels through the payload diagnostic
+# (tools/make-payload-diag.py) instead of the screen.
+panic_screen = false
+# Trust caches of THIS board's IPSW (iPad7,1 / 17.7.11 / 21H461). The two sheng
+# values this block originally carried belong to another iPad model, so payload.py
+# rejected the correct file as "not one of the trust caches this board accepts".
+# Recomputed with `unixnu ipsw fetch StaticTrustCache` against this IPSW:
+#   Firmware/044-76040-038.dmg.trustcache   StaticTrustCache
+#   Firmware/044-76034-038.dmg.trustcache   Cryptex1,SystemTrustCache
+# The workflow hands payload.py out/ipsw/<build>/StaticTrustCache, i.e. the first
+# file, so that hash must be present. Re-run the fetch and `sha256sum` if the IPSW
+# ever changes.
 trust_cache_sha256 = [
-  "7416ca4f8377146626bb284e2133c76bee6cb4e3ee0af5d648b186235a7323a7",
-  "8900d6a93d7a59ce1a872a5c081e559f4240a218f97e12d44d22dda46644d68f",
+  "4563bdbf6ed8f72237d45dbba3ccde432634338f95c10d79d5d4631678a97c7c",
+  "9742f3d566369e6c48f63b3dc0740b06c243d13c6650e25bbf44616e13d6d097",
 ]
 # The sheng- prefixed arguments are read by the sheng kit sources this repository
 # reuses; they are not device names. Keep them until the kit is renamed.
