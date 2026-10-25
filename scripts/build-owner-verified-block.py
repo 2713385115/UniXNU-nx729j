@@ -17,7 +17,7 @@ build-arm-driver.py NativeUfs publishes the authenticated window, and
 build-verified-root-bundle.py supplies the owner-signed envelopes it
 authenticates against.
 
-This script compiles drivers/NativeUfs/OwnerVerifiedBlock.cpp and merges the
+This script compiles drivers/NativeUfs/OwnerVerifiedBlock.c and merges the
 object into build/native-ufs/libNativeUfs.a, the archive the kernel link already
 force-loads. Definitions placed there are found by construction; a separate
 archive on LD_KERNEL_ARCHIVES was tried twice upstream and produced an
@@ -46,7 +46,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'build/owner-verified-block'
 RECIPE = ROOT / 'build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/bsd/DEVELOPMENT/bsd_init.o.json'
-SOURCE = ROOT / 'drivers/NativeUfs/OwnerVerifiedBlock.cpp'
+SOURCE = ROOT / 'drivers/NativeUfs/OwnerVerifiedBlock.c'
 UFS = ROOT / 'build/native-ufs/libNativeUfs.a'
 NEEDED = {'_native_verified_root_probe', '_native_verified_block_root_authorized'}
 
@@ -91,7 +91,7 @@ def main() -> int:
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     (OUT / 'compile.log').write_text(result.stdout or '')
     if result.returncode:
-        fail('OwnerVerifiedBlock.cpp did not compile:\n' + (result.stdout or '')[-3000:])
+        fail('OwnerVerifiedBlock.c did not compile:\n' + (result.stdout or '')[-3000:])
 
     data = destination.read_bytes()
     magic, cpu, subtype, kind, count = struct.unpack_from('<5I', data, 0)
