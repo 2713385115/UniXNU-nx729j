@@ -52,9 +52,13 @@ CONFIG_XNU_NATIVE_CS_HASH_CACHE=y
 CONFIG_XNU_VERIFIED_ROOT_PROBE=y
 CONFIG_XNU_OWNER_ROOT_AUDIT=y
 CONFIG_XNU_OWNER_ROOT_TRUST=y
-CONFIG_XNU_OWNER_CACHE_MOUNT=y
-CONFIG_XNU_OWNER_CACHE_STARTUP=y
-CONFIG_XNU_OWNER_BOOT_MANIFEST=y
+# The SystemOS cache chain and the boot manifest are stage 7. They need
+# native_verified_block_volume_device() and native_verified_block_manifest_sha384(),
+# which only NativeVirtioBlock implements; answering them from the UFS driver with a
+# guess would let mountroot act on a device that was never resolved.
+CONFIG_XNU_OWNER_CACHE_MOUNT=n
+CONFIG_XNU_OWNER_CACHE_STARTUP=n
+CONFIG_XNU_OWNER_BOOT_MANIFEST=n
 CONFIG_XNU_CRYPTO_BOOTSTRAP="prelinked"
 CONFIG_XNU_VERIFIED_ROOT_ARCHIVE="{tree}/build/verified-root-bundle/libVerifiedRootBundle.a"
 CONFIG_XNU_EXTRA_LD_ARCHIVES=""
