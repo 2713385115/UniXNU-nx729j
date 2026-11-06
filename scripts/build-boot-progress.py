@@ -8,8 +8,29 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'build/boot-progress'
 OUT.mkdir(parents=True, exist_ok=True)
+
+
+def kit_file(name):
+    """Locate a board package source by name.
+
+    In the assembled build tree the device package appears as kits/<board.kit>/
+    (sheng -> kits/sheng, nx729j -> kits/nx729j), so a hard-coded kit name breaks
+    every board that is not sheng.  In a bare device-repository checkout the same
+    sources sit directly in package/.  Search both, kit directory first.
+    """
+    kits = ROOT / 'kits'
+    if kits.is_dir():
+        for hit in sorted(kits.glob(f'*/{name}')):
+            if hit.is_file():
+                return hit
+    direct = ROOT / 'package' / name
+    if direct.is_file():
+        return direct
+    raise SystemExit(f'{name}: not found under kits/*/ or package/')
+
+
 record = json.loads((ROOT / 'build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/osfmk/DEVELOPMENT/startup.o.json').read_text().strip().rstrip(','))
-source = ROOT / 'kits/sheng/BootProgress.c'
+source = kit_file('BootProgress.c')
 obj = OUT / 'BootProgress.o'
 command = []
 args = record['arguments']
@@ -34,11 +55,11 @@ command += ['-DXNU_BOOT_PROGRESS=1', '-mgeneral-regs-only', '-Wall', '-Wextra', 
             '-I', str(ROOT / 'uefi-sheng/Silicon/Silicium/SiliciumPkg/Library/FrameBufferSerialPortLib')]
 subprocess.run(command, cwd=record['directory'], check=True, timeout=90)
 (OUT / 'compile-command.json').write_text(json.dumps(command,indent=2)+'\n')
-fault_source = ROOT / 'kits/sheng/BootFaultProbe.c'
+fault_source = kit_file('BootFaultProbe.c')
 fault_obj = OUT / 'BootFaultProbe.o'
 fault_command = [str(fault_source) if arg == str(source) else str(fault_obj) if arg == str(obj) else arg for arg in command]
 subprocess.run(fault_command, cwd=record['directory'], check=True, timeout=90)
-policy_source = ROOT / 'kits/sheng/BootWatchdogPolicy.c'
+policy_source = kit_file('BootWatchdogPolicy.c')
 policy_obj = OUT / 'BootWatchdogPolicy.o'
 policy_record = json.loads((ROOT / 'build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/bsd/DEVELOPMENT/kern_exec.o.json').read_text().strip().rstrip(','))
 policy_command = []
@@ -70,6 +91,9 @@ subprocess.run(policy_command, cwd=policy_record['directory'], check=True, timeo
 log_source = kit_file('BootLog.c')
 log_obj = OUT / 'BootLog.o'
 log_command = [str(log_source) if arg == str(source) else str(log_obj) if arg == str(obj) else arg for arg in command]
+# The kit directory carries the board's own headers next to the sources, the same way the display
+# archive builder adds it; in a bare device checkout there is nothing there and -I is harmless.
+log_command += ['-I', str(log_source.parent)]
 subprocess.run(log_command, cwd=record['directory'], check=True, timeout=90)
 
 archive = OUT / 'libBootProgress.a'
