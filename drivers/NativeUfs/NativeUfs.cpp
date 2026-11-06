@@ -1961,12 +1961,27 @@ bool NativeUfs::start (IOService *provider)
   }
   if (probe == 10) {
     // Read-only check before anything is flashed: LUN 0 GPT -> "userdata" -> its first block.
+    // With native-ufs-root=1 this probe does not stop here any more: once bring-up succeeded the partition
+    // range is known, so the diagnostic window is opened at this exact point and control falls through into
+    // the root path. One flash then answers both questions, "did the host come up" and "where does the root
+    // path stop", without a screen: from here on the kernel message buffer is persisted every two seconds.
     const char *why = "";
     if (!hostBringUp (&why)) {
       panic ("NATIVE_UFS root check: bring-up failed: %s", why);
     }
     RootLayout *layout = static_cast<RootLayout *> (IOMalloc (sizeof (RootLayout)));
-    if (!layout || !findRootLayout (layout, &why)) {
+    bool laid = layout && findRootLayout (layout, &why);
+    if (layout && layout->userdataLast > layout->userdataFirst) {
+      gStoreGeometry = { true, layout->userdataFirst, layout->userdataLast, layout->imageBytes,
+                         layout->gptEntriesLba, layout->gptHeaderCrc, layout->gptEntriesCrc, layout->gptEntryCount };
+      native_ufs_start_log ();
+      if (!laid) rootDiagnosticFailure (why);
+      if (rootMode) {
+        IOFree (layout, sizeof (RootLayout));
+        return startRoot (provider);
+      }
+    }
+    if (!laid) {
       panic ("NATIVE_UFS root check: %s", why);
     }
     panic ("NATIVE_UFS root check\n"
