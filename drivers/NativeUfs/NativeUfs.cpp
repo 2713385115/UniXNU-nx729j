@@ -1932,6 +1932,17 @@ static void mediaReportThread (void *, wait_result_t)
 
 bool NativeUfs::start (IOService *provider)
 {
+  // Diagnostic fork (native-ufs-start-probe=1): prove that this driver's start() is reached at all.
+  // This board has no serial console, and the payload image built here carries no panic screen, so a
+  // driver that never matches looks exactly like one whose bring-up panics: the panel stays on the
+  // green hand-off bar either way and nothing is ever written to the log window. A restart a few
+  // seconds after the hand-off is the only signal that needs no screen, so it answers one yes/no
+  // question and nothing else - restart means the personality matched and start() ran.
+  uint32_t startProbe = 0;
+  if (PE_parse_boot_argn ("native-ufs-start-probe", &startProbe, sizeof (startProbe)) && startProbe == 1) {
+    IOLog ("NativeUfs: start() reached (provider %p); restarting as asked\n", provider);
+    PEHaltRestart (2 /* kPERestartCPU */);
+  }
   unsigned probe = 0, rootMode = 0;
   PE_parse_boot_argn ("native-ufs-probe", &probe, sizeof (probe));
   PE_parse_boot_argn ("native-ufs-root", &rootMode, sizeof (rootMode));
