@@ -97,9 +97,9 @@ defconfig = "nx729j_defconfig"
 #   build-native-adreno-accelerator.py, build-native-legacy-display.py
 #       need an exact original GPU/framebuffer candidate.
 #   build-mockfs-fixture.py   a QEMU fixture, not a device component.
-#   build-boot-progress.py    needs kits/sheng/BootProgress.c, same missing kit as the power stub.
-#       The kernel script only calls it when XNU_BOOT_PROGRESS=1, which requires
-#       NATIVE_UFS && OWNER_ROOT_AUDIT && NATIVE_VIRTIO_BLOCK && SOURCE_CORECRYPTO14 all at once.
+#   (build-boot-progress.py is no longer withheld: it resolves BootProgress.c and BootLog.c from
+#   package/ and is listed below. The kernel script only calls it when XNU_BOOT_PROGRESS=1, which
+#   requires NATIVE_UFS && OWNER_ROOT_AUDIT && NATIVE_VIRTIO_BLOCK && SOURCE_CORECRYPTO14 at once.)
 archives = [
   "build-corecrypto-14.py",
   "build-corecrypto-14.py --namespace",
@@ -123,8 +123,14 @@ archives = [
   # UFS transport defines. This stage has no UFS, so bind them to a stub that
   # reports mode()==0 and makes attachStore() skip the overlay entirely.
   "build-storage-store-stub.py",
-  # An observer that observes nothing, for the boot_progress_poll NativeUfs declares weak.
-  "build-boot-progress-stub.py",
+  # The board progress monitor and the persistent diagnostic writer. This board used to link
+  # build-boot-progress-stub.py here - an observer that observes nothing - so the kernel had no
+  # BootProgress.c and no BootLog.c: boot_log_tick stayed a null weak import, "sheng-log=1" wrote
+  # nothing, and the 32 MiB SHLOG001 window at the tail of userdata was zero in every run. The real
+  # builder compiles package/BootProgress.c, whose monitor calls boot_log_tick() once a second, and
+  # package/BootLog.c, the writer that keeps that window current (unixnu.com/zh/porting/log-capture,
+  # step 4). Reading it back needs no screen: the window is ordinary blocks on LUN 0.
+  "build-boot-progress.py",
   # The stage-6 component under test: the native SM8550 UFS transport.
   "build-arm-driver.py NativeUfs",
   # The owner-signed policies NativeUfs authenticates every root window against
