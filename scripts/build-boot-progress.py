@@ -59,12 +59,26 @@ while j < len(policy_args):
 policy_command += ['-mgeneral-regs-only', '-Wall', '-Wextra', '-Werror']
 subprocess.run(policy_command, cwd=policy_record['directory'], check=True, timeout=90)
 
+# The persistent diagnostic writer (package/BootLog.c, boot argument sheng-log=1). The board progress
+# monitor above starts it with boot_log_tick() once a second, and it is what keeps the 32 MiB SHLOG001
+# window at the tail of userdata current - the only way a run on this board is read back without a photo
+# (unixnu.com/zh/porting/log-capture, step 4: the kernel writer and its bounded storage calls).
+# build-native-legacy-display.py compiles the same file for sheng, but this board withholds that archive
+# until an original display candidate exists, so the writer has to be built here. Without it the
+# boot_log_tick that BootProgress.c calls stays an unresolved weak import: the kernel then has no writer,
+# sheng-log=1 writes nothing, and the log window stays zero no matter what the rest of the boot does.
+log_source = kit_file('BootLog.c')
+log_obj = OUT / 'BootLog.o'
+log_command = [str(log_source) if arg == str(source) else str(log_obj) if arg == str(obj) else arg for arg in command]
+subprocess.run(log_command, cwd=record['directory'], check=True, timeout=90)
+
 archive = OUT / 'libBootProgress.a'
 archive.unlink(missing_ok=True)
-subprocess.run(['xcrun', 'ar', 'rcs', str(archive), str(obj), str(fault_obj), str(policy_obj)], check=True, timeout=30)
+subprocess.run(['xcrun', 'ar', 'rcs', str(archive), str(obj), str(fault_obj), str(policy_obj), str(log_obj)], check=True, timeout=30)
 (OUT / 'build-report.json').write_text(json.dumps({
     'watchdog_policy_sha256': hashlib.sha256(policy_source.read_bytes()).hexdigest(),
     'fault_sha256': hashlib.sha256(fault_source.read_bytes()).hexdigest(),
+    'log_sha256': hashlib.sha256(log_source.read_bytes()).hexdigest(),
     'source_sha256': hashlib.sha256(source.read_bytes()).hexdigest(),
     'lifecycle_sha256': hashlib.sha256((source.parent / 'BootProgressLifecycle.h').read_bytes()).hexdigest(),
     'core_sha256': hashlib.sha256((source.parent / 'BootProgressCore.h').read_bytes()).hexdigest(),
