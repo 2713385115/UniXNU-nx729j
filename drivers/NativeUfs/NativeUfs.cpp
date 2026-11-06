@@ -1242,8 +1242,11 @@ static void bootLogThread (void *, wait_result_t)
   thread_set_thread_name (current_thread (), "boot_log");
   uint64_t first = 0, blocks = 0;
   const char *why = "";
-  // The window exists once root layout is parsed; until then the open is refused ("no root layout").
-  while (!native_ufs_log_open (&first, &blocks, &why)) {
+  // The window exists once root layout is parsed; until then the open is refused ("no root layout"). A failure record
+  // may already have opened it, in which case that window is reused rather than treated as a refusal.
+  for (;;) {
+    if (native_ufs_log_open (&first, &blocks, &why)) break;
+    if (!strcmp (why, "already open")) { first = gLogRegionFirst; blocks = gLogRegionBlocks; break; }
     if (strcmp (why, "no root layout")) return;
     IOSleep (1000);
   }
@@ -1275,8 +1278,20 @@ static void bootLogThread (void *, wait_result_t)
     int ok = 1;
     // One text slot with a short header line, then the message buffer, then the header that makes both visible.
     memset (buffer, 0, BootLogSlotBlocks * 4096);
+    const char *failure = native_ufs_root_failure;
     snprintf (reinterpret_cast<char *> (buffer), BootLogSlotBlocks * 4096,
-              "#slot %u t=%us tag=%s\n", h.slots_written, now, h.tag);
+              "#slot %u t=%us tag=%s\nroot step=%u reason=%s\nstage=%s phase=%u window=%u\n"
+              "published=%u prepared=%u windows=%u manifest=%u magic=%08x %08x\n"
+              "policies=%llu verify=%08x windowBytes=%llx verifyReads=%llu failures=%llu\n"
+              "userdata=%llx..%llx imageBytes=%llx gpt=%u\nmsg_bytes=%u writer_errors=%u\n",
+              h.slots_written, now, h.tag, native_ufs_root_step, failure ? failure : "(none)",
+              gRootDiagnostic.stage, gRootDiagnostic.publicationPhase, gRootDiagnostic.publicationWindow,
+              gRootDiagnostic.published, gRootDiagnostic.prepared, gRootDiagnostic.windows, gRootDiagnostic.manifest,
+              gRootDiagnostic.magic0, gRootDiagnostic.magic1, gRootDiagnostic.policyCount, gRootDiagnostic.verify,
+              (unsigned long long) gRootDiagnostic.windowBytes, (unsigned long long) gRootDiagnostic.reads,
+              (unsigned long long) gRootDiagnostic.failures, (unsigned long long) gStoreGeometry.first,
+              (unsigned long long) gStoreGeometry.last, (unsigned long long) gStoreGeometry.imageBytes,
+              native_ufs_store_gpt_check (), h.msg_bytes, h.write_errors);
     ok &= native_ufs_log_write (BootLogSlotFirst + static_cast<uint64_t> (h.slots_written % slot_count) * BootLogSlotBlocks,
                                 BootLogSlotBlocks, buffer);
     h.msg_bytes = boot_log_copy_msgbuf (buffer);
@@ -1295,13 +1310,40 @@ static void bootLogThread (void *, wait_result_t)
   }
 }
 
-// Start the boot log writer once root layout is available and sheng-log=1. Called from startRoot on success.
+// Start the boot log writer once root layout is available and sheng-log=1. Called from startRoot twice: as soon as the
+// geometry is known, and again on the success path. The second call finds the flag set and returns, so exactly one
+// writer ever runs.
+static int gBootLogStarted = 0;
 static void native_ufs_start_log (void)
 {
+  if (__atomic_exchange_n (&gBootLogStarted, 1, __ATOMIC_SEQ_CST)) return;
   uint32_t mode = 0;
   if (!PE_parse_boot_argn ("sheng-log", &mode, sizeof (mode)) || mode != 1) return;
   thread_t thread = nullptr;
-  if (kernel_thread_start (bootLogThread, nullptr, &thread) == KERN_SUCCESS) thread_deallocate (thread);
+  if (kernel_thread_start (bootLogThread, nullptr, &thread) != KERN_SUCCESS) { gBootLogStarted = 0; return; }
+  thread_deallocate (thread);
+}
+
+// Persist one failure record the moment it happens. Every root step that can fail calls rootDiagnosticFailure(), and
+// before this the window stayed empty on every one of them: the writer only starts on success, so a soft failure could
+// only be read back by photographing the frame buffer. The record goes into the last slot of the window, which the
+// periodic writer reaches only after a thousand rounds, so it survives a writer that is already running.
+static void rootFailureRecord (const char *reason)
+{
+  static uint8_t record[4096];
+  uint64_t first = 0, blocks = 0;
+  const char *why = "";
+  if (!native_ufs_log_open (&first, &blocks, &why)) {
+    if (strcmp (why, "already open")) return;   // log off, no layout, or window refused
+    blocks = gLogRegionBlocks;
+  }
+  (void) first;
+  if (blocks <= BootLogSlotFirst + BootLogSlotBlocks) return;
+  memset (record, 0, sizeof record);
+  formatUfsRootDiagnostics (reinterpret_cast<char *> (record), sizeof record, gRootDiagnostic, reason, "UFS ROOT FAILURE");
+  const uint64_t slots = (blocks - BootLogSlotFirst) / BootLogSlotBlocks;
+  if (!native_ufs_log_write (BootLogSlotFirst + (slots - 1) * BootLogSlotBlocks, 1, record)) return;
+  native_ufs_log_sync ();
 }
 
 // Re-read the GPT header and entry array and compare their CRCs with what was recorded at root start. 0 = unchanged.
@@ -1393,6 +1435,7 @@ static void rootDiagnosticFailure (const char *reason)
 {
   // Kept even when the panic diagnostic is off, so the boot page can say why nothing was published.
   native_ufs_root_failure = reason;
+  rootFailureRecord (reason);
   if (!gRootDiagnosticEnabled) return;
   gRootDiagnostic.published = native_ufs_blocks_published;
   gRootDiagnostic.reads = native_ufs_block_reads;
@@ -2034,6 +2077,9 @@ bool NativeUfs::startRoot (IOService *provider)
   }
   gStoreGeometry = { true, layout->userdataFirst, layout->userdataLast, layout->imageBytes, layout->gptEntriesLba,
                      layout->gptHeaderCrc, layout->gptEntriesCrc, layout->gptEntryCount };
+  // The log window is openable from here on, and every remaining step can still fail, so the writer starts now rather
+  // than at the end of startRoot where a failure would never reach it.
+  native_ufs_start_log ();
   const char *names[4] = {};
   for (unsigned i = 0; i < layout->windows; ++i) names[i] = layout->window[i].name;
   if (!ufsBuildRootPlan (names, layout->windows, gPublicationPlan)) {
