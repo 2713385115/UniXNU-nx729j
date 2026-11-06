@@ -1940,8 +1940,28 @@ bool NativeUfs::start (IOService *provider)
   // question and nothing else - restart means the personality matched and start() ran.
   uint32_t startProbe = 0;
   if (PE_parse_boot_argn ("native-ufs-start-probe", &startProbe, sizeof (startProbe)) && startProbe == 1) {
-    IOLog ("NativeUfs: start() reached (provider %p); restarting as asked\n", provider);
+    IOLog ("NativeUfs: start() reached (provider %p); resetting as asked\n", provider);
+    // PSCI SYSTEM_RESET first. It is the same call the upstream reset probe
+    // (scripts/patch-xnu-entry-probe.py, stage 3/4) emits, and unlike PEHaltRestart() it cannot be
+    // turned into a no-op by a missing platform callback: PEHaltRestart() panics when the platform
+    // restart hook is not installed yet, and at this point in bring-up "panic with no panic screen"
+    // is indistinguishable from "start() never ran". So the hard reset goes first, the polite one
+    // second, and a silent park last so a hang can never be misread as a successful reset.
+    for (unsigned attempt = 0; attempt < 4; attempt++) {
+      __asm__ volatile (
+          "mov x0, #0x0009\n"
+          "movk x0, #0x8400, lsl #16\n"
+          "mov x1, xzr\n"
+          "mov x2, xzr\n"
+          "mov x3, xzr\n"
+          "smc #0\n"
+          ::: "x0", "x1", "x2", "x3", "memory");
+    }
     PEHaltRestart (2 /* kPERestartCPU */);
+    for (;;) {
+      __asm__ volatile ("wfe");
+    }
+    __builtin_unreachable ();
   }
   unsigned probe = 0, rootMode = 0;
   PE_parse_boot_argn ("native-ufs-probe", &probe, sizeof (probe));
