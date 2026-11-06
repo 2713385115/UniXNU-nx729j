@@ -2061,7 +2061,16 @@ bool NativeUfs::startRoot (IOService *provider)
   }
   native_ufs_root_step = 2;
   RootLayout *layout = static_cast<RootLayout *> (IOMalloc (sizeof (RootLayout)));
-  if (!layout || !findRootLayout (layout, &why)) {
+  bool laid = layout && findRootLayout (layout, &why);
+  // The GPT is parsed before the manifest is looked at, so the partition range is known even when the manifest is
+  // rejected. Fill the geometry from it and start the writer right here: every step below can still fail, and until
+  // now each of those failures left the window empty because the writer only started after the manifest was accepted.
+  if (layout && layout->userdataLast > layout->userdataFirst) {
+    gStoreGeometry = { true, layout->userdataFirst, layout->userdataLast, layout->imageBytes, layout->gptEntriesLba,
+                       layout->gptHeaderCrc, layout->gptEntriesCrc, layout->gptEntryCount };
+    native_ufs_start_log ();
+  }
+  if (!laid) {
     rootDiagnosticFailure (layout ? why : "root layout allocation failed");
     IOLog ("NativeUfs: root layout failed: %s\n", why);
     if (layout) IOFree (layout, sizeof (RootLayout));
