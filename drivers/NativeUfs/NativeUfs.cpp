@@ -2279,3 +2279,79 @@ void NativeUfs::stop (IOService *provider)
   fMap.reset ();
   IOService::stop (provider);
 }
+
+// The owner-SystemOS mount chain in patches/xnu/offline-owner-systemos-mount.patch
+// resolves a volume UUID to the dev node it may mount. Upstream that query lives in
+// NativeVirtioBlock; this board's only verified block device is NativeUfsBlock, so
+// the answer has to come from the same trust state OwnerVerifiedBlock.c reports.
+//
+// The contract is the virtio one, unchanged: one IOMedia, that UUID, a BSD name and
+// a major/minor, and the device must be one the verified-window policy vouches for.
+// Anything else is refused rather than guessed - a wrong dev node here would mount
+// an unauthenticated volume at /private/preboot and hand dyld a cache from it.
+extern "C" int native_verified_block_root_authorized (dev_t device);
+
+extern "C" int
+native_verified_block_volume_device (const char *uuid, dev_t *device, char *path, size_t size)
+{
+  if (!uuid || !device || !path || size < 6 || strlen (uuid) != 36) {
+    return 0;
+  }
+  *device = NODEV;
+  path[0] = 0;
+  OSDictionary *matching = IOService::serviceMatching ("IOMedia");
+  OSDictionary *properties = OSDictionary::withCapacity (1);
+  OSString *wanted = OSString::withCString (uuid);
+  if (!matching || !properties || !wanted) {
+    OSSafeReleaseNULL (wanted);
+    OSSafeReleaseNULL (properties);
+    OSSafeReleaseNULL (matching);
+    return 0;
+  }
+  bool ready = properties->setObject ("UUID", wanted) &&
+    matching->setObject ("IOPropertyMatch", properties);
+  wanted->release ();
+  properties->release ();
+  OSIterator *iterator = ready ? IOService::getMatchingServices (matching) : nullptr;
+  matching->release ();
+  if (!iterator) {
+    return 0;
+  }
+  unsigned matches = 0;
+  bool authenticated = false;
+  dev_t candidate = NODEV;
+  char candidatePath[64] = {};
+  while (OSObject *object = iterator->getNextObject ()) {
+    IOService *media = OSDynamicCast (IOService, object);
+    if (!media) {
+      continue;
+    }
+    if (++matches != 1) {
+      authenticated = false;
+      break;
+    }
+    OSString *identity = OSDynamicCast (OSString, media->getProperty ("UUID"));
+    OSString *name = OSDynamicCast (OSString, media->getProperty (kIOBSDNameKey));
+    OSNumber *major = OSDynamicCast (OSNumber, media->getProperty (kIOBSDMajorKey));
+    OSNumber *minor = OSDynamicCast (OSNumber, media->getProperty (kIOBSDMinorKey));
+    if (!identity || strcmp (identity->getCStringNoCopy (), uuid) || !name || !major || !minor ||
+        !name->getLength () || name->getLength () >= sizeof (candidatePath) - 6 ||
+        name->getLength () >= size - 6 ||
+        major->unsigned64BitValue () > 255 || minor->unsigned64BitValue () > 0xffffff) {
+      continue;
+    }
+    candidate = static_cast<dev_t> (makedev (major->unsigned32BitValue (), minor->unsigned32BitValue ()));
+    if (!native_verified_block_root_authorized (candidate)) {
+      continue;
+    }
+    snprintf (candidatePath, sizeof (candidatePath), "/dev/%s", name->getCStringNoCopy ());
+    authenticated = true;
+  }
+  iterator->release ();
+  if (!authenticated || matches != 1) {
+    return 0;
+  }
+  *device = candidate;
+  strlcpy (path, candidatePath, size);
+  return 1;
+}
