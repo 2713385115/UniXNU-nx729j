@@ -6,7 +6,9 @@
 static bool ufsWindowGeometry (uint64_t absolute, uint64_t bytes)
 {
   constexpr uint64_t limit = (uint64_t (UINT32_MAX) + 1) * 4096;
-  return bytes && !(bytes & 511) && !(absolute & 4095) && absolute < limit && bytes <= limit - absolute;
+  // A window may start on any 512-byte sector: the OS window begins behind a GPT header that the
+  // flashed image no longer carries, so its APFS container sits at +0x4400 and not on a 4096 edge.
+  return bytes && !(bytes & 511) && !(absolute & 511) && absolute < limit && bytes <= limit - absolute;
 }
 struct UfsWindowResult { IOReturn status; uint64_t done; };
 template <class Ops> struct UfsWindowGuard {
@@ -34,7 +36,10 @@ static UfsWindowResult ufsReadWindow (Ops &ops, uint64_t absolute, uint64_t byte
     // The window lock protects this same snapshot through verify AND copy.
     // The transport lock alone protects only the DMA-to-bounce copy.
     for (uint64_t index = 0; index < blocks; ++index) {
-      uint64_t windowBlock = lba + index - absolute / 4096;
+      // Derive the window block from byte offsets and clamp the leading partial block, which is
+      // the one that holds the start of the container when `absolute` is not 4096-aligned.
+      uint64_t physical = (lba + index) * 4096;
+      uint64_t windowBlock = physical > absolute ? (physical - absolute) / 4096 : 0;
       uint64_t offset = windowBlock * 4096;
       if (offset >= bytes) { result.status = kIOReturnBadArgument; break; }
       uint64_t length = bytes - offset < 4096 ? bytes - offset : 4096;
