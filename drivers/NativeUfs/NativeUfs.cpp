@@ -1595,6 +1595,135 @@ extern "C" int native_ufs_block_authenticates (IOService *provider, const char *
   }
   return block->authenticatesVolume (uuid, digest) ? 1 : 0;
 }
+
+// Owner-root stage-7 queries: the owner-root patches under OWNER_CACHE_MOUNT and
+// OWNER_BOOT_MANIFEST call these once the root and cache volumes are mounted. They
+// resolve a volume UUID to the one owner-authenticated NativeUfs window that
+// published it, returning its BSD device and the authenticated envelope's manifest
+// digest. Upstream these live in NativeVirtioBlock (the verified block device on
+// sheng); this board has no virtio, so the answer comes from NativeUfsBlock's trust
+// state instead. Semantics mirror drivers/NativeVirtioBlock/SourceRootBinding.cpp.
+
+// Walk an IOMedia's provider chain looking for a NativeUfs window that authenticates
+// `uuid`; when found, also emit the envelope digest. Returns true only on a match.
+static bool nativeVerifiedMediaMatches (IOService *media, const char *uuid, uint8_t *digest)
+{
+  OSString *identity = OSDynamicCast (OSString, media->getProperty ("UUID"));
+  if (!identity || identity->getLength () != 36 ||
+      (uuid && strcmp (uuid, identity->getCStringNoCopy ()))) {
+    return false;
+  }
+  for (unsigned depth = 0; media && depth < 64; media = media->getProvider (), ++depth) {
+    const int result = native_ufs_block_authenticates (media, identity->getCStringNoCopy (), digest);
+    if (result >= 0) {
+      return result == 1;
+    }
+  }
+  return false;
+}
+
+extern "C" int native_verified_block_manifest_sha384 (dev_t device, const char *uuid, uint8_t digest[48])
+{
+  if (!digest) {
+    return 0;
+  }
+  bzero (digest, 48);
+  if (!uuid || strlen (uuid) != 36) {
+    return 0;
+  }
+  OSDictionary *matching = IOService::serviceMatching ("IOMedia");
+  OSDictionary *properties = OSDictionary::withCapacity (2);
+  OSNumber *mjr = OSNumber::withNumber (static_cast<unsigned> (major (static_cast<uint32_t> (device))), 32);
+  OSNumber *mnr = OSNumber::withNumber (static_cast<unsigned> (minor (static_cast<uint32_t> (device))), 32);
+  bool ready = matching && properties && mjr && mnr &&
+               properties->setObject (kIOBSDMajorKey, mjr) && properties->setObject (kIOBSDMinorKey, mnr) &&
+               matching->setObject ("IOPropertyMatch", properties);
+  OSSafeReleaseNULL (mnr);
+  OSSafeReleaseNULL (mjr);
+  OSSafeReleaseNULL (properties);
+  OSIterator *iterator = ready ? IOService::getMatchingServices (matching) : nullptr;
+  OSSafeReleaseNULL (matching);
+  if (!iterator) {
+    return 0;
+  }
+  unsigned matches = 0;
+  bool authenticated = false;
+  while (OSObject *object = iterator->getNextObject ()) {
+    IOService *media = OSDynamicCast (IOService, object);
+    if (!media) {
+      continue;
+    }
+    if (++matches != 1) {
+      authenticated = false;
+      break;
+    }
+    if (nativeVerifiedMediaMatches (media, uuid, digest)) {
+      authenticated = true;
+    }
+  }
+  iterator->release ();
+  if (!authenticated || matches != 1) {
+    bzero (digest, 48);
+    return 0;
+  }
+  return 1;
+}
+
+extern "C" int native_verified_block_volume_device (const char *uuid, dev_t *device, char *path, size_t size)
+{
+  if (!uuid || !device || !path || size < 6 || strlen (uuid) != 36) {
+    return 0;
+  }
+  *device = NODEV;
+  path[0] = 0;
+  OSDictionary *matching = IOService::serviceMatching ("IOMedia");
+  OSDictionary *properties = OSDictionary::withCapacity (1);
+  OSString *wanted = OSString::withCString (uuid);
+  bool ready = matching && properties && wanted && properties->setObject ("UUID", wanted) &&
+               matching->setObject ("IOPropertyMatch", properties);
+  OSSafeReleaseNULL (wanted);
+  OSSafeReleaseNULL (properties);
+  OSIterator *iterator = ready ? IOService::getMatchingServices (matching) : nullptr;
+  OSSafeReleaseNULL (matching);
+  if (!iterator) {
+    return 0;
+  }
+  unsigned matches = 0;
+  bool authenticated = false;
+  dev_t candidate = NODEV;
+  char candidatePath[64] = {};
+  while (OSObject *object = iterator->getNextObject ()) {
+    IOService *media = OSDynamicCast (IOService, object);
+    if (!media) {
+      continue;
+    }
+    if (++matches != 1) {
+      authenticated = false;
+      break;
+    }
+    OSString *name = OSDynamicCast (OSString, media->getProperty (kIOBSDNameKey));
+    OSNumber *mjr = OSDynamicCast (OSNumber, media->getProperty (kIOBSDMajorKey));
+    OSNumber *mnr = OSDynamicCast (OSNumber, media->getProperty (kIOBSDMinorKey));
+    if (!name || !mjr || !mnr || !name->getLength () || name->getLength () >= sizeof (candidatePath) - 6 ||
+        name->getLength () >= size - 6 || mjr->unsigned64BitValue () > 255 || mnr->unsigned64BitValue () > 0xffffff) {
+      continue;
+    }
+    const dev_t c = static_cast<dev_t> (makedev (mjr->unsigned32BitValue (), mnr->unsigned32BitValue ()));
+    if (!nativeVerifiedMediaMatches (media, uuid, nullptr)) {
+      continue;
+    }
+    candidate = c;
+    snprintf (candidatePath, sizeof (candidatePath), "/dev/%s", name->getCStringNoCopy ());
+    authenticated = true;
+  }
+  iterator->release ();
+  if (!authenticated || matches != 1) {
+    return 0;
+  }
+  *device = candidate;
+  strlcpy (path, candidatePath, size);
+  return 1;
+}
 #endif
 
 bool NativeUfsBlock::start (IOService *provider)
