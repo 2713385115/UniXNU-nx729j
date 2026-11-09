@@ -1368,6 +1368,7 @@ class NativeUfsBlock : public IOBlockStorageDevice {
   OSDeclareDefaultStructors (NativeUfsBlock)
   uint64_t absolute = 0;      // byte offset of the window on LUN 0
   uint64_t bytes = 0;
+  uint64_t windowBias = 0;    // 512-byte-aligned offset of the APFS container inside the window
   char label[32] = {};
   uint8_t *bounce = nullptr;
   IOLock *windowLock = nullptr;
@@ -1396,7 +1397,7 @@ public:
   char *getAdditionalDeviceInfoString () override { return const_cast<char *> ("UFS LUN 0 userdata window, read-only"); }
   IOReturn reportBlockSize (UInt64 *value) override { *value = 512; return kIOReturnSuccess; }
   IOReturn reportEjectability (bool *value) override { *value = false; return kIOReturnSuccess; }
-  IOReturn reportMaxValidBlock (UInt64 *value) override { *value = bytes / 512 - 1; return kIOReturnSuccess; }
+  IOReturn reportMaxValidBlock (UInt64 *value) override { *value = (bytes - windowBias) / 512 - 1; return kIOReturnSuccess; }
   IOReturn reportMediaState (bool *present, bool *changed) override {
     *present = online; if (changed) *changed = false; return kIOReturnSuccess;
   }
@@ -1594,7 +1595,24 @@ bool NativeUfsBlock::configureVerification ()
   int status = vr_open (reinterpret_cast<const uint8_t *> (verifiedStorage), manifestBytes, key, 1,
                         &vr_xnu_crypto, &verified);
   gRootDiagnostic.verify = static_cast<uint32_t> (status);
-  return status == VR_OK && verified.image_bytes == bytes;
+  if (status != VR_OK || verified.image_bytes != bytes) {
+    return false;
+  }
+  // This board's OS window is the whole disk image: a 34-sector PMBR + GPT header, zeroed in the
+  // copy that was flashed, with the APFS container starting immediately behind it at +0x4400.
+  // Present the container rather than the gap, otherwise APFS reads block zero, finds no NXSB and
+  // never mounts -- which is exactly what happened after the UUID was corrected. Probe instead of
+  // assuming: block zero must not carry NXSB while the 4096-byte block covering +0x4400 must.
+  windowBias = 0;
+  if (bounce && hostRead4k (0, absolute / 4096, 1, bounce) == kIOReturnSuccess &&
+      memcmp (bounce + 0x20, "NXSB", 4) != 0 &&
+      hostRead4k (0, (absolute + 0x4000) / 4096, 1, bounce) == kIOReturnSuccess &&
+      !memcmp (bounce + 0x420, "NXSB", 4)) {
+    windowBias = 0x4400;
+  }
+  IOLog ("NativeUfs: %s window %#llx bytes %llu container bias %llu\n",
+         label, absolute, bytes, windowBias);
+  return true;
 }
 
 bool NativeUfsBlock::authenticatesVolume (const char *uuid, uint8_t *manifestDigest) const
@@ -1670,8 +1688,9 @@ bool NativeUfsBlock::start (IOService *provider)
 IOReturn NativeUfsBlock::doAsyncReadWrite (IOMemoryDescriptor *buffer, UInt64 block, UInt64 count,
                                            IOStorageAttributes *, IOStorageCompletion *completion)
 {
-  if (!buffer || !completion || !completion->action || !count || block >= bytes / 512 ||
-      count > bytes / 512 - block || buffer->getLength () < count * 512) {
+  const uint64_t exposed = bytes - windowBias;
+  if (!buffer || !completion || !completion->action || !count || block >= exposed / 512 ||
+      count > exposed / 512 - block || buffer->getLength () < count * 512) {
     return kIOReturnBadArgument;
   }
   if (buffer->getDirection () != kIODirectionIn) {
@@ -1732,7 +1751,8 @@ IOReturn NativeUfsBlock::doAsyncReadWrite (IOMemoryDescriptor *buffer, UInt64 bl
     , &verified
 #endif
   };
-  UfsWindowResult outcome = ufsReadWindow (operations, absolute, bytes, block, count, bounce);
+  UfsWindowResult outcome = ufsReadWindow (operations, absolute + windowBias, bytes - windowBias,
+                                          block, count, bounce);
   IOReturn result = outcome.status;
   uint64_t done = outcome.done;
   if (result != kIOReturnSuccess) {
