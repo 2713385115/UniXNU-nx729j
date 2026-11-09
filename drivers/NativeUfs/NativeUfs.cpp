@@ -1510,6 +1510,7 @@ bool NativeUfsBlock::configureVerification ()
   // this window by reading only its 544-byte header from UFS; two matches are refused.
   uint64_t manifestOffset = 0;
   uint64_t manifestBytes = 0;
+  const uint8_t *manifestSource = nullptr;   // non-null when the envelope is linked into the kernel
   if (!verified_root_policy_count || verified_root_policy_count > 16) {
     gRootDiagnostic.stage = "policy count invalid";
     return false;
@@ -1517,14 +1518,25 @@ bool NativeUfsBlock::configureVerification ()
   uint8_t probe[4096];
   for (uint64_t index = 0; index < verified_root_policy_count; ++index) {
     const NativeVerifiedBlockPolicy &policy = verified_root_policies[index];
-    uint64_t offset = reinterpret_cast<uintptr_t> (policy.manifest);  // userdata byte offset
+    uint64_t offset = reinterpret_cast<uintptr_t> (policy.manifest);  // userdata offset, or a kernel VA
+    // Two envelope layouts exist in this tree, and the table itself says which one it carries:
+    // build-verified-root-bundle.py links both envelopes into __DATA_CONST and records their
+    // addresses ("the table below has to carry real kernel VAs, not byte offsets"), while the
+    // offset form keeps them in `userdata`. Anything in the top canonical half is a kernel pointer,
+    // and reading it as an offset asks UFS for LBA 0xfffffff007209 and fails.
+    const bool embedded = offset >= 0xffff000000000000ULL;
     if (!offset || policy.manifestBytes < VR_HEADER_BYTES + VR_SIGNATURE_BYTES) {
       gRootDiagnostic.stage = "policy envelope invalid";
       return false;
     }
     // Read just the fixed header; the image size sits at byte 24 (little-endian). The buffer is a
     // full 4 KiB block because readPolicyData reads whole blocks, never partial ones.
-    if (!readPolicyData (offset, 1, probe)) {
+    if (embedded) {
+      const uint8_t *source = reinterpret_cast<const uint8_t *> (policy.manifest);
+      for (unsigned i = 0; i < 64; ++i) {
+        probe[i] = source[i];
+      }
+    } else if (!readPolicyData (offset, 1, probe)) {
       gRootDiagnostic.stage = "policy header read failed";
       return false;
     }
@@ -1541,6 +1553,7 @@ bool NativeUfsBlock::configureVerification ()
     }
     manifestOffset = offset;
     manifestBytes = policy.manifestBytes;
+    manifestSource = embedded ? reinterpret_cast<const uint8_t *> (policy.manifest) : nullptr;
   }
   if (!manifestOffset) {
     gRootDiagnostic.stage = "no capacity-matching policy";
@@ -1558,9 +1571,13 @@ bool NativeUfsBlock::configureVerification ()
                   static_cast<kma_flags_t> (KMA_KOBJECT | KMA_DATA), VM_KERN_MEMORY_SECURITY) != KERN_SUCCESS) {
     return false;
   }
-  // Read the whole envelope from UFS into the protected buffer.
-  if (!readPolicyData (manifestOffset, (manifestBytes + 4095) / 4096,
-                       reinterpret_cast<void *> (verifiedStorage))) {
+  // Copy the whole envelope into the protected buffer: out of __DATA_CONST when the bundle linked
+  // it into the kernel, otherwise out of `userdata`.
+  gRootDiagnostic.stage = "policy copy";
+  if (manifestSource) {
+    memcpy (reinterpret_cast<void *> (verifiedStorage), manifestSource, manifestBytes);
+  } else if (!readPolicyData (manifestOffset, (manifestBytes + 4095) / 4096,
+                              reinterpret_cast<void *> (verifiedStorage))) {
     gRootDiagnostic.stage = "policy read failed";
     kmem_free (kernel_map, verifiedStorage, verifiedStorageBytes);
     verifiedStorage = 0;
@@ -2207,8 +2224,10 @@ bool NativeUfs::startRoot (IOService *provider)
     gPending = 0;
     gRootDiagnostic.result = result.phase == UfsRootPhase::Identity ? kIOReturnNotPrivileged :
       result.phase == UfsRootPhase::Schedule ? kIOReturnNoResources : kIOReturnError;
-    IOLog ("NativeUfs: root preparation failed phase=%u window=%u; nothing published\n",
-           static_cast<unsigned> (result.phase), result.index);
+    IOLog ("NativeUfs: root preparation failed phase=%u window=%u stage=%s bytes=%llu policies=%llu verify=%u; nothing published\n",
+           static_cast<unsigned> (result.phase), result.index, gRootDiagnostic.stage,
+           (unsigned long long) gRootDiagnostic.windowBytes,
+           (unsigned long long) gRootDiagnostic.policyCount, gRootDiagnostic.verify);
     IOService::stop (provider);
     rootDiagnosticFailure (result.phase == UfsRootPhase::Schedule ? "root publisher thread creation failed" :
                           result.phase == UfsRootPhase::Identity ? "signed window identities rejected" :
