@@ -1566,36 +1566,50 @@ bool NativeUfsBlock::configureVerification ()
     gRootDiagnostic.stage = "policy size overflow";
     return false;
   }
-  verifiedStorageBytes = tableBytes + 4096;
-  gRootDiagnostic.stage = "policy allocation";
-  if (kmem_alloc (kernel_map, &verifiedStorage, verifiedStorageBytes,
-                  static_cast<kma_flags_t> (KMA_KOBJECT | KMA_DATA), VM_KERN_MEMORY_SECURITY) != KERN_SUCCESS) {
-    return false;
-  }
-  // Copy the whole envelope into the protected buffer: out of __DATA_CONST when the bundle linked
-  // it into the kernel, otherwise out of `userdata`.
-  gRootDiagnostic.stage = "policy copy";
+  // Two envelope layouts, and only one of them needs a copy:
+  //   linked into the kernel (build-verified-root-bundle.py) -> authenticate in place. The bytes
+  //     already live in __DATA_CONST and are immutable, so no buffer and no protection change.
+  //   stored in `userdata` -> read it into a read-only kernel buffer first.
+  // The in-place path is not an optimisation: a KMA_KOBJECT allocation of the 45 MiB OS envelope
+  // panicked this board at "policy allocation" (root step=3, verify=ffffffff, published=0) and the
+  // root window never published, so `setconf` waited for an IOMedia that could not appear.
+  int status;
   if (manifestSource) {
-    memcpy (reinterpret_cast<void *> (verifiedStorage), manifestSource, manifestBytes);
-  } else if (!readPolicyData (manifestOffset, (manifestBytes + 4095) / 4096,
-                              reinterpret_cast<void *> (verifiedStorage))) {
+    gRootDiagnostic.stage = "owner signature and hash table";
+    verifiedStorage = reinterpret_cast<vm_offset_t> (const_cast<uint8_t *> (manifestSource));
+    verifiedStorageBytes = 0;              // owned by the kernel image, never freed
+    status = vr_open (manifestSource, manifestBytes, verified_root_key, 1, &vr_xnu_crypto, &verified);
+  } else {
+    verifiedStorageBytes = tableBytes + 4096;
+    gRootDiagnostic.stage = "policy allocation";
+    if (kmem_alloc (kernel_map, &verifiedStorage, verifiedStorageBytes,
+                    static_cast<kma_flags_t> (KMA_KOBJECT | KMA_DATA), VM_KERN_MEMORY_SECURITY) != KERN_SUCCESS) {
+      IOLog ("NativeUfs: policy buffer allocation failed (%llu bytes)\n",
+             (unsigned long long) verifiedStorageBytes);
+      return false;
+    }
     gRootDiagnostic.stage = "policy read failed";
-    kmem_free (kernel_map, verifiedStorage, verifiedStorageBytes);
-    verifiedStorage = 0;
-    return false;
+    if (!readPolicyData (manifestOffset, (manifestBytes + 4095) / 4096,
+                         reinterpret_cast<void *> (verifiedStorage))) {
+      kmem_free (kernel_map, verifiedStorage, verifiedStorageBytes);
+      verifiedStorage = 0;
+      return false;
+    }
+    uint8_t *key = reinterpret_cast<uint8_t *> (verifiedStorage + tableBytes);
+    memcpy (key, verified_root_key, VR_KEY_BYTES);
+    gRootDiagnostic.stage = "policy read-only protection";
+    if (vm_map_protect (kernel_map, verifiedStorage, verifiedStorage + verifiedStorageBytes,
+                        VM_PROT_READ, TRUE) != KERN_SUCCESS) {
+      return false;
+    }
+    gRootDiagnostic.stage = "owner signature and hash table";
+    status = vr_open (reinterpret_cast<const uint8_t *> (verifiedStorage), manifestBytes, key, 1,
+                      &vr_xnu_crypto, &verified);
   }
-  uint8_t *key = reinterpret_cast<uint8_t *> (verifiedStorage + tableBytes);
-  memcpy (key, verified_root_key, VR_KEY_BYTES);
-  gRootDiagnostic.stage = "policy read-only protection";
-  if (vm_map_protect (kernel_map, verifiedStorage, verifiedStorage + verifiedStorageBytes,
-                      VM_PROT_READ, TRUE) != KERN_SUCCESS) {
-    return false;
-  }
-  gRootDiagnostic.stage = "owner signature and hash table";
-  int status = vr_open (reinterpret_cast<const uint8_t *> (verifiedStorage), manifestBytes, key, 1,
-                        &vr_xnu_crypto, &verified);
   gRootDiagnostic.verify = static_cast<uint32_t> (status);
   if (status != VR_OK || verified.image_bytes != bytes) {
+    IOLog ("NativeUfs: owner policy rejected: vr_open %d image_bytes %llu window %llu\n",
+           status, (unsigned long long) verified.image_bytes, (unsigned long long) bytes);
     return false;
   }
   // This board's OS window is the whole disk image: a 34-sector PMBR + GPT header, zeroed in the
@@ -1767,7 +1781,7 @@ IOReturn NativeUfsBlock::doAsyncReadWrite (IOMemoryDescriptor *buffer, UInt64 bl
 void NativeUfsBlock::free ()
 {
 #if defined(NATIVE_VERIFIED_BLOCK) && NATIVE_VERIFIED_BLOCK
-  if (verifiedStorage) {
+  if (verifiedStorage && verifiedStorageBytes) {
     kmem_free (kernel_map, verifiedStorage, verifiedStorageBytes);
     verifiedStorage = 0;
   }
