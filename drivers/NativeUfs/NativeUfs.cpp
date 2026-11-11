@@ -1307,19 +1307,10 @@ static void rootFailureRecord (const char *reason)
   uint64_t first = 0, blocks = 0;
   const char *why = "";
   if (!native_ufs_log_open (&first, &blocks, &why)) {
-    if (!strcmp (why, "already open")) {
-      blocks = gLogRegionBlocks;
-    } else if (!strcmp (why, "no root layout") && gRootDiagnostic.last) {
-      // The GPT was parsed far enough to know where userdata ends before the step failed. Adopt that geometry for
-      // the open only, so "root manifest rejected" and the window steps after it still leave a record on the phone.
-      gStoreGeometry.valid = true;
-      gStoreGeometry.first = gRootDiagnostic.first;
-      gStoreGeometry.last = gRootDiagnostic.last;
-      gStoreGeometry.imageBytes = 0;
-      if (!native_ufs_log_open (&first, &blocks, &why)) return;
-    } else {
-      return;   // log off, no GPT yet, or window refused
-    }
+    // "already open" is the normal case for every failure after startRoot adopted the geometry; anything else means
+    // the window itself never opened (log off, bring-up failed, or no GPT yet) and there is nowhere to write.
+    if (strcmp (why, "already open")) return;
+    blocks = gLogRegionBlocks;
   }
   (void) first;
   if (blocks <= BootLogSlotFirst + BootLogSlotBlocks) return;
@@ -1335,7 +1326,8 @@ static void rootFailureRecord (const char *reason)
 static int gBootLogStarted = 0;
 static void native_ufs_start_log (void)
 {
-  if (__atomic_exchange_n (&gBootLogStarted, 1, __ATOMIC_SEQ_CST)) return;
+  if (gBootLogStarted) return;
+  gBootLogStarted = 1;
   uint32_t mode = 0;
   if (!PE_parse_boot_argn ("sheng-log", &mode, sizeof (mode)) || mode != 1) return;
   thread_t thread = nullptr;
@@ -1435,11 +1427,13 @@ static void rootDiagnosticFailure (const char *reason)
 {
   // Kept even when the panic diagnostic is off, so the boot page can say why nothing was published.
   native_ufs_root_failure = reason;
-  rootFailureRecord (reason);
-  if (!gRootDiagnosticEnabled) return;
   gRootDiagnostic.published = native_ufs_blocks_published;
   gRootDiagnostic.reads = native_ufs_block_reads;
   gRootDiagnostic.failures = native_ufs_block_failures;
+  // Persist after the counters are filled in, so the record on the phone is the state at the failure, not the state
+  // before it.
+  rootFailureRecord (reason);
+  if (!gRootDiagnosticEnabled) return;
   formatUfsRootDiagnostics (gRootDiagnosticText, sizeof (gRootDiagnosticText), gRootDiagnostic, reason);
   strlcat (gRootDiagnosticText, gRootMediaText, sizeof (gRootDiagnosticText));
   panic ("%s", gRootDiagnosticText);
@@ -2197,17 +2191,27 @@ bool NativeUfs::startRoot (IOService *provider)
     return false;
   }
   native_ufs_root_step = 3;
+  // The GPT has already told us where userdata starts and ends before the manifest is judged. Adopt that geometry
+  // first, with the image extent zeroed, so a rejected manifest still leaves a record in the log window instead of
+  // silence: the window open only needs first/last, and imageBytes stays 0 until the manifest vouches for it.
+  gStoreGeometry = { true, layout->userdataFirst, layout->userdataLast,
+                     layout->manifestStatus == 0 ? layout->imageBytes : 0, layout->gptEntriesLba,
+                     layout->gptHeaderCrc, layout->gptEntriesCrc, layout->gptEntryCount };
+  // Geometry is known from here on: start the writer now so a failure in any later step leaves a slot behind.
+  native_ufs_start_log ();
   if (layout->manifestStatus != 0) {
+    gRootDiagnostic.stage = "root manifest";
+    gRootDiagnostic.first = layout->userdataFirst;
+    gRootDiagnostic.last = layout->userdataLast;
+    gRootDiagnostic.manifest = layout->manifestStatus;
+    gRootDiagnostic.magic0 = layout->magic0;
+    gRootDiagnostic.magic1 = layout->magic1;
     rootDiagnosticFailure ("root manifest rejected");
     IOLog ("NativeUfs: no valid root manifest in userdata (status %u, magic %08x %08x)\n",
            layout->manifestStatus, layout->magic0, layout->magic1);
     IOFree (layout, sizeof (RootLayout));
     return false;
   }
-  gStoreGeometry = { true, layout->userdataFirst, layout->userdataLast, layout->imageBytes, layout->gptEntriesLba,
-                     layout->gptHeaderCrc, layout->gptEntriesCrc, layout->gptEntryCount };
-  // Geometry is known from here on: start the writer now so a failure in any later step leaves a slot behind.
-  native_ufs_start_log ();
   const char *names[4] = {};
   for (unsigned i = 0; i < layout->windows; ++i) names[i] = layout->window[i].name;
   if (!ufsBuildRootPlan (names, layout->windows, gPublicationPlan)) {
