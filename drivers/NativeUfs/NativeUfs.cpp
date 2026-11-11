@@ -1481,109 +1481,61 @@ volatile uint64_t native_ufs_verify_ticks = 0, native_ufs_read_ticks = 0;
 static inline uint64_t timerTicks (void) {uint64_t v; __asm__ volatile ("isb\n\tmrs %0, cntpct_el0" : "=r" (v)); return v;}
 volatile uint32_t native_ufs_integrity_failures = 0;
 
-// Read `blocks` 4096-byte blocks at a byte offset inside the userdata partition (offset 0 == the
-// SHNGROOT header). The VerifiedRoot envelopes live there, after the windows, so they are no longer
-// linked into the kernel. The absolute LBA is gStoreGeometry.first + offset/4096, read in
-// kDataMax-sized chunks because a 47 MiB envelope exceeds a single DMA transfer. This is NOT
-// native_ufs_store_read: that reads the Data-store overlay (opened by native_ufs_store_open), not a
-// fixed offset in the partition; the envelopes sit at a constant POLICY_BASE instead.
-static bool readPolicyData (uint64_t offset, uint32_t blocks, void *dst)
-{
-  if (!gStoreGeometry.valid || !gHost.ready || !dst || (offset & 4095)) return false;
-  uint64_t lba = gStoreGeometry.first + offset / 4096;
-  uint8_t *out = static_cast<uint8_t *> (dst);
-  while (blocks) {
-    uint32_t chunk = blocks > kDataMax / 4096 ? static_cast<uint32_t> (kDataMax / 4096) : blocks;
-    if (hostRead4k (0, lba, chunk, out) != kIOReturnSuccess) return false;
-    out += chunk * 4096ULL;
-    lba += chunk;
-    blocks -= chunk;
-  }
-  return true;
-}
-
 bool NativeUfsBlock::configureVerification ()
 {
   gRootDiagnostic.stage = "policy selection";
   gRootDiagnostic.windowBytes = bytes;
   gRootDiagnostic.policyCount = verified_root_policy_count;
   gRootDiagnostic.verify = 0xffffffff;
-  // The envelopes live in the `userdata` image (after the SystemOS window), not in the
-  // kernel: linking the 74 MiB of block hashes into __DATA_CONST blew the kernel up and the
-  // ABL-loaded boot image stalled right after entry. Each table entry records the envelope's
-  // byte offset into `userdata` plus its length; the anchor key stays in-kernel and still
-  // authenticates whatever is read back. Select the one policy whose signed image size equals
-  // this window by reading only its 544-byte header from UFS; two matches are refused.
-  uint64_t manifestOffset = 0;
+  // The two owner-signed envelopes are linked into __DATA_CONST by build-verified-root-bundle.py
+  // (125 MiB kernel, 74 MiB of block hashes). The policy table records their kernel addresses and
+  // lengths, so selecting a policy is a memory read, not a UFS read: pick the one whose signed
+  // image size equals this window, and refuse if two do.
+  const uint8_t *selected = nullptr;
   uint64_t manifestBytes = 0;
   if (!verified_root_policy_count || verified_root_policy_count > 16) {
     gRootDiagnostic.stage = "policy count invalid";
     return false;
   }
-  uint8_t probe[4096];
   for (uint64_t index = 0; index < verified_root_policy_count; ++index) {
     const NativeVerifiedBlockPolicy &policy = verified_root_policies[index];
-    uint64_t offset = reinterpret_cast<uintptr_t> (policy.manifest);  // userdata byte offset
-    if (!offset || policy.manifestBytes < VR_HEADER_BYTES + VR_SIGNATURE_BYTES) {
+    // The envelopes are linked into __DATA_CONST, so this field is a kernel address, not a
+    // userdata byte offset. Feeding it to readPolicyData() computes first + VA/4096 as an LBA;
+    // the controller rejects that with kIOReturnError (0xe00002bc), which is exactly the
+    // "policy header read failed" stop the boot page has been printing.
+    const uint8_t *envelope = reinterpret_cast<const uint8_t *> (policy.manifest);
+    if (!envelope || policy.manifestBytes < VR_HEADER_BYTES + VR_SIGNATURE_BYTES) {
       gRootDiagnostic.stage = "policy envelope invalid";
       return false;
     }
-    // Read just the fixed header; the image size sits at byte 24 (little-endian). The buffer is a
-    // full 4 KiB block because readPolicyData reads whole blocks, never partial ones.
-    if (!readPolicyData (offset, 1, probe)) {
-      gRootDiagnostic.stage = "policy header read failed";
-      return false;
-    }
+    // The signed image size sits at byte 24, little-endian: match the envelope to this window by it.
     uint64_t imageBytes = 0;
     for (unsigned i = 0; i < 8; ++i) {
-      imageBytes |= static_cast<uint64_t> (probe[24 + i]) << (8 * i);
+      imageBytes |= static_cast<uint64_t> (envelope[24 + i]) << (8 * i);
     }
     if (imageBytes != bytes) {
       continue;
     }
-    if (manifestOffset) {
+    if (selected) {
       gRootDiagnostic.stage = "duplicate capacity-matching policy";
       return false;
     }
-    manifestOffset = offset;
+    selected = envelope;
     manifestBytes = policy.manifestBytes;
   }
-  if (!manifestOffset) {
+  if (!selected) {
     gRootDiagnostic.stage = "no capacity-matching policy";
     return false;
   }
-  gRootDiagnostic.stage = "policy storage";
-  vm_size_t tableBytes = round_page (static_cast<vm_size_t> (manifestBytes));
-  if (tableBytes < manifestBytes || tableBytes > UINT64_MAX - 4096) {
-    gRootDiagnostic.stage = "policy size overflow";
-    return false;
-  }
-  verifiedStorageBytes = tableBytes + 4096;
-  gRootDiagnostic.stage = "policy allocation";
-  if (kmem_alloc (kernel_map, &verifiedStorage, verifiedStorageBytes,
-                  static_cast<kma_flags_t> (KMA_KOBJECT | KMA_DATA), VM_KERN_MEMORY_SECURITY) != KERN_SUCCESS) {
-    return false;
-  }
-  // Read the whole envelope from UFS into the protected buffer.
-  if (!readPolicyData (manifestOffset, (manifestBytes + 4095) / 4096,
-                       reinterpret_cast<void *> (verifiedStorage))) {
-    gRootDiagnostic.stage = "policy read failed";
-    kmem_free (kernel_map, verifiedStorage, verifiedStorageBytes);
-    verifiedStorage = 0;
-    return false;
-  }
-  uint8_t *key = reinterpret_cast<uint8_t *> (verifiedStorage + tableBytes);
-  memcpy (key, verified_root_key, VR_KEY_BYTES);
-  gRootDiagnostic.stage = "policy read-only protection";
-  if (vm_map_protect (kernel_map, verifiedStorage, verifiedStorage + verifiedStorageBytes,
-                      VM_PROT_READ, TRUE) != KERN_SUCCESS) {
-    return false;
-  }
+  // No kmem_alloc and no UFS read: the envelope is already resident in __DATA_CONST and mapped
+  // read-only, which is exactly the protection the old copy-then-protect sequence was building.
   gRootDiagnostic.stage = "owner signature and hash table";
-  int status = vr_open (reinterpret_cast<const uint8_t *> (verifiedStorage), manifestBytes, key, 1,
-                        &vr_xnu_crypto, &verified);
+  int status = vr_open (selected, manifestBytes, verified_root_key, 1, &vr_xnu_crypto, &verified);
   gRootDiagnostic.verify = static_cast<uint32_t> (status);
-  return status == VR_OK && verified.image_bytes == bytes;
+  if (status != VR_OK || verified.image_bytes != bytes) return false;
+  verifiedStorage = reinterpret_cast<vm_offset_t> (selected);
+  verifiedStorageBytes = static_cast<vm_size_t> (manifestBytes);
+  return true;
 }
 
 bool NativeUfsBlock::authenticatesVolume (const char *uuid, uint8_t *manifestDigest) const
@@ -1855,10 +1807,10 @@ IOReturn NativeUfsBlock::doAsyncReadWrite (IOMemoryDescriptor *buffer, UInt64 bl
 void NativeUfsBlock::free ()
 {
 #if defined(NATIVE_VERIFIED_BLOCK) && NATIVE_VERIFIED_BLOCK
-  if (verifiedStorage) {
-    kmem_free (kernel_map, verifiedStorage, verifiedStorageBytes);
-    verifiedStorage = 0;
-  }
+  // verifiedStorage points into __DATA_CONST (the envelopes linked by build-verified-root-bundle.py),
+  // so there is no kernel_map allocation to give back. Freeing it would unmap the kernel's own text.
+  verifiedStorage = 0;
+  verifiedStorageBytes = 0;
 #endif
   if (bounce) {
     IOFree (bounce, kDataMax);
