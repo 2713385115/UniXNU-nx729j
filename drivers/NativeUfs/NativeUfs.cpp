@@ -1307,10 +1307,22 @@ static void rootFailureRecord (const char *reason)
   uint64_t first = 0, blocks = 0;
   const char *why = "";
   if (!native_ufs_log_open (&first, &blocks, &why)) {
-    // "already open" is the normal case for every failure after startRoot adopted the geometry; anything else means
-    // the window itself never opened (log off, bring-up failed, or no GPT yet) and there is nowhere to write.
-    if (strcmp (why, "already open")) return;
-    blocks = gLogRegionBlocks;
+    // "already open" is the normal case for every failure after startRoot adopted the geometry.
+    if (!strcmp (why, "already open")) {
+      blocks = gLogRegionBlocks;
+    } else if (!strcmp (why, "no root layout") && gRootDiagnostic.last) {
+      // findRootLayout sets gRootDiagnostic.first/last as soon as it has the userdata partition (RootLayout.h:146),
+      // which is before it reads the manifest block. A failure in that read never reaches startRoot's geometry
+      // assignment, so adopt the same geometry here for the open only: imageBytes stays 0, which is also what the
+      // window open wants until a manifest vouches for an image extent.
+      gStoreGeometry.valid = true;
+      gStoreGeometry.first = gRootDiagnostic.first;
+      gStoreGeometry.last = gRootDiagnostic.last;
+      gStoreGeometry.imageBytes = 0;
+      if (!native_ufs_log_open (&first, &blocks, &why)) return;
+    } else {
+      return;   // log off, no GPT yet, or window refused
+    }
   }
   (void) first;
   if (blocks <= BootLogSlotFirst + BootLogSlotBlocks) return;
