@@ -37,6 +37,7 @@ extern const uint8_t verified_root_key[];
 static UfsRootDiagnostics gRootDiagnostic;
 static bool gRootDiagnosticEnabled;
 static void rootDiagnosticFailure (const char *reason);
+static void rootFailureRecord (const char *reason);
 
 extern "C" {
 // Optional passive observer; absent in ordinary builds. It may run while a
@@ -1295,13 +1296,54 @@ static void bootLogThread (void *, wait_result_t)
   }
 }
 
-// Start the boot log writer once root layout is available and sheng-log=1. Called from startRoot on success.
+// Persist one failure record the moment it happens. Every root step that can fail calls rootDiagnosticFailure();
+// without this the window stayed empty on every one of them, because the periodic writer only starts on the success
+// path, so a soft failure could only be read back by photographing the frame buffer. The record goes into the last
+// slot of the window, which the periodic writer reaches only after a thousand rounds, so it survives a writer that
+// is already running.
+static void rootFailureRecord (const char *reason)
+{
+  static uint8_t record[4096];
+  uint64_t first = 0, blocks = 0;
+  const char *why = "";
+  if (!native_ufs_log_open (&first, &blocks, &why)) {
+    if (!strcmp (why, "already open")) {
+      blocks = gLogRegionBlocks;
+    } else if (!strcmp (why, "no root layout") && gRootDiagnostic.last) {
+      // The GPT was parsed far enough to know where userdata ends before the step failed. Adopt that geometry for
+      // the open only, so "root manifest rejected" and the window steps after it still leave a record on the phone.
+      gStoreGeometry.valid = true;
+      gStoreGeometry.first = gRootDiagnostic.first;
+      gStoreGeometry.last = gRootDiagnostic.last;
+      gStoreGeometry.imageBytes = 0;
+      if (!native_ufs_log_open (&first, &blocks, &why)) return;
+    } else {
+      return;   // log off, no GPT yet, or window refused
+    }
+  }
+  (void) first;
+  if (blocks <= BootLogSlotFirst + BootLogSlotBlocks) return;
+  memset (record, 0, sizeof record);
+  formatUfsRootDiagnostics (reinterpret_cast<char *> (record), sizeof record, gRootDiagnostic, reason);
+  const uint64_t slots = (blocks - BootLogSlotFirst) / BootLogSlotBlocks;
+  if (!native_ufs_log_write (BootLogSlotFirst + (slots - 1) * BootLogSlotBlocks, 1, record)) return;
+  native_ufs_log_sync ();
+}
+
+// Start the boot log writer once root layout is available and sheng-log=1. Called from startRoot as soon as the
+// geometry is known, so the periodic slot reports a later failure instead of nothing at all.
+static int gBootLogStarted = 0;
 static void native_ufs_start_log (void)
 {
+  if (__atomic_exchange_n (&gBootLogStarted, 1, __ATOMIC_SEQ_CST)) return;
   uint32_t mode = 0;
   if (!PE_parse_boot_argn ("sheng-log", &mode, sizeof (mode)) || mode != 1) return;
   thread_t thread = nullptr;
-  if (kernel_thread_start (bootLogThread, nullptr, &thread) == KERN_SUCCESS) thread_deallocate (thread);
+  if (kernel_thread_start (bootLogThread, nullptr, &thread) == KERN_SUCCESS) {
+    thread_deallocate (thread);
+  } else {
+    gBootLogStarted = 0;
+  }
 }
 
 // Re-read the GPT header and entry array and compare their CRCs with what was recorded at root start. 0 = unchanged.
@@ -1393,6 +1435,7 @@ static void rootDiagnosticFailure (const char *reason)
 {
   // Kept even when the panic diagnostic is off, so the boot page can say why nothing was published.
   native_ufs_root_failure = reason;
+  rootFailureRecord (reason);
   if (!gRootDiagnosticEnabled) return;
   gRootDiagnostic.published = native_ufs_blocks_published;
   gRootDiagnostic.reads = native_ufs_block_reads;
@@ -2163,6 +2206,8 @@ bool NativeUfs::startRoot (IOService *provider)
   }
   gStoreGeometry = { true, layout->userdataFirst, layout->userdataLast, layout->imageBytes, layout->gptEntriesLba,
                      layout->gptHeaderCrc, layout->gptEntriesCrc, layout->gptEntryCount };
+  // Geometry is known from here on: start the writer now so a failure in any later step leaves a slot behind.
+  native_ufs_start_log ();
   const char *names[4] = {};
   for (unsigned i = 0; i < layout->windows; ++i) names[i] = layout->window[i].name;
   if (!ufsBuildRootPlan (names, layout->windows, gPublicationPlan)) {
