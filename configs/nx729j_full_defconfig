@@ -1,0 +1,71 @@
+# Kernel configuration of the nx729j image: the full owner-root chain.
+#
+# This is nx729j_defconfig with exactly one component turned off, and the reason is
+# mechanical rather than a preference:
+#
+#   NATIVE_VIRTIO_BLOCK   the kernel link demands
+#                         build/native-virtio-block-verified-bundle/libNativeVirtioBlock.a
+#                         via CONFIG_XNU_NATIVE_VIRTIO_BLOCK_ARCHIVE. board.toml lists
+#                         build-storage-bindings.py, build-arm-driver.py NativeRamBlock,
+#                         build-storage-store-stub.py, build-boot-progress-stub.py,
+#                         build-arm-driver.py NativeUfs, build-verified-root-bundle.py and
+#                         build-owner-verified-block.py -- no NativeVirtioBlock builder at
+#                         all, because its binding needs build/storage-abi/interface-audit.json
+#                         (a live lldb snapshot of bsd_init). The link therefore fails with
+#                         "no builder makes it, supply the archive" before any of our code is
+#                         reached. This board has no virtio transport; the UFS root windows are
+#                         the block devices, so nothing at runtime loses a dependency.
+#
+# Everything else is the official terminal configuration: NATIVE_RAM_BLOCK, the whole
+# OWNER_* mount chain, VERIFIED_ROOT_PROBE, legacy DPU display, Adreno, PMGR and the
+# ramoops console. The kernel this reproduces is the one whose UFS window last recorded
+# "stage=policy header read failed": native_ram_block and native_owner symbols present,
+# virtio absent.
+
+CONFIG_XNU_BUILD_ARCHIVES=y
+CONFIG_XNU_SOURCE_CORECRYPTO14=y
+CONFIG_XNU_SOURCE_PTHREAD=y
+CONFIG_XNU_ARM_DT_PLATFORM=y
+CONFIG_XNU_ARMCPU=y
+CONFIG_XNU_NATIVE_UFS=y
+CONFIG_XNU_NATIVE_AES=y
+CONFIG_XNU_NATIVE_RAM_BLOCK=y
+CONFIG_XNU_TRUST_CACHE_RUNTIME=y
+CONFIG_XNU_SOURCE_MOCKFS=y
+CONFIG_XNU_NATIVE_CS_HASH_CACHE=y
+CONFIG_XNU_VERIFIED_ROOT_PROBE=y
+CONFIG_XNU_OWNER_ROOT_AUDIT=y
+CONFIG_XNU_OWNER_ROOT_TRUST=y
+# PMGR integration lives in the sheng kit; RPMh / AOSS addresses are SoC level.
+CONFIG_XNU_SHENG_PMGR=y
+CONFIG_XNU_OWNER_CACHE_MOUNT=y
+CONFIG_XNU_OWNER_CACHE_STARTUP=y
+CONFIG_XNU_OWNER_BOOT_MANIFEST=y
+CONFIG_XNU_OWNER_DATA_MOUNT=y
+CONFIG_XNU_OWNER_UNION_SYSTEMOS=y
+CONFIG_XNU_DT_PANIC_REGION=y
+CONFIG_XNU_ZONE_PGZ_ALIGNMENT_PROBE=y
+CONFIG_XNU_NATIVE_ARCH_TIMER=y
+CONFIG_XNU_NATIVE_PAN=y
+CONFIG_XNU_BOOT_PROGRESS=y
+CONFIG_XNU_NATIVE_LEGACY_DISPLAY=y
+CONFIG_XNU_NATIVE_ADRENO=y
+
+CONFIG_XNU_CRYPTO_BOOTSTRAP="prelinked"
+# Scratch Data volume identity. It is arbitrary but must match the Data seed the
+# payload step embeds; kept at the sheng value because the seed tooling comes from
+# the sheng kit. Change it only together with the seed.
+CONFIG_XNU_OWNER_DATA_VOLUME_UUID="18AB5557-DC2D-469B-8758-855E60F5B0DF"
+CONFIG_XNU_VERIFIED_ROOT_ARCHIVE="{tree}/build/verified-root-os-xnu-bundle/libVerifiedRootProbe.a"
+CONFIG_XNU_NATIVE_VIRTIO_BLOCK_ARCHIVE=""
+CONFIG_XNU_EXTRA_LD_ARCHIVES=""
+# The proven display path is the legacy (DPU) one, as on sheng.
+CONFIG_XNU_NATIVE_MOBILE_DISPLAY=n
+CONFIG_XNU_NATIVE_VIRTIO_BLOCK=n
+CONFIG_XNU_NATIVE_VIRTIO_CONSOLE=n
+CONFIG_XNU_ARMVIRT_PLATFORM=n
+
+# Persistent console mirror (ramoops) into the PIL Reserved carve-out at 0x8A800000.
+# After a crash the bootloader / 9008 QFIL reads the 2 MiB window back from physical memory.
+CONFIG_XNU_NX729J_RAMOOPS_CONSOLE=y
+CONFIG_XNU_NX729J_VOLATILE_PANIC_LOG=y
