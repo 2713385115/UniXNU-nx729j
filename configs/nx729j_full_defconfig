@@ -26,8 +26,9 @@
 #                          controller, so no record can even be attempted.
 #   NATIVE_RAM_BLOCK       a block device backed by the packed Data seed, so mountroot
 #                          has something before the UFS windows publish
-#   BOOT_PROGRESS          checkpoint reporting (build-boot-progress-stub.py provides the
-#                          symbols; the real kit is withheld)
+#   BOOT_PROGRESS          off: line 65 of build-xnu-4k-baseline.sh requires
+#                          OWNER_ROOT_AUDIT and NATIVE_VIRTIO_BLOCK alongside it, and both
+#                          are unreachable here. The stub archive alone is not enough.
 #   ramoops + panic region so a stop leaves text somewhere other than a black screen
 #
 # Display and GPU stay off: their builders are withheld, and at this stage the screen is
@@ -44,7 +45,7 @@ CONFIG_XNU_NATIVE_RAM_BLOCK=y
 CONFIG_XNU_TRUST_CACHE_RUNTIME=y
 CONFIG_XNU_NATIVE_CS_HASH_CACHE=y
 CONFIG_XNU_SHENG_PMGR=y
-CONFIG_XNU_BOOT_PROGRESS=y
+CONFIG_XNU_BOOT_PROGRESS=n
 CONFIG_XNU_DT_PANIC_REGION=y
 CONFIG_XNU_NATIVE_ARCH_TIMER=y
 CONFIG_XNU_NATIVE_PAN=y
