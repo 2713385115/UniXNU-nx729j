@@ -56,7 +56,7 @@ CONFIG_XNU_CRYPTO_BOOTSTRAP="prelinked"
 # payload step embeds; kept at the sheng value because the seed tooling comes from
 # the sheng kit. Change it only together with the seed.
 CONFIG_XNU_OWNER_DATA_VOLUME_UUID="18AB5557-DC2D-469B-8758-855E60F5B0DF"
-CONFIG_XNU_VERIFIED_ROOT_ARCHIVE="{tree}/build/verified-root-os-xnu-bundle/libVerifiedRootProbe.a"
+CONFIG_XNU_VERIFIED_ROOT_ARCHIVE="{tree}/build/verified-root-bundle/libVerifiedRootBundle.a"
 CONFIG_XNU_NATIVE_VIRTIO_BLOCK_ARCHIVE=""
 CONFIG_XNU_EXTRA_LD_ARCHIVES=""
 # The proven display path is the legacy (DPU) one, as on sheng.
