@@ -1,30 +1,37 @@
-# Kernel configuration of the nx729j image: the largest owner-root chain this tree
-# can actually link.
+# Kernel configuration of the nx729j image: UFS root with a powered controller.
 #
-# This is nx729j_defconfig with four components off. None of them is a preference:
-# each one names an archive that board.toml never builds, so the kernel link fails
-# with "no builder makes it, supply the archive" before any of our code is reached.
+# The official terminal configuration (nx729j_defconfig) cannot be linked in this tree.
+# Three of its components name archives that no board.toml entry builds, and the
+# dependency checks in scripts/build-xnu-4k-baseline.sh then refuse the combination:
 #
-#   NATIVE_VIRTIO_BLOCK    build/native-virtio-block-verified-bundle/libNativeVirtioBlock.a
-#                          has no builder: its binding needs
-#                          build/storage-abi/interface-audit.json, a live lldb snapshot
-#                          of bsd_init. This board has no virtio transport; the UFS root
-#                          windows are the block devices, so runtime loses nothing.
-#   VERIFIED_ROOT_PROBE    bsd_init's crypto probe calls native_verified_root_probe(),
-#                          provided only by build-verified-root-probe.py, which requires
-#                          build/verified-root-os/verification.json and the 6 GB original
-#                          target volume. The CI workflow prepares neither. The owner
-#                          mount chain does not go through this probe.
-#   NATIVE_LEGACY_DISPLAY  build-native-legacy-display.py is withheld from this fork.
-#   NATIVE_ADRENO          build-arm-driver.py NativeAdreno, build-native-adreno-kits.py
-#                          and build-native-adreno-accelerator.py are all withheld.
+#   NATIVE_VIRTIO_BLOCK    no builder (needs build/storage-abi/interface-audit.json, a
+#                          live lldb snapshot of bsd_init)
+#   VERIFIED_ROOT_PROBE    no builder (needs build/verified-root-os/verification.json and
+#                          the 6 GB original target volume; the workflow prepares neither)
+#   NATIVE_LEGACY_DISPLAY /
+#   NATIVE_ADRENO          builders withheld from this fork
 #
-# Everything that does link stays on: NATIVE_RAM_BLOCK, the OWNER_* mount chain
-# (root audit, root trust, cache mount, cache startup, boot manifest, data mount,
-# union SystemOS), SHENG_PMGR, BOOT_PROGRESS, the ramoops console and the panic region.
-# That is the shape of the kernel whose UFS window last recorded
-# "stage=policy header read failed": native_ram_block 22 symbols, native_owner 80
-# symbols, virtio 0, verified_root 11.
+#   OWNER_ROOT_AUDIT=1  requires VERIFIED_ROOT_PROBE=1        (line 257 of that script)
+#   OWNER_ROOT_TRUST=1  requires OWNER_ROOT_AUDIT=1 AND NATIVE_VIRTIO_BLOCK=1  (line 266)
+#
+# So the owner mount chain is not reachable here by construction; it is not a choice.
+# What is reachable, and what this file selects, is the storage half:
+#
+#   NATIVE_UFS             the whole point: host bring-up, GPT, root windows, and the
+#                          verified-block policy path (board.toml links NativeUfs with
+#                          -DNATIVE_VERIFIED_BLOCK=1)
+#   SHENG_PMGR             the UFS controller's clocks and power. nx729j_ufs_defconfig
+#                          leaves this off, which is why that image wrote nothing at all
+#                          to the log window: without it hostBringUp cannot talk to the
+#                          controller, so no record can even be attempted.
+#   NATIVE_RAM_BLOCK       a block device backed by the packed Data seed, so mountroot
+#                          has something before the UFS windows publish
+#   BOOT_PROGRESS          checkpoint reporting (build-boot-progress-stub.py provides the
+#                          symbols; the real kit is withheld)
+#   ramoops + panic region so a stop leaves text somewhere other than a black screen
+#
+# Display and GPU stay off: their builders are withheld, and at this stage the screen is
+# not the instrument -- the 32 MiB UFS window is.
 
 CONFIG_XNU_BUILD_ARCHIVES=y
 CONFIG_XNU_SOURCE_CORECRYPTO14=y
@@ -35,41 +42,37 @@ CONFIG_XNU_NATIVE_UFS=y
 CONFIG_XNU_NATIVE_AES=y
 CONFIG_XNU_NATIVE_RAM_BLOCK=y
 CONFIG_XNU_TRUST_CACHE_RUNTIME=y
-CONFIG_XNU_SOURCE_MOCKFS=y
 CONFIG_XNU_NATIVE_CS_HASH_CACHE=y
-CONFIG_XNU_OWNER_ROOT_AUDIT=y
-CONFIG_XNU_OWNER_ROOT_TRUST=y
-# PMGR integration lives in the sheng kit; RPMh / AOSS addresses are SoC level.
 CONFIG_XNU_SHENG_PMGR=y
-CONFIG_XNU_OWNER_CACHE_MOUNT=y
-CONFIG_XNU_OWNER_CACHE_STARTUP=y
-CONFIG_XNU_OWNER_BOOT_MANIFEST=y
-CONFIG_XNU_OWNER_DATA_MOUNT=y
-CONFIG_XNU_OWNER_UNION_SYSTEMOS=y
+CONFIG_XNU_BOOT_PROGRESS=y
 CONFIG_XNU_DT_PANIC_REGION=y
-CONFIG_XNU_ZONE_PGZ_ALIGNMENT_PROBE=y
 CONFIG_XNU_NATIVE_ARCH_TIMER=y
 CONFIG_XNU_NATIVE_PAN=y
-CONFIG_XNU_BOOT_PROGRESS=y
 
 CONFIG_XNU_CRYPTO_BOOTSTRAP="prelinked"
-# Scratch Data volume identity. It is arbitrary but must match the Data seed the
-# payload step embeds; kept at the sheng value because the seed tooling comes from
-# the sheng kit. Change it only together with the seed.
 CONFIG_XNU_OWNER_DATA_VOLUME_UUID="18AB5557-DC2D-469B-8758-855E60F5B0DF"
 CONFIG_XNU_VERIFIED_ROOT_ARCHIVE="{tree}/build/verified-root-bundle/libVerifiedRootBundle.a"
-CONFIG_XNU_NATIVE_VIRTIO_BLOCK_ARCHIVE=""
 CONFIG_XNU_EXTRA_LD_ARCHIVES=""
-CONFIG_XNU_NATIVE_MOBILE_DISPLAY=n
+
+CONFIG_XNU_VERIFIED_ROOT_PROBE=n
+CONFIG_XNU_OWNER_ROOT_AUDIT=n
+CONFIG_XNU_OWNER_ROOT_TRUST=n
+CONFIG_XNU_OWNER_CACHE_MOUNT=n
+CONFIG_XNU_OWNER_CACHE_STARTUP=n
+CONFIG_XNU_OWNER_BOOT_MANIFEST=n
+CONFIG_XNU_OWNER_DATA_MOUNT=n
+CONFIG_XNU_OWNER_UNION_SYSTEMOS=n
 CONFIG_XNU_NATIVE_VIRTIO_BLOCK=n
 CONFIG_XNU_NATIVE_VIRTIO_CONSOLE=n
-CONFIG_XNU_ARMVIRT_PLATFORM=n
-CONFIG_XNU_VERIFIED_ROOT_PROBE=n
+CONFIG_XNU_NATIVE_MOBILE_DISPLAY=n
 CONFIG_XNU_NATIVE_LEGACY_DISPLAY=n
 CONFIG_XNU_NATIVE_ADRENO=n
 CONFIG_XNU_NATIVE_OFFLINE_GPU=n
+CONFIG_XNU_SOURCE_MOCKFS=n
+CONFIG_XNU_ARMVIRT_PLATFORM=n
+CONFIG_XNU_ZONE_PGZ_ALIGNMENT_PROBE=n
+CONFIG_XNU_NATIVE_VIRTIO_BLOCK_ARCHIVE=""
 
 # Persistent console mirror (ramoops) into the PIL Reserved carve-out at 0x8A800000.
-# After a crash the bootloader / 9008 QFIL reads the 2 MiB window back from physical memory.
 CONFIG_XNU_NX729J_RAMOOPS_CONSOLE=y
 CONFIG_XNU_NX729J_VOLATILE_PANIC_LOG=y
