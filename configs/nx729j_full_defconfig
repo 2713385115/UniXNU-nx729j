@@ -28,8 +28,13 @@
 #                          leaves this off, which is why that image wrote nothing at all
 #                          to the log window: without it hostBringUp cannot talk to the
 #                          controller, so no record can even be attempted.
-#   NATIVE_RAM_BLOCK       a block device backed by the packed Data seed, so mountroot
-#                          has something before the UFS windows publish
+#   NATIVE_RAM_BLOCK       off: it publishes the packed-Data seed as a 32 MiB media
+#                          (8192 x 4096) and registers it before the UFS windows, so it
+#                          becomes disk0 and APFS mounts THAT container. mountroot then
+#                          waits forever for the OS UUID, which is exactly what the
+#                          u097 log shows: dev_init disk0 4096/8192, nx_mount disk0
+#                          "checkpoint search: largest xid 5", then Waiting on UUID.
+#                          nx729j_ufs/storage_defconfig also leave it off.
 #   BOOT_PROGRESS          off: line 65 of build-xnu-4k-baseline.sh requires
 #                          OWNER_ROOT_AUDIT and NATIVE_VIRTIO_BLOCK alongside it, and both
 #                          are unreachable here. The stub archive alone is not enough.
@@ -45,7 +50,7 @@ CONFIG_XNU_ARM_DT_PLATFORM=y
 CONFIG_XNU_ARMCPU=y
 CONFIG_XNU_NATIVE_UFS=y
 CONFIG_XNU_NATIVE_AES=y
-CONFIG_XNU_NATIVE_RAM_BLOCK=y
+CONFIG_XNU_NATIVE_RAM_BLOCK=n
 CONFIG_XNU_TRUST_CACHE_RUNTIME=y
 CONFIG_XNU_NATIVE_CS_HASH_CACHE=y
 CONFIG_XNU_SHENG_PMGR=n
