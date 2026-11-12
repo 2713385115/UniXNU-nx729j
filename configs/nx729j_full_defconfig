@@ -20,7 +20,11 @@
 #   NATIVE_UFS             the whole point: host bring-up, GPT, root windows, and the
 #                          verified-block policy path (board.toml links NativeUfs with
 #                          -DNATIVE_VERIFIED_BLOCK=1)
-#   SHENG_PMGR             the UFS controller's clocks and power. nx729j_ufs_defconfig
+#   SHENG_PMGR             off: needs libShengPlatformPower.a, and no board.toml entry
+#                          builds it (kits/sheng/ShengPlatformPower.cpp is not in any
+#                          published repository). The UFS controller keep-alive is
+#                          approximated by the image-side binary patch instead.
+#   (old note)             the UFS controller's clocks and power. nx729j_ufs_defconfig
 #                          leaves this off, which is why that image wrote nothing at all
 #                          to the log window: without it hostBringUp cannot talk to the
 #                          controller, so no record can even be attempted.
@@ -44,7 +48,7 @@ CONFIG_XNU_NATIVE_AES=y
 CONFIG_XNU_NATIVE_RAM_BLOCK=y
 CONFIG_XNU_TRUST_CACHE_RUNTIME=y
 CONFIG_XNU_NATIVE_CS_HASH_CACHE=y
-CONFIG_XNU_SHENG_PMGR=y
+CONFIG_XNU_SHENG_PMGR=n
 CONFIG_XNU_BOOT_PROGRESS=n
 CONFIG_XNU_DT_PANIC_REGION=y
 CONFIG_XNU_NATIVE_ARCH_TIMER=y
