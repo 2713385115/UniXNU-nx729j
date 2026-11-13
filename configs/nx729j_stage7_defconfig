@@ -78,6 +78,26 @@ CONFIG_XNU_SOURCE_MOCKFS=n
 CONFIG_XNU_ARMVIRT_PLATFORM=n
 CONFIG_XNU_ZONE_PGZ_ALIGNMENT_PROBE=n
 CONFIG_XNU_BOOT_PROGRESS=n
-CONFIG_XNU_OWNER_UNION_SYSTEMOS=y
+# Stage 7 third attempt: stop composing the SystemOS cryptex into "/" as a writable
+# union layer, and let dyld map the shared cache straight off the read-only volume.
+#
+# What the union cost us.  With OWNER_UNION_SYSTEMOS the SystemOS volume becomes the
+# upper (writable) layer of "/", so every file reachable there is copied up on demand.
+# The recorded boot shows the price: from the moment launchd starts, a strictly
+# sequential 128 KiB write stream runs into that volume at ~200 MB/s (op 28, dir 2,
+# LBA climbing from the start of the SystemOS window), 13,000 commands deep, until the
+# machine stops.  In the same 3 ms window launchd logs
+#   shared_region: [1(launchd)] check_np() vm_shared_region_start_address() failed
+# which is exactly the shared-region mapping the union cannot serve.
+#
+# OWNER_CACHE_CARRIER is the mechanism this board was actually built around: the shared
+# cache lives on the read-only SystemOS volume at
+# /private/preboot/System/Library/Caches/com.apple.dyld and vm_unix.c authorises mapping
+# it from a volume other than the process root (native_owner_shared_cache_carrier, which
+# requires both mounts read-only and both volume UUIDs to match).  It is mutually
+# exclusive with the union by construction - the carrier's first test is that the root
+# mount and the cache mount differ, which the union makes false.
+CONFIG_XNU_OWNER_UNION_SYSTEMOS=n
+CONFIG_XNU_OWNER_CACHE_CARRIER=y
 CONFIG_XNU_OWNER_DATA_MOUNT=y
 CONFIG_XNU_OWNER_DATA_VOLUME_UUID="C76C5309-AEA7-4AF7-AAD5-9785B87F4822"
