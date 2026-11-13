@@ -38,6 +38,15 @@ CONFIG_XNU_NATIVE_UFS=y
 CONFIG_XNU_NATIVE_ARCH_TIMER=y
 CONFIG_XNU_NATIVE_PAN=y
 CONFIG_XNU_DT_PANIC_REGION=y
+# The panic channel. DT_PANIC_REGION alone keeps the panic text in RAM the firmware
+# never reads back, so every dead boot came away as "the console simply stopped".
+# RAMOOPS_CONSOLE mirrors every console_write() byte into the 2 MiB carve-out at
+# physical 0x8A800000 inside the SM8550 PIL Reserved span, which survives a cold
+# reboot and can be read from 9008 - including the backtrace of a panic that the
+# storage-stack log writer can never record. VOLATILE_PANIC_LOG keeps the embedded
+# panic machinery alive on this board, which has no Apple PRAM reservation.
+CONFIG_XNU_NX729J_RAMOOPS_CONSOLE=y
+CONFIG_XNU_NX729J_VOLATILE_PANIC_LOG=y
 CONFIG_XNU_TRUST_CACHE_RUNTIME=y
 CONFIG_XNU_NATIVE_CS_HASH_CACHE=y
 
