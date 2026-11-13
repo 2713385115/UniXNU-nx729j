@@ -1344,7 +1344,17 @@ static void bootLogThread (void *, wait_result_t)
   // alive; this says where it died, and unlike the phase record it survives on a round that writes nothing but its
   // own slot, so a stall with no phase block still reads back as "the round before stopped at <stage>".
   const char *stage = "start";
+  unsigned busy_rounds = 0, busy_total = 0;
   for (;;) {
+    // Never queue behind the data path. A round that joins the command lock during a long transfer is indis-
+    // tinguishable from a dead machine on the medium, which is the one question three boots could not answer.
+    if (hostCommandBusy ()) {
+      ++busy_rounds;
+      ++busy_total;
+      if (busy_rounds == 25) IOLog ("NativeUfs: log writer yielding, command lock busy for 5s\n");
+      IOSleep (200);
+      continue;
+    }
     const uint64_t round_start = boot_log_ticks ();
     const uint32_t rnd = h.rounds + 1;
     const unsigned now = static_cast<unsigned> ((boot_log_ticks () - start) / f);
@@ -1359,9 +1369,10 @@ static void bootLogThread (void *, wait_result_t)
     // stops moving is far more often a time base that stopped than a CPU that did. host=poisoned,ready records whether
     // the transport gave up before the writer did.
     int used = snprintf (reinterpret_cast<char *> (buffer), BootLogSlotBlocks * 4096,
-                         "#slot %u t=%us tag=%s stage=%s mat=%llu host=%d%d\n",
+                         "#slot %u t=%us tag=%s stage=%s mat=%llu host=%d%d busy=%u/%u\n",
                          h.slots_written, now, h.tag, stage,
-                         (unsigned long long) mach_absolute_time (), gHost.poisoned, gHost.ready);
+                         (unsigned long long) mach_absolute_time (), gHost.poisoned, gHost.ready,
+                         busy_rounds, busy_total);
     if (used > 0 && static_cast<size_t> (used) < BootLogSlotBlocks * 4096)
       formatUfsRootDiagnostics (reinterpret_cast<char *> (buffer) + used,
                                 BootLogSlotBlocks * 4096 - static_cast<size_t> (used),
@@ -1411,6 +1422,7 @@ static void bootLogThread (void *, wait_result_t)
       native_ufs_log_sync ();
     }
     stage = "done";
+    busy_rounds = 0;
     if (!ok) {
       ++errors;
       if (errors >= 3) {
