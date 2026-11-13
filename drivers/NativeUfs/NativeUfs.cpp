@@ -1332,10 +1332,11 @@ static void bootLogThread (void *, wait_result_t)
       ok = 0;
       bootLogPhase (h.rounds + 1, 2, 0);
     }
-    // The message buffer is the heaviest thing here (128 KiB) and it barely changes between rounds: sampling it every
-    // fifth round costs a fifth of the traffic and still bounds the lost tail to ten seconds. It goes out in 32 KiB
-    // pieces: one 128 KiB command turned out to be the largest transfer the stalled rounds died on.
-    if (!(h.rounds % 5)) {
+    // The message buffer is the heaviest thing here, and it used to be sampled every fifth round to save traffic. That
+    // sampling is what lost the last two seconds of every stalled boot: the window said "round 6" while the text that
+    // explains the stall had never been copied. It now goes out every round, in 32 KiB pieces, and the extra four
+    // commands per two seconds are nothing next to the thousand launchd issues.
+    {
       stage = "msg";
       h.msg_bytes = boot_log_copy_msgbuf (buffer);
       for (uint32_t at = 0; at < BootLogMsgBlocks; at += 8) {
@@ -1363,7 +1364,7 @@ static void bootLogThread (void *, wait_result_t)
     // longer decides whether the round succeeded: the writes already returned, and this only asks the device to move
     // them from its own cache to the medium. The previous build flushed every round with a 20 s timeout and a flush
     // that never completed froze the whole storage stack for those twenty seconds.
-    if (!(h.rounds % 10)) {
+    if (!(h.rounds % 30)) {
       stage = "sync";
       native_ufs_log_sync ();
     }
