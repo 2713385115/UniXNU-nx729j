@@ -1274,10 +1274,16 @@ static void bootLogThread (void *, wait_result_t)
   for (;;) {
     const unsigned now = static_cast<unsigned> ((boot_log_ticks () - start) / f);
     int ok = 1;
-    // One text slot with a short header line, then the message buffer, then the header that makes both visible.
+    // One text slot with a short header line plus the live transport snapshot, then the message buffer, then the header that
+    // makes both visible. The snapshot is what a stalled boot can still be read for: after a transfer poisons the host the
+    // medium takes no more writes, so the slot of the round before is the last context available.
     memset (buffer, 0, BootLogSlotBlocks * 4096);
-    snprintf (reinterpret_cast<char *> (buffer), BootLogSlotBlocks * 4096,
-              "#slot %u t=%us tag=%s\n", h.slots_written, now, h.tag);
+    int used = snprintf (reinterpret_cast<char *> (buffer), BootLogSlotBlocks * 4096,
+                         "#slot %u t=%us tag=%s\n", h.slots_written, now, h.tag);
+    if (used > 0 && static_cast<size_t> (used) < BootLogSlotBlocks * 4096)
+      formatUfsRootDiagnostics (reinterpret_cast<char *> (buffer) + used,
+                                BootLogSlotBlocks * 4096 - static_cast<size_t> (used),
+                                gRootDiagnostic, "periodic snapshot", "UFS STATE");
     ok &= native_ufs_log_write (BootLogSlotFirst + static_cast<uint64_t> (h.slots_written % slot_count) * BootLogSlotBlocks,
                                 BootLogSlotBlocks, buffer);
     h.msg_bytes = boot_log_copy_msgbuf (buffer);
