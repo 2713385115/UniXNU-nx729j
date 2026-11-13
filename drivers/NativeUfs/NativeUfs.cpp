@@ -1406,19 +1406,17 @@ static void bootLogThread (void *, wait_result_t)
       bootLogPhase (h.rounds + 1, 2, 0);
     }
     bootLogPublish (h, 2, rnd, now);
-    // Four 32 KiB writes into the text region was the single heaviest thing this thread did, and every stalled boot so
-    // far stopped inside a round within two milliseconds of this point (phase 3 published, phase 5 never) -- while the
-    // round itself took one millisecond, so it was never starved. That makes the burst the prime suspect, and the only
-    // way to settle it is to stop doing it: one 4 KiB block, the tail of the ring, into its own block at the end of the
-    // window. Everything else about the round is unchanged.
+    // The single-block tail was a measurement, not a fix, and it cost us the evidence: it kept only the newest 4 KiB, so
+    // the first lines after launchd started -- the ones that say why it cannot map its cache -- were already overwritten
+    // by the time the boot stalled eight seconds later. The ring is 128 KiB and the whole stamp fits in it, so copy the
+    // entire ring and write all 32 blocks. The buffer is the slot buffer, which is already 128 KiB and idle here.
     {
       stage = "msg";
-      static uint8_t tail[4096];
-      h.msg_bytes = boot_log_copy_tail (tail, sizeof tail);
+      h.msg_bytes = boot_log_copy_tail (buffer, BootLogMsgBlocks * 4096);
       bootLogPublish (h, 3, rnd, now);
-      // The last block of the text region: it already sits inside the block range the reader pulls in one go, so the
-      // tail shows up as the kernel log with no reader change.
-      if (!native_ufs_log_write_try (BootLogMsgFirst + BootLogMsgBlocks - 1, 1, tail)) {
+      uint32_t msg_chunks = (h.msg_bytes + 4095) / 4096;
+      if (msg_chunks == 0) msg_chunks = 1;
+      if (!native_ufs_log_write_try (BootLogMsgFirst, msg_chunks, buffer)) {
         ok = 0;
         bootLogPhase (h.rounds + 1, 4, 0);
       }
