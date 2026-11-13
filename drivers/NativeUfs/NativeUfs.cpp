@@ -1090,14 +1090,20 @@ extern "C" int native_ufs_store_read (uint64_t rel, uint32_t blocks, void *dst)
   return 1;
 }
 
+// Counters read by the writer's phase record. A writer that stops proves only that the writer stopped: whether the rest
+// of the kernel was still issuing storage I/O is what separates a dead transport from a frozen system, and the store
+// write count answers it without another probe.
+static volatile uint64_t gStoreWriteCalls = 0, gStoreWriteFails = 0, gLogWriteCalls = 0, gSyncCalls = 0, gSyncFails = 0;
+
 extern "C" int native_ufs_store_write (uint64_t rel, uint32_t blocks, const void *src)
 {
   if (storeMode () != 2 || !gStoreRegionBlocks || !src || !blocks || rel >= gStoreRegionBlocks ||
       blocks > gStoreRegionBlocks - rel) return 0;
+  ++gStoreWriteCalls;
   while (blocks) {
     uint32_t chunk = blocks > kDataMax / 4096 ? static_cast<uint32_t> (kDataMax / 4096) : blocks;
     // Forced unit access: the block is on the medium when the command completes, so the overlay needs no cache flush.
-    if (hostWrite4k (0, gStoreRegionFirst + rel, chunk, src, true) != kIOReturnSuccess) return 0;
+    if (hostWrite4k (0, gStoreRegionFirst + rel, chunk, src, true) != kIOReturnSuccess) { ++gStoreWriteFails; return 0; }
     src = static_cast<const uint8_t *> (src) + chunk * 4096ULL;
     rel += chunk;
     blocks -= chunk;
@@ -1107,7 +1113,10 @@ extern "C" int native_ufs_store_write (uint64_t rel, uint32_t blocks, const void
 
 extern "C" int native_ufs_store_sync (void)
 {
-  return storeMode () == 2 && gStoreRegionBlocks && hostSyncCache () == kIOReturnSuccess;
+  ++gSyncCalls;
+  IOReturn status = hostSyncCache ();
+  if (status != kIOReturnSuccess) ++gSyncFails;
+  return storeMode () == 2 && gStoreRegionBlocks && status == kIOReturnSuccess;
 }
 
 // ---- Diagnostic log window (sheng-log=1) --------------------------------------------------------------------------
@@ -1157,6 +1166,7 @@ extern "C" int native_ufs_log_open (uint64_t *firstLba, uint64_t *blocks, const 
 extern "C" int native_ufs_log_write (uint64_t rel, uint32_t blocks, const void *src)
 {
   if (!gLogRegionBlocks || !src || !blocks || rel >= gLogRegionBlocks || blocks > gLogRegionBlocks - rel) return 0;
+  ++gLogWriteCalls;
   while (blocks) {
     uint32_t chunk = blocks > kDataMax / 4096 ? static_cast<uint32_t> (kDataMax / 4096) : blocks;
     if (hostWrite4k (0, gLogRegionFirst + rel, chunk, src) != kIOReturnSuccess) return 0;
@@ -1238,6 +1248,24 @@ static uint32_t boot_log_copy_msgbuf (uint8_t *out)
   return n;
 }
 
+// One block per phase of the writer's round, at a fixed LBA (the window's second-to-last block, so it sits beside the
+// quarantine record). A round that never finishes leaves the phase it reached on the medium, and the phases separate the
+// two failure modes that look identical from outside: no phase 3 means the thread never came back from the message-buffer
+// copy (no command was issued, the transport is innocent); phase 3 but no phase 4 means the message write itself stalled.
+static void bootLogPhase (uint32_t round, uint32_t phase, int ok)
+{
+  if (!gLogOpen || gLogBlocks < 4) return;
+  static uint8_t rec[4096];
+  memset (rec, 0, sizeof rec);
+  snprintf (reinterpret_cast<char *> (rec), sizeof rec,
+            "PHASE round=%u phase=%u ok=%d cmd=%llu store=%llu store_fail=%llu log=%llu sync=%llu sync_fail=%llu\n",
+            round, phase, ok, (unsigned long long) gRootDiagnostic.command,
+            (unsigned long long) gStoreWriteCalls, (unsigned long long) gStoreWriteFails,
+            (unsigned long long) gLogWriteCalls, (unsigned long long) gSyncCalls,
+            (unsigned long long) gSyncFails);
+  hostWrite4k (0, gLogFirst + gLogBlocks - 2, 1, rec, false, 3000000);
+}
+
 static void bootLogThread (void *, wait_result_t)
 {
   thread_set_thread_name (current_thread (), "boot_log");
@@ -1286,10 +1314,20 @@ static void bootLogThread (void *, wait_result_t)
       formatUfsRootDiagnostics (reinterpret_cast<char *> (buffer) + used,
                                 BootLogSlotBlocks * 4096 - static_cast<size_t> (used),
                                 gRootDiagnostic, "periodic snapshot", "UFS STATE");
+    bootLogPhase (h.rounds + 1, 1, ok);
     ok &= native_ufs_log_write (BootLogSlotFirst + static_cast<uint64_t> (h.slots_written % slot_count) * BootLogSlotBlocks,
                                 BootLogSlotBlocks, buffer);
+    bootLogPhase (h.rounds + 1, 2, ok);
     h.msg_bytes = boot_log_copy_msgbuf (buffer);
-    ok &= native_ufs_log_write (BootLogMsgFirst, BootLogMsgBlocks, buffer);
+    bootLogPhase (h.rounds + 1, 3, ok);
+    // The message block is the largest single transfer this driver issues (32 x 4096 = 128 KiB), and both stalled rounds
+    // died on it while the 8-block slot before it went through, so it goes out in 16 KiB pieces: a small command competes
+    // with the thousand-plus writes per second launchd generates, and the phase record still says exactly where a stall is.
+    for (uint32_t at = 0; at < BootLogMsgBlocks; at += 4) {
+      uint32_t n = BootLogMsgBlocks - at < 4 ? BootLogMsgBlocks - at : 4;
+      ok &= native_ufs_log_write (BootLogMsgFirst + at, n, buffer + static_cast<uint64_t> (at) * 4096);
+    }
+    bootLogPhase (h.rounds + 1, 4, ok);
     if (ok) ++h.slots_written; else ++h.write_errors;
     h.uptime_s = now;
     h.rounds++;
@@ -1298,7 +1336,9 @@ static void bootLogThread (void *, wait_result_t)
     memset (buffer, 0, 4096);
     memcpy (buffer, &h, sizeof h);
     ok &= native_ufs_log_write (0, 1, buffer);
+    bootLogPhase (h.rounds + 1, 5, ok);
     ok &= native_ufs_log_sync ();
+    bootLogPhase (h.rounds + 1, 6, ok);
     if (!ok) {
       ++errors;
       if (errors >= 3) {
