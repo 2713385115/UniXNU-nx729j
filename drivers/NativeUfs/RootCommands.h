@@ -197,6 +197,12 @@ static IOReturn hostNop (void)
   return kIOReturnSuccess;
 }
 
+// True while a command runs with gHost.lock held. The quarantine recorder has to know, because it writes its record
+// through this same command path: called from inside a transfer it already owns the lock, and re-locking a non-recursive
+// IOLock parks the thread forever with the lock held. That is precisely how every silent stall looked from outside - no
+// panic, no error record, the periodic writer and every APFS thread stopped at the same instant.
+static bool gInsideLockedTransfer = false;
+
 // Run a SCSI command. direction 0: no data, 1: host -> device from the DMA data area (already filled by the caller), 2: device
 // -> host into the DMA data area. Callers other than hostWrite4k never pass direction 1.
 static IOReturn hostScsiDir (uint8_t lun, const uint8_t *cdb, unsigned cdbLength, unsigned direction, uint32_t dataBytes,
@@ -215,7 +221,10 @@ static IOReturn hostScsiDir (uint8_t lun, const uint8_t *cdb, unsigned cdbLength
     ucd[16 + index] = cdb[index];
   }
   uint32_t ocs = 0xf;
+  const bool outer = gInsideLockedTransfer;
+  gInsideLockedTransfer = true;
   IOReturn status = hostSubmit (direction ? direction : 0U, dataBytes, timeoutUs, &ocs);
+  gInsideLockedTransfer = outer;
   if (status != kIOReturnSuccess) return status;
   status = hostResponseHeader (0x21, lun, 0);
   if (status != kIOReturnSuccess) return status;
@@ -328,6 +337,22 @@ static bool hostStoreOpen (uint64_t first, uint64_t blocks)
   return true;
 }
 
+// The write itself, with gHost.lock already held by the caller. The quarantine recorder runs from inside a transfer and
+// must use this one: hostWrite4k would take the same non-recursive IOLock a second time and hang the whole storage stack.
+static IOReturn hostWrite4kLocked (uint8_t lun, uint64_t lba, uint32_t blocks, const void *src, bool fua,
+                                   uint32_t timeoutUs)
+{
+  if (!gHost.ready || !src || !blocks || blocks > kDataMax / 4096 || lun != 0 || !hostInWindow (lba, blocks)) {
+    return kIOReturnBadArgument;
+  }
+  gRootDiagnostic.lba = lba;
+  memcpy (gHost.virt + kDataOffset, src, blocks * 4096U);
+  uint8_t cdb[10] = { 0x2a, uint8_t (fua ? 0x08 : 0), uint8_t (lba >> 24), uint8_t (lba >> 16), uint8_t (lba >> 8), uint8_t (lba),
+                      0, uint8_t (blocks >> 8), uint8_t (blocks), 0 };
+  uint32_t scsi = 0;
+  return hostScsiDir (0, cdb, 10, 1, blocks * 4096U, timeoutUs, &scsi);
+}
+
 // WRITE(10) of `blocks` 4096-byte blocks from src to lba on LUN 0; the range must lie inside one open window.
 static IOReturn hostWrite4k (uint8_t lun, uint64_t lba, uint32_t blocks, const void *src, bool fua = false,
                              uint32_t timeoutUs = 8000000)
@@ -336,12 +361,7 @@ static IOReturn hostWrite4k (uint8_t lun, uint64_t lba, uint32_t blocks, const v
     return kIOReturnBadArgument;
   }
   IOLockLock (gHost.lock);
-  gRootDiagnostic.lba = lba;
-  memcpy (gHost.virt + kDataOffset, src, blocks * 4096U);
-  uint8_t cdb[10] = { 0x2a, uint8_t (fua ? 0x08 : 0), uint8_t (lba >> 24), uint8_t (lba >> 16), uint8_t (lba >> 8), uint8_t (lba),
-                      0, uint8_t (blocks >> 8), uint8_t (blocks), 0 };
-  uint32_t scsi = 0;
-  IOReturn status = hostScsiDir (0, cdb, 10, 1, blocks * 4096U, timeoutUs, &scsi);
+  IOReturn status = hostWrite4kLocked (lun, lba, blocks, src, fua, timeoutUs);
   IOLockUnlock (gHost.lock);
   return status;
 }
@@ -398,8 +418,12 @@ static bool hostRecordFailure (UfsTransferEnd end, uint32_t dataBytes, uint32_t 
             gRootDiagnostic.residual, read32 (gHost.hc, 0x30), read32 (gHost.hc, 0x34));
   // Last block of the window: a fixed LBA the reader can compute from the header alone (first + window_blocks - 1).
   const uint64_t slot = gLogFirst + gLogBlocks - 1;
-  // Short timeout on purpose: this runs on an already failing path and must not add seconds to every retry.
-  IOReturn status = hostWrite4k (0, slot, 1, record, false, 200000);
+  // Short timeout on purpose: this runs on an already failing path and must not add seconds to every retry. The record
+  // is written with whatever lock state the caller has: inside a transfer the lock is already ours, and taking it again
+  // here was the deadlock that turned one failed command into a frozen machine.
+  IOReturn status = gInsideLockedTransfer
+      ? hostWrite4kLocked (0, slot, 1, record, false, 200000)
+      : hostWrite4k (0, slot, 1, record, false, 200000);
   gRecordingFailure = false;
   return status == kIOReturnSuccess;
 }
