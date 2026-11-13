@@ -351,15 +351,40 @@ static IOReturn hostWrite4k (uint8_t lun, uint64_t lba, uint32_t blocks, const v
 // on, which is why every stalled boot so far came back as a frozen round counter with no error recorded. The slot is the
 // one rootFailureRecord already uses, so a boot that fails early and a boot that stalls late land in the same place.
 static bool gRecordingFailure = false;
+// The transport is quarantined by a doorbell that never came back, and that same doorbell is what makes every later
+// write impossible - including the one record that would say which command killed it. Disabling the controller clears
+// the stuck request without touching the LUN configuration the device already accepted, so the recorder gets one more
+// command slot before the quarantine is set. The request list is then put back exactly the way hostBringUp left it,
+// because the reset also drops its base address and its enable bit. If the doorbell survives the reset the controller
+// is gone and the record is abandoned rather than retried.
+static bool hostClearStuckDoorbell (void)
+{
+  if (!(read32 (gHost.hc, 0x58) & 1U)) return true;
+  const uint32_t hce = read32 (gHost.hc, 0x34);
+  write32 (gHost.hc, 0x34, hce & ~1U);
+  IODelay (2000);
+  write32 (gHost.hc, 0x34, hce | 1U);
+  IODelay (2000);
+  write32 (gHost.hc, 0x24, 0);                  // interrupts stay masked, as hostBringUp left them
+  write32 (gHost.hc, 0x60, 0);                  // stop the request list
+  write32 (gHost.hc, 0x50, static_cast<uint32_t> (gHost.phys));
+  write32 (gHost.hc, 0x54, static_cast<uint32_t> (gHost.phys >> 32));
+  write32 (gHost.hc, 0x20, 0xffffffffU);        // clear stale status
+  write32 (gHost.hc, 0x60, 1);                  // start it again
+  IODelay (2000);
+  const uint32_t doorbell = read32 (gHost.hc, 0x58);
+  IOLog ("NativeUfs: controller reset after a stuck doorbell: hce %08x -> doorbell %08x\n", hce, doorbell);
+  return !(doorbell & 1U);
+}
+
 static bool hostRecordFailure (UfsTransferEnd end, uint32_t dataBytes, uint32_t timeoutUs,
                                const UfsTransferPoll &state, uint32_t doorbell, uint32_t interrupt)
 {
   if (gRecordingFailure || !gLogOpen || gLogBlocks <= 2) return false;
-  // A doorbell that is still set is exactly the case that quarantines the transport, and it is also the one case this
-  // record cannot escape: hostClearUcd rejects it before the command area is touched, so the attempt would only burn
-  // its timeout and then quarantine from inside the recorder. Give up immediately instead; the phase record written
-  // before the stall is what survives.
-  if (read32 (gHost.hc, 0x58) & 1U) return false;
+  // The record used to be abandoned here, because a set doorbell is also what hostClearUcd refuses. That made the one
+  // channel built for a quarantine the one channel a quarantine always disabled, and every stalled boot came back with
+  // no error at all. Clearing the controller first costs two milliseconds and is the only way this record can land.
+  if (!hostClearStuckDoorbell ()) return false;
   gRecordingFailure = true;
   static uint8_t record[4096];
   memset (record, 0, sizeof record);
