@@ -1254,7 +1254,9 @@ static uint32_t boot_log_copy_msgbuf (uint8_t *out)
 // copy (no command was issued, the transport is innocent); phase 3 but no phase 4 means the message write itself stalled.
 static void bootLogPhase (uint32_t round, uint32_t phase, int ok)
 {
-  if (!gLogOpen || gLogBlocks < 4) return;
+  // Written through the ordinary log-window writer: it is the path already open here, and the record has to use the same
+  // command channel as the writes it is describing.
+  if (gLogRegionBlocks < 4) return;
   static uint8_t rec[4096];
   memset (rec, 0, sizeof rec);
   snprintf (reinterpret_cast<char *> (rec), sizeof rec,
@@ -1263,7 +1265,7 @@ static void bootLogPhase (uint32_t round, uint32_t phase, int ok)
             (unsigned long long) gStoreWriteCalls, (unsigned long long) gStoreWriteFails,
             (unsigned long long) gLogWriteCalls, (unsigned long long) gSyncCalls,
             (unsigned long long) gSyncFails);
-  hostWrite4k (0, gLogFirst + gLogBlocks - 2, 1, rec, false, 3000000);
+  native_ufs_log_write (gLogRegionBlocks - 2, 1, rec);
 }
 
 static void bootLogThread (void *, wait_result_t)
