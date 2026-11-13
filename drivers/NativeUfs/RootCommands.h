@@ -10,7 +10,18 @@ struct HardwareTransferPort {
     return *reinterpret_cast<volatile uint32_t *> (gHost.virt + 8) & 0xff;
   }
   bool expired () { return mach_absolute_time () >= deadline; }
-  void delay () { IODelay (2); }
+  uint32_t polls_done = 0;
+  void delay () {
+    // A command that never completes used to be indistinguishable from a dead machine: the poll loop said nothing and the
+    // storage-backed log writer had already stopped, so the window froze at the round before. Pace the wait onto the frame
+    // buffer console instead. That path never touches the command slot, the doorbell or the UFS clock, so it keeps
+    // reporting even while the controller is wedged. Roughly every 262 ms, which is far below the shortest transfer
+    // timeout, so the last screenful always describes the command that is stuck.
+    if (!(++polls_done & 0x1ffffU)) {
+      observe (polls_done, doorbell (), interrupt (), 0);
+    }
+    IODelay (2);
+  }
   // Printed from inside the poll loop so a transfer that is still waiting is visible while it waits. Without it a command
   // that never completes looks exactly like a boot that stopped logging: both leave the window frozen at the last header.
   void observe (uint32_t polls, uint32_t doorbell, uint32_t interrupt, uint32_t ocs) {
@@ -76,6 +87,14 @@ static IOReturn hostSubmit (uint32_t direction, uint32_t dataBytes, uint32_t tim
   gRootDiagnostic.protocol = 0;
   gRootDiagnostic.residual = 0;
   gRootDiagnostic.sense = 0;
+  // A doorbell write that never returns leaves nothing behind: no completion, no timeout, no log line. Rolling the
+  // submission itself onto the frame buffer console costs one print per 256 commands and turns that silent hang into a
+  // legible last line - the command that was being submitted when the bus stopped answering.
+  if (!(gRootDiagnostic.command & 0xffU)) {
+    IOLog ("NativeUfs: submit cmd %llu lba %llx op %02x dir %u bytes %u db %08x\n",
+           (unsigned long long) gRootDiagnostic.command, (unsigned long long) gRootDiagnostic.lba,
+           gRootDiagnostic.opcode, direction, dataBytes, read32 (gHost.hc, 0x58));
+  }
   uint8_t *utrd = gHost.virt;
   uint64_t ucdPhys = gHost.phys + kUcdOffset;
   uint32_t *words = reinterpret_cast<uint32_t *> (utrd);
