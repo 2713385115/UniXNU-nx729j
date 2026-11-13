@@ -34,6 +34,11 @@ static uint32_t loadBe32 (const uint8_t *at)
   return (uint32_t (at[0]) << 24) | (uint32_t (at[1]) << 16) | (uint32_t (at[2]) << 8) | at[3];
 }
 
+// Declared here, defined with the write path further down: the quarantine that needs it happens inside hostSubmit, while
+// the window globals it writes through are declared with the other window state.
+static bool hostRecordFailure (UfsTransferEnd end, uint32_t dataBytes, uint32_t timeoutUs,
+                               const UfsTransferPoll &state, uint32_t doorbell, uint32_t interrupt);
+
 // Issue the UPIU already placed at gHost.virt + kUcdOffset through request slot 0. `direction` is
 // the UTRD data direction (0 none, 1 from host, 2 to host). Direction 1 is reachable only through hostWrite4k, which
 // confines it to the persistent store window. Returns the overall command status
@@ -56,6 +61,8 @@ static IOReturn hostSubmit (uint32_t direction, uint32_t dataBytes, uint32_t tim
   if (read32 (gHost.hc, 0x20) & kUfsFatalStatus) {
     IOLog ("NativeUfs: poisoned: interrupt %08x has a fatal bit (lba %llx op %02x)\n",
            read32 (gHost.hc, 0x20), (unsigned long long) gRootDiagnostic.lba, gRootDiagnostic.opcode);
+    UfsTransferPoll none;
+    hostRecordFailure (UfsTransferEnd::Fatal, 0, 0, none, 0, read32 (gHost.hc, 0x20));
     gHost.poisoned = true;
     gHost.ready = false;
     return recordTransport (kIOReturnIOError, *ocs);
@@ -101,15 +108,28 @@ static IOReturn hostSubmit (uint32_t direction, uint32_t dataBytes, uint32_t tim
   gRootDiagnostic.isSeen = state.interruptSeen;
   *ocs = state.ocs;
   if (end != UfsTransferEnd::Completed) {
-    // No cancel/reset/retry: the controller may still own the buffer, even
-    // with DB=0. Keep it allocated and prohibit all subsequent CPU writes.
-    // The reason is also printed, because after this point no log reaches the medium.
-    IOLog ("NativeUfs: poisoned: transfer %s after %u us: lba %llx op %02x bytes %u polls %u db %x is %x ocs %x cmd %llu\n",
+    // A doorbell that is still set, or an interrupt with a fatal bit, means the controller may still own the buffer: no
+    // cancel/reset/retry, keep it allocated and prohibit all subsequent CPU writes. A clear doorbell with no fatal bit is
+    // a different event: the controller handed the buffer back and dropped this one command, which is survivable.
+    // Quarantining that case turned a single dropped command into a storage stack that answered NotReady for the rest of
+    // the boot, and the window showed it only as a frozen round counter with write_errors 0.
+    uint32_t doorbellNow = read32 (gHost.hc, 0x58);
+    uint32_t interruptNow = read32 (gHost.hc, 0x20);
+    bool wedged = (doorbellNow & 1U) || (interruptNow & kUfsFatalStatus);
+    // The reason is also printed, because after a quarantine no log reaches the medium.
+    IOLog ("NativeUfs: %s: transfer %s after %u us: lba %llx op %02x bytes %u polls %u db %x/%x is %x/%x ocs %x cmd %llu\n",
+           wedged ? "poisoned" : "dropped",
            end == UfsTransferEnd::Timeout ? "timed out" : "fatal", timeoutUs,
            (unsigned long long) gRootDiagnostic.lba, gRootDiagnostic.opcode, dataBytes, state.polls,
-           state.doorbellSeen, state.interruptSeen, state.ocs, (unsigned long long) gRootDiagnostic.command);
-    gHost.poisoned = true;
-    gHost.ready = false;
+           state.doorbellSeen, doorbellNow, state.interruptSeen, interruptNow, state.ocs,
+           (unsigned long long) gRootDiagnostic.command);
+    if (wedged) {
+      // Written before the quarantine is set, while the command path still answers: the header write that normally
+      // carries this record needs that same path, so after the quarantine nothing else can land on the medium.
+      hostRecordFailure (end, dataBytes, timeoutUs, state, doorbellNow, interruptNow);
+      gHost.poisoned = true;
+      gHost.ready = false;
+    }
     return recordTransport (end == UfsTransferEnd::Timeout ? kIOReturnTimeout : kIOReturnIOError, *ocs);
   }
   cacheInvalidate (gHost.virt, kDataOffset + dataBytes);
@@ -267,7 +287,7 @@ static IOReturn hostRead4k (uint8_t lun, uint64_t lba, uint32_t blocks, void *ds
   uint8_t cdb[10] = { 0x28, 0, uint8_t (lba >> 24), uint8_t (lba >> 16), uint8_t (lba >> 8), uint8_t (lba),
                       0, uint8_t (blocks >> 8), uint8_t (blocks), 0 };
   uint32_t scsi = 0;
-  IOReturn status = hostScsi (lun, cdb, 10, true, blocks * 4096U, 1000000, &scsi);
+  IOReturn status = hostScsi (lun, cdb, 10, true, blocks * 4096U, 3000000, &scsi);
   if (status == kIOReturnSuccess) {
     memcpy (dst, gHost.virt + kDataOffset, blocks * 4096U);
   }
@@ -309,7 +329,8 @@ static bool hostStoreOpen (uint64_t first, uint64_t blocks)
 }
 
 // WRITE(10) of `blocks` 4096-byte blocks from src to lba on LUN 0; the range must lie inside one open window.
-static IOReturn hostWrite4k (uint8_t lun, uint64_t lba, uint32_t blocks, const void *src, bool fua = false)
+static IOReturn hostWrite4k (uint8_t lun, uint64_t lba, uint32_t blocks, const void *src, bool fua = false,
+                             uint32_t timeoutUs = 8000000)
 {
   if (!gHost.ready || !src || !blocks || blocks > kDataMax / 4096 || lun != 0 || !hostInWindow (lba, blocks)) {
     return kIOReturnBadArgument;
@@ -320,9 +341,37 @@ static IOReturn hostWrite4k (uint8_t lun, uint64_t lba, uint32_t blocks, const v
   uint8_t cdb[10] = { 0x2a, uint8_t (fua ? 0x08 : 0), uint8_t (lba >> 24), uint8_t (lba >> 16), uint8_t (lba >> 8), uint8_t (lba),
                       0, uint8_t (blocks >> 8), uint8_t (blocks), 0 };
   uint32_t scsi = 0;
-  IOReturn status = hostScsiDir (0, cdb, 10, 1, blocks * 4096U, 2000000, &scsi);
+  IOReturn status = hostScsiDir (0, cdb, 10, 1, blocks * 4096U, timeoutUs, &scsi);
   IOLockUnlock (gHost.lock);
   return status;
+}
+
+// One block, written into the last slot of the log window the moment a transfer is quarantined. This is the only channel
+// that survives the quarantine: the periodic writer's header write needs the same command path and is refused from then
+// on, which is why every stalled boot so far came back as a frozen round counter with no error recorded. The slot is the
+// one rootFailureRecord already uses, so a boot that fails early and a boot that stalls late land in the same place.
+static bool gRecordingFailure = false;
+static bool hostRecordFailure (UfsTransferEnd end, uint32_t dataBytes, uint32_t timeoutUs,
+                               const UfsTransferPoll &state, uint32_t doorbell, uint32_t interrupt)
+{
+  if (gRecordingFailure || !gLogOpen || gLogBlocks <= 2) return false;
+  gRecordingFailure = true;
+  static uint8_t record[4096];
+  memset (record, 0, sizeof record);
+  snprintf (reinterpret_cast<char *> (record), sizeof record,
+            "SHLOGERR reason=%s timeout_us=%u bytes=%u lba=%llx op=%02x type=%02x cmd=%llu polls=%u "
+            "db_seen=%x db_now=%x is_seen=%x is_now=%x ocs=%x scsi=%x sense=%x residual=%u hcs=%x hce=%x\n",
+            end == UfsTransferEnd::Timeout ? "timeout" : "fatal", timeoutUs, dataBytes,
+            (unsigned long long) gRootDiagnostic.lba, gRootDiagnostic.opcode, gRootDiagnostic.type,
+            (unsigned long long) gRootDiagnostic.command, state.polls, state.doorbellSeen, doorbell,
+            state.interruptSeen, interrupt, state.ocs, gRootDiagnostic.scsi, gRootDiagnostic.sense,
+            gRootDiagnostic.residual, read32 (gHost.hc, 0x30), read32 (gHost.hc, 0x34));
+  // Last block of the window: a fixed LBA the reader can compute from the header alone (first + window_blocks - 1).
+  const uint64_t slot = gLogFirst + gLogBlocks - 1;
+  // Short timeout on purpose: this runs on an already failing path and must not add seconds to every retry.
+  IOReturn status = hostWrite4k (0, slot, 1, record, false, 200000);
+  gRecordingFailure = false;
+  return status == kIOReturnSuccess;
 }
 
 // SYNCHRONIZE CACHE(10) for the whole LUN: everything written so far is on the medium when this returns.
@@ -332,7 +381,7 @@ static IOReturn hostSyncCache (void)
   IOLockLock (gHost.lock);
   uint8_t cdb[10] = { 0x35 };
   uint32_t scsi = 0;
-  IOReturn status = hostScsiDir (0, cdb, 10, 0, 0, 10000000, &scsi);
+  IOReturn status = hostScsiDir (0, cdb, 10, 0, 0, 20000000, &scsi);
   IOLockUnlock (gHost.lock);
   return status;
 }
