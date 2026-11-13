@@ -1235,6 +1235,9 @@ struct boot_log_header {
   uint32_t phase_round;
   uint64_t phase_mat;            // mach_absolute_time at that step: separates a stopped CPU from a stopped clock
   uint32_t max_round_ms;         // longest round so far, in ms: a starved writer shows up here, not as a stall
+  uint32_t cmds;                 // UFS commands the rest of the kernel had completed at that step
+  uint64_t msg_lap;              // msgbuf write cursor: moves on *any* kprintf from any thread, copied or not
+  uint32_t store_writes;         // store-backend writes so far
   uint32_t reserved0;
 };
 
@@ -1287,6 +1290,12 @@ static int bootLogPublish (struct boot_log_header &h, uint32_t phase, uint32_t r
   h.phase_round = round;
   h.phase_mat = mach_absolute_time ();
   h.uptime_s = uptime;
+  // Two witnesses that the kernel is still running, independent of this thread: the transport's own command count, and
+  // the message-buffer cursor, which any kprintf anywhere moves. Both frozen with the clock means the machine stopped;
+  // both climbing means the writer alone was starved, which is the ambiguity that cost the last three boots.
+  h.cmds = static_cast<uint32_t> (gRootDiagnostic.command);
+  h.store_writes = static_cast<uint32_t> (gStoreWriteCalls);
+  h.msg_lap = msgbufp ? static_cast<uint64_t> (msgbufp->msg_bufx) : 0;
   memset (blk, 0, sizeof blk);
   memcpy (blk, &h, sizeof h);
   return native_ufs_log_write (0, 1, blk) ? 1 : 0;
