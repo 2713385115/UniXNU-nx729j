@@ -11,6 +11,14 @@ struct HardwareTransferPort {
   }
   bool expired () { return mach_absolute_time () >= deadline; }
   void delay () { IODelay (2); }
+  // Printed from inside the poll loop so a transfer that is still waiting is visible while it waits. Without it a command
+  // that never completes looks exactly like a boot that stopped logging: both leave the window frozen at the last header.
+  void observe (uint32_t polls, uint32_t doorbell, uint32_t interrupt, uint32_t ocs) {
+    IOLog ("NativeUfs: transfer waiting %u polls: db %x is %x ocs %x lba %llx op %02x cmd %llu\n",
+           polls, doorbell, interrupt, ocs,
+           (unsigned long long) gRootDiagnostic.lba, gRootDiagnostic.opcode,
+           (unsigned long long) gRootDiagnostic.command);
+  }
 };
 
 static void putBe32 (uint8_t *at, uint32_t value)
