@@ -78,6 +78,23 @@ static void erase_line (u8 *base, u32 rb, u32 width, u32 y, u32 lh)
   }
 }
 
+/* Page flip.
+ *
+ * Wrapping to the top without clearing made each new page overwrite the old one in place, so a photo of a stalled boot
+ * showed a screen whose top half was current and whose bottom half was minutes old. Reading "the last thing it printed"
+ * off that screen was guesswork, and it is why a stall at kernel 11 s was read as a stall at 26 s for several boots.
+ * Clearing the text area first makes every page self-contained: the last line drawn ends at the cursor, and everything
+ * below it is blank. */
+static void clear_text (u8 *base, u32 rb, u32 width, u32 text_h, u32 lh, struct cur *g)
+{
+  u32 y;
+  for (y = 0; y + lh <= text_h; y += lh) {
+    erase_line (base, rb, width, y, lh);
+  }
+  g->x = 0;
+  g->y = 0;
+}
+
 static void draw_glyph (u8 *base, u32 rb, u32 scale, u32 x, u32 y, u32 c)
 {
   u64 bits = console_font[c - 32];
@@ -163,7 +180,7 @@ void console_screen (const char *s, s32 len)
     if (c == '\n') {      g->x = 0;
       g->y += lh;
       if (g->y + lh > text_h) {
-        g->y = 0;
+        clear_text (base, rb, width, text_h, lh, g);
       }
       continue;
     }
@@ -182,7 +199,7 @@ void console_screen (const char *s, s32 len)
       g->x = 0;
       g->y += lh;
       if (g->y + lh > text_h) {
-        g->y = 0;
+        clear_text (base, rb, width, text_h, lh, g);
       }
     }
     if (g->x == 0) {
