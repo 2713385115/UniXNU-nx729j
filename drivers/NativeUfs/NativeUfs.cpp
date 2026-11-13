@@ -1093,7 +1093,7 @@ extern "C" int native_ufs_store_read (uint64_t rel, uint32_t blocks, void *dst)
 // Counters read by the writer's phase record. A writer that stops proves only that the writer stopped: whether the rest
 // of the kernel was still issuing storage I/O is what separates a dead transport from a frozen system, and the store
 // write count answers it without another probe.
-static volatile uint64_t gStoreWriteCalls = 0, gStoreWriteFails = 0, gLogWriteCalls = 0, gSyncCalls = 0, gSyncFails = 0;
+static uint64_t gStoreWriteCalls = 0, gStoreWriteFails = 0, gLogWriteCalls = 0, gSyncCalls = 0, gSyncFails = 0;
 
 extern "C" int native_ufs_store_write (uint64_t rel, uint32_t blocks, const void *src)
 {
