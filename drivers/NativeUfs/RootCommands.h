@@ -37,11 +37,17 @@ static IOReturn hostSubmit (uint32_t direction, uint32_t dataBytes, uint32_t tim
       (dataBytes ? (direction != 1 && direction != 2) : direction != 0)) return kIOReturnBadArgument;
   if (gHost.poisoned) return kIOReturnNotReady;
   if (read32 (gHost.hc, 0x58) != 0) {
+    // The doorbell is still set: a command this driver issued never completed. Nothing can be written after this, so the
+    // reason goes to kprintf (the frame buffer console) as well, where it survives a dead UFS.
+    IOLog ("NativeUfs: poisoned: doorbell still %08x (lba %llx op %02x); no further storage I/O\n",
+           read32 (gHost.hc, 0x58), (unsigned long long) gRootDiagnostic.lba, gRootDiagnostic.opcode);
     gHost.poisoned = true;
     gHost.ready = false;
     return recordTransport (kIOReturnBusy, *ocs);
   }
   if (read32 (gHost.hc, 0x20) & kUfsFatalStatus) {
+    IOLog ("NativeUfs: poisoned: interrupt %08x has a fatal bit (lba %llx op %02x)\n",
+           read32 (gHost.hc, 0x20), (unsigned long long) gRootDiagnostic.lba, gRootDiagnostic.opcode);
     gHost.poisoned = true;
     gHost.ready = false;
     return recordTransport (kIOReturnIOError, *ocs);
@@ -89,6 +95,11 @@ static IOReturn hostSubmit (uint32_t direction, uint32_t dataBytes, uint32_t tim
   if (end != UfsTransferEnd::Completed) {
     // No cancel/reset/retry: the controller may still own the buffer, even
     // with DB=0. Keep it allocated and prohibit all subsequent CPU writes.
+    // The reason is also printed, because after this point no log reaches the medium.
+    IOLog ("NativeUfs: poisoned: transfer %s after %u us: lba %llx op %02x bytes %u polls %u db %x is %x ocs %x cmd %llu\n",
+           end == UfsTransferEnd::Timeout ? "timed out" : "fatal", timeoutUs,
+           (unsigned long long) gRootDiagnostic.lba, gRootDiagnostic.opcode, dataBytes, state.polls,
+           state.doorbellSeen, state.interruptSeen, state.ocs, (unsigned long long) gRootDiagnostic.command);
     gHost.poisoned = true;
     gHost.ready = false;
     return recordTransport (end == UfsTransferEnd::Timeout ? kIOReturnTimeout : kIOReturnIOError, *ocs);
