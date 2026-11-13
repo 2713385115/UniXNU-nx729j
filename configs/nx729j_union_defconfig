@@ -1,0 +1,78 @@
+# Kernel configuration of the nx729j owner-root image (stage 7: compose the
+# SystemOS cryptex into the root via union mount so launchd can find the dyld
+# cache and reach userland).
+#
+# This file is nx729j_owner_defconfig (stage 6, which already mounts the root
+# volume and starts launchd) plus the four OWNER macros that stage 7 needs to
+# union-mount the SystemOS cryptex window onto "/". That is the official
+# root-composition path (sheng_defconfig == the terminal nx729j_defconfig, all
+# union macros on). The dyld cache / libSystem.B.dylib live in the SystemOS
+# window, so without the union mount launchd fails with
+# "Library not loaded: /usr/lib/libSystem.B.dylib / no dyld cache".
+#
+# What stage 7 turns on (the four macros below):
+#
+#   OWNER_CACHE_MOUNT     resolve the SystemOS volume device via
+#                         native_verified_block_volume_device() and mount it
+#   OWNER_CACHE_STARTUP   run the cache carrier at boot
+#   OWNER_BOOT_MANIFEST   publish the boot manifest (native_verified_block_manifest_sha384)
+#   OWNER_UNION_SYSTEMOS  union-mount SystemOS onto "/" (MNT_UNION); requires
+#                         CONFIG_UNION_MOUNTS, which the iOS arm64 kernel enables
+#                         by default (config_union_mounts is part of FILESYS_BASE)
+#
+# Still off, and why:
+#
+#   NATIVE_VIRTIO_BLOCK   no virtio transport on this board (OWNER_ROOT_TRUST now
+#                         accepts NATIVE_UFS as the alternative)
+#   NATIVE_RAM_BLOCK      no RAM disk in this image
+#   SHENG_PMGR            needs kits/sheng/ShengPlatformPower.cpp (unpublished)
+#   BOOT_PROGRESS         needs kits/sheng/BootProgress.c (unpublished)
+#   OWNER_DATA_MOUNT      the scratch Data volume; depends on a RAM block, deferred
+#   NATIVE_LEGACY_DISPLAY / NATIVE_ADRENO
+#                         need an exact original framebuffer/GPU candidate
+#   SOURCE_MOCKFS         a QEMU test fixture, not a device component
+
+CONFIG_XNU_BUILD_ARCHIVES=y
+CONFIG_XNU_SOURCE_CORECRYPTO14=y
+CONFIG_XNU_SOURCE_PTHREAD=y
+CONFIG_XNU_ARM_DT_PLATFORM=y
+CONFIG_XNU_ARMCPU=y
+CONFIG_XNU_NATIVE_AES=y
+CONFIG_XNU_NATIVE_UFS=y
+CONFIG_XNU_NATIVE_ARCH_TIMER=y
+CONFIG_XNU_NATIVE_PAN=y
+CONFIG_XNU_DT_PANIC_REGION=y
+CONFIG_XNU_TRUST_CACHE_RUNTIME=y
+CONFIG_XNU_NATIVE_CS_HASH_CACHE=y
+
+# --- the owner-signed verified-root chain ---
+CONFIG_XNU_VERIFIED_ROOT_PROBE=y
+CONFIG_XNU_OWNER_ROOT_AUDIT=y
+CONFIG_XNU_OWNER_ROOT_TRUST=y
+# Stage 7: the SystemOS cache chain and boot manifest. The four
+# native_verified_block_* symbols are implemented in NativeUfs.cpp +
+# OwnerVerifiedBlock.c on this board (commit b03ea0fbe added
+# volume_device + manifest_sha384), so the UFS driver answers them instead of
+# NativeVirtioBlock.
+CONFIG_XNU_OWNER_CACHE_MOUNT=y
+CONFIG_XNU_OWNER_CACHE_STARTUP=y
+CONFIG_XNU_OWNER_BOOT_MANIFEST=y
+CONFIG_XNU_CRYPTO_BOOTSTRAP="prelinked"
+CONFIG_XNU_VERIFIED_ROOT_ARCHIVE="{tree}/build/verified-root-bundle/libVerifiedRootBundle.a"
+CONFIG_XNU_EXTRA_LD_ARCHIVES=""
+
+CONFIG_XNU_NATIVE_LEGACY_DISPLAY=n
+CONFIG_XNU_NATIVE_MOBILE_DISPLAY=n
+CONFIG_XNU_NATIVE_ADRENO=n
+CONFIG_XNU_NATIVE_VIRTIO_BLOCK=n
+CONFIG_XNU_NATIVE_RAM_BLOCK=n
+CONFIG_XNU_NATIVE_VIRTIO_CONSOLE=n
+CONFIG_XNU_NATIVE_OFFLINE_GPU=n
+CONFIG_XNU_SHENG_PMGR=n
+CONFIG_XNU_SOURCE_MOCKFS=n
+CONFIG_XNU_ARMVIRT_PLATFORM=n
+CONFIG_XNU_ZONE_PGZ_ALIGNMENT_PROBE=n
+CONFIG_XNU_BOOT_PROGRESS=n
+CONFIG_XNU_OWNER_UNION_SYSTEMOS=y
+CONFIG_XNU_OWNER_DATA_MOUNT=n
+CONFIG_XNU_OWNER_DATA_VOLUME_UUID="00000000-0000-0000-0000-000000000000"
