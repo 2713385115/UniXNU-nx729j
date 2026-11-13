@@ -1248,10 +1248,10 @@ static uint32_t boot_log_copy_msgbuf (uint8_t *out)
   return n;
 }
 
-// One block per phase of the writer's round, at a fixed LBA (the window's second-to-last block, so it sits beside the
-// quarantine record). A round that never finishes leaves the phase it reached on the medium, and the phases separate the
-// two failure modes that look identical from outside: no phase 3 means the thread never came back from the message-buffer
-// copy (no command was issued, the transport is innocent); phase 3 but no phase 4 means the message write itself stalled.
+// One block per failure point, at a fixed LBA (the window's second-to-last block, so it sits beside the quarantine
+// record). Written only when a round actually fails: the steady-state writer cannot afford six commands per round, and
+// the slot text already carries the stage the previous round reached. What is left on the medium is therefore the last
+// failure, with the phase naming the command that failed: 2 the slot write, 4 the message write, 5 the header write.
 static void bootLogPhase (uint32_t round, uint32_t phase, int ok)
 {
   // Written through the ordinary log-window writer: it is the path already open here, and the record has to use the same
@@ -1303,33 +1303,45 @@ static void bootLogThread (void *, wait_result_t)
   uint64_t f = 0; __asm__ volatile ("mrs %0, cntfrq_el0" : "=r" (f)); if (!f) f = 19200000;
   const uint64_t start = boot_log_ticks ();
   uint32_t errors = 0;
+  // The stage the previous round reached, carried into the next slot's text. The video console says the writer is
+  // alive; this says where it died, and unlike the phase record it survives on a round that writes nothing but its
+  // own slot, so a stall with no phase block still reads back as "the round before stopped at <stage>".
+  const char *stage = "start";
   for (;;) {
     const unsigned now = static_cast<unsigned> ((boot_log_ticks () - start) / f);
     int ok = 1;
-    // One text slot with a short header line plus the live transport snapshot, then the message buffer, then the header that
-    // makes both visible. The snapshot is what a stalled boot can still be read for: after a transfer poisons the host the
-    // medium takes no more writes, so the slot of the round before is the last context available.
+    // Two commands per round is the budget. Every command this thread issues competes for the single command slot with
+    // the thousand-plus writes per second launchd generates, so the writer is kept as light as the evidence allows:
+    // one text slot with the live transport snapshot, and the header that publishes it. Everything else is rate
+    // limited below.
     memset (buffer, 0, BootLogSlotBlocks * 4096);
     int used = snprintf (reinterpret_cast<char *> (buffer), BootLogSlotBlocks * 4096,
-                         "#slot %u t=%us tag=%s\n", h.slots_written, now, h.tag);
+                         "#slot %u t=%us tag=%s stage=%s\n", h.slots_written, now, h.tag, stage);
     if (used > 0 && static_cast<size_t> (used) < BootLogSlotBlocks * 4096)
       formatUfsRootDiagnostics (reinterpret_cast<char *> (buffer) + used,
                                 BootLogSlotBlocks * 4096 - static_cast<size_t> (used),
                                 gRootDiagnostic, "periodic snapshot", "UFS STATE");
-    bootLogPhase (h.rounds + 1, 1, ok);
-    ok &= native_ufs_log_write (BootLogSlotFirst + static_cast<uint64_t> (h.slots_written % slot_count) * BootLogSlotBlocks,
-                                BootLogSlotBlocks, buffer);
-    bootLogPhase (h.rounds + 1, 2, ok);
-    h.msg_bytes = boot_log_copy_msgbuf (buffer);
-    bootLogPhase (h.rounds + 1, 3, ok);
-    // The message block is the largest single transfer this driver issues (32 x 4096 = 128 KiB), and both stalled rounds
-    // died on it while the 8-block slot before it went through, so it goes out in 16 KiB pieces: a small command competes
-    // with the thousand-plus writes per second launchd generates, and the phase record still says exactly where a stall is.
-    for (uint32_t at = 0; at < BootLogMsgBlocks; at += 4) {
-      uint32_t n = BootLogMsgBlocks - at < 4 ? BootLogMsgBlocks - at : 4;
-      ok &= native_ufs_log_write (BootLogMsgFirst + at, n, buffer + static_cast<uint64_t> (at) * 4096);
+    stage = "slot";
+    if (!native_ufs_log_write (BootLogSlotFirst + static_cast<uint64_t> (h.slots_written % slot_count) * BootLogSlotBlocks,
+                               BootLogSlotBlocks, buffer)) {
+      ok = 0;
+      bootLogPhase (h.rounds + 1, 2, 0);
     }
-    bootLogPhase (h.rounds + 1, 4, ok);
+    // The message buffer is the heaviest thing here (128 KiB) and it barely changes between rounds: sampling it every
+    // fifth round costs a fifth of the traffic and still bounds the lost tail to ten seconds. It goes out in 32 KiB
+    // pieces: one 128 KiB command turned out to be the largest transfer the stalled rounds died on.
+    if (!(h.rounds % 5)) {
+      stage = "msg";
+      h.msg_bytes = boot_log_copy_msgbuf (buffer);
+      for (uint32_t at = 0; at < BootLogMsgBlocks; at += 8) {
+        uint32_t n = BootLogMsgBlocks - at < 8 ? BootLogMsgBlocks - at : 8;
+        if (!native_ufs_log_write (BootLogMsgFirst + at, n, buffer + static_cast<uint64_t> (at) * 4096)) {
+          ok = 0;
+          bootLogPhase (h.rounds + 1, 4, 0);
+          break;
+        }
+      }
+    }
     if (ok) ++h.slots_written; else ++h.write_errors;
     h.uptime_s = now;
     h.rounds++;
@@ -1337,10 +1349,20 @@ static void bootLogThread (void *, wait_result_t)
     if (!(h.rounds % 30)) h.gpt_last = native_ufs_store_gpt_check ();
     memset (buffer, 0, 4096);
     memcpy (buffer, &h, sizeof h);
-    ok &= native_ufs_log_write (0, 1, buffer);
-    bootLogPhase (h.rounds + 1, 5, ok);
-    ok &= native_ufs_log_sync ();
-    bootLogPhase (h.rounds + 1, 6, ok);
+    stage = "header";
+    if (!native_ufs_log_write (0, 1, buffer)) {
+      ok = 0;
+      bootLogPhase (h.rounds + 1, 5, 0);
+    }
+    // Flushing the whole LUN holds the command lock while everything else waits behind it, so it is rare and it no
+    // longer decides whether the round succeeded: the writes already returned, and this only asks the device to move
+    // them from its own cache to the medium. The previous build flushed every round with a 20 s timeout and a flush
+    // that never completed froze the whole storage stack for those twenty seconds.
+    if (!(h.rounds % 10)) {
+      stage = "sync";
+      native_ufs_log_sync ();
+    }
+    stage = "done";
     if (!ok) {
       ++errors;
       if (errors >= 3) {
