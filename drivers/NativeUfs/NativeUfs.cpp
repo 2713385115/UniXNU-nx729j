@@ -1243,20 +1243,24 @@ struct boot_log_header {
 
 static uint64_t boot_log_ticks (void) { uint64_t v; __asm__ volatile ("isb\n\tmrs %0, cntpct_el0" : "=r" (v)); return v; }
 
-// Copy the kernel message buffer oldest byte first into out (BootLogMsgBlocks blocks, NUL-padded); returns bytes copied.
-static uint32_t boot_log_copy_msgbuf (uint8_t *out)
+// The last `bytes` of the ring, oldest first. Only the tail is ever needed to explain a stall, and copying 128 KiB per
+// round for the whole buffer is what the writer paid for a text region whose first half never changes.
+static uint32_t boot_log_copy_tail (uint8_t *out, uint32_t bytes)
 {
-  memset (out, 0, BootLogMsgBlocks * 4096);
+  memset (out, 0, bytes);
   struct boot_log_msgbuf *m = msgbufp;
   if (!m || !m->msg_bufc || m->msg_size <= 0) return 0;
-  int size = m->msg_size, x = m->msg_bufx;
+  const int size = m->msg_size;
+  int x = m->msg_bufx;
   if (x < 0 || x >= size) x = 0;
-  uint32_t n = 0;
-  for (int i = 0; i < size && n < BootLogMsgBlocks * 4096; ++i) {
-    char c = m->msg_bufc[(x + i) % size];
-    if (c) out[n++] = static_cast<uint8_t> (c);
+  const uint32_t want = static_cast<uint32_t> (size) < bytes ? static_cast<uint32_t> (size) : bytes;
+  int from = x - static_cast<int> (want);
+  while (from < 0) from += size;
+  for (uint32_t i = 0; i < want; ++i) {
+    char c = m->msg_bufc[(from + static_cast<int> (i)) % size];
+    if (c) out[i] = static_cast<uint8_t> (c);
   }
-  return n;
+  return want;
 }
 
 // One block per failure point, at a fixed LBA (the window's second-to-last block, so it sits beside the quarantine
@@ -1369,21 +1373,21 @@ static void bootLogThread (void *, wait_result_t)
       bootLogPhase (h.rounds + 1, 2, 0);
     }
     bootLogPublish (h, 2, rnd, now);
-    // The message buffer is the heaviest thing here, and it used to be sampled every fifth round to save traffic. That
-    // sampling is what lost the last two seconds of every stalled boot: the window said "round 6" while the text that
-    // explains the stall had never been copied. It now goes out every round, in 32 KiB pieces, and the extra four
-    // commands per two seconds are nothing next to the thousand launchd issues.
+    // Four 32 KiB writes into the text region was the single heaviest thing this thread did, and every stalled boot so
+    // far stopped inside a round within two milliseconds of this point (phase 3 published, phase 5 never) -- while the
+    // round itself took one millisecond, so it was never starved. That makes the burst the prime suspect, and the only
+    // way to settle it is to stop doing it: one 4 KiB block, the tail of the ring, into its own block at the end of the
+    // window. Everything else about the round is unchanged.
     {
       stage = "msg";
-      h.msg_bytes = boot_log_copy_msgbuf (buffer);
+      static uint8_t tail[4096];
+      h.msg_bytes = boot_log_copy_tail (tail, sizeof tail);
       bootLogPublish (h, 3, rnd, now);
-      for (uint32_t at = 0; at < BootLogMsgBlocks; at += 8) {
-        uint32_t n = BootLogMsgBlocks - at < 8 ? BootLogMsgBlocks - at : 8;
-        if (!native_ufs_log_write (BootLogMsgFirst + at, n, buffer + static_cast<uint64_t> (at) * 4096)) {
-          ok = 0;
-          bootLogPhase (h.rounds + 1, 4, 0);
-          break;
-        }
+      // The last block of the text region: it already sits inside the block range the reader pulls in one go, so the
+      // tail shows up as the kernel log with no reader change.
+      if (!native_ufs_log_write (BootLogMsgFirst + BootLogMsgBlocks - 1, 1, tail)) {
+        ok = 0;
+        bootLogPhase (h.rounds + 1, 4, 0);
       }
     }
     if (ok) ++h.slots_written; else ++h.write_errors;
