@@ -1315,8 +1315,13 @@ static void bootLogThread (void *, wait_result_t)
     // one text slot with the live transport snapshot, and the header that publishes it. Everything else is rate
     // limited below.
     memset (buffer, 0, BootLogSlotBlocks * 4096);
+    // mat is the kernel's own time base and t is the raw counter: they are read from different clocks, and a boot that
+    // stops moving is far more often a time base that stopped than a CPU that did. host=poisoned,ready records whether
+    // the transport gave up before the writer did.
     int used = snprintf (reinterpret_cast<char *> (buffer), BootLogSlotBlocks * 4096,
-                         "#slot %u t=%us tag=%s stage=%s\n", h.slots_written, now, h.tag, stage);
+                         "#slot %u t=%us tag=%s stage=%s mat=%llu host=%d%d\n",
+                         h.slots_written, now, h.tag, stage,
+                         (unsigned long long) mach_absolute_time (), gHost.poisoned, gHost.ready);
     if (used > 0 && static_cast<size_t> (used) < BootLogSlotBlocks * 4096)
       formatUfsRootDiagnostics (reinterpret_cast<char *> (buffer) + used,
                                 BootLogSlotBlocks * 4096 - static_cast<size_t> (used),
@@ -1376,7 +1381,10 @@ static void bootLogThread (void *, wait_result_t)
     // One line per round on the frame buffer: the round that never prints is the one that stalled, and the heartbeat above
     // then says whether it stalled inside a transfer.
     IOLog ("NativeUfs: log round %u t=%us ok %d errs %u\n", h.rounds, h.uptime_s, ok, errors);
-    IOSleep (BootLogPeriodMs);
+    // Two seconds while the boot is still in its first minute, where every round is evidence; ten after that, where the
+    // only thing worth knowing is whether the writer is still alive. The first minute is what the stalled boots lost,
+    // and the long tail is what makes the writer itself part of the load it is trying to observe.
+    IOSleep (h.uptime_s < 60 ? BootLogPeriodMs : 10000);
   }
 }
 
