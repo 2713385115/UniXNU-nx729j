@@ -1251,6 +1251,8 @@ static void bootLogThread (void *, wait_result_t)
   uint8_t *buffer = static_cast<uint8_t *> (IOMallocAligned (BootLogMsgBlocks * 4096, 4096));
   if (!buffer) return;
   const uint32_t slot_count = static_cast<uint32_t> ((blocks - BootLogSlotFirst) / BootLogSlotBlocks);
+  IOLog ("NativeUfs: boot log window %llu+%llu blocks, %u slots\n",
+         (unsigned long long) first, (unsigned long long) blocks, slot_count);
   struct boot_log_header h;
   memset (&h, 0, sizeof h);
   memcpy (h.magic, "SHLOG001", 8);
@@ -1297,7 +1299,16 @@ static void bootLogThread (void *, wait_result_t)
     memcpy (buffer, &h, sizeof h);
     ok &= native_ufs_log_write (0, 1, buffer);
     ok &= native_ufs_log_sync ();
-    if (!ok) { ++errors; if (errors >= 3) return; } else errors = 0;
+    if (!ok) {
+      ++errors;
+      if (errors >= 3) {
+        IOLog ("NativeUfs: boot log writer stopped after %u consecutive failures\n", errors);
+        return;
+      }
+    } else errors = 0;
+    // One line per round on the frame buffer: the round that never prints is the one that stalled, and the heartbeat above
+    // then says whether it stalled inside a transfer.
+    IOLog ("NativeUfs: log round %u t=%us ok %d errs %u\n", h.rounds, h.uptime_s, ok, errors);
     IOSleep (BootLogPeriodMs);
   }
 }
