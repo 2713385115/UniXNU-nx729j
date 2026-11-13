@@ -1,0 +1,74 @@
+# Kernel configuration of the nx729j owner-root image, stage 7 second half:
+# the writable scratch Data volume.
+#
+# This is nx729j_union_defconfig (the SystemOS cryptex union-mounted onto "/",
+# which already reaches launchd) plus the three switches the Data volume needs.
+# Without them /private/var is read-only, so launchd's fixup-mobile-tmp fails,
+# tzinit exits 30, its coredump cannot be written, and the debugger xcall
+# deadlocks the kernel right after userland had started.
+#
+#   NATIVE_RAM_BLOCK       present the payload's packed seed as a RAM-backed
+#                          block device (NativeRamBlock reads /chosen/memory-map
+#                          PackedRAMDisk, which DarwinBoot fills from the initrd)
+#   OWNER_DATA_MOUNT       mount that volume on /private/var before launchd
+#   OWNER_DATA_VOLUME_UUID the APFS *volume* UUID of the seed, which is the
+#                          identity APFS publishes on the IOMedia that
+#                          native_ram_block_volume_seed() matches
+#
+# The seed is work/ci-u055/scratch-data.img (DBRDISK1, 32 MiB logical, carried in
+# the payload as EFI/UniXNU/Payloads/scratch-data.img and named by the entry's
+# initrd key). Its volume UUID was read from the APSB record at +0xF0; the
+# container UUID in NXSB (CA60F50D-...) is not the one to put here.
+#
+# Still off, and why:
+#
+#   NATIVE_VIRTIO_BLOCK   no virtio transport on this board
+#   SHENG_PMGR            needs kits/sheng/ShengPlatformPower.cpp (unpublished)
+#   BOOT_PROGRESS         needs kits/sheng/BootProgress.c (unpublished)
+#   NATIVE_LEGACY_DISPLAY / NATIVE_ADRENO
+#                         need an exact original framebuffer/GPU candidate
+#   SOURCE_MOCKFS         a QEMU test fixture, not a device component
+CONFIG_XNU_BUILD_ARCHIVES=y
+CONFIG_XNU_SOURCE_CORECRYPTO14=y
+CONFIG_XNU_SOURCE_PTHREAD=y
+CONFIG_XNU_ARM_DT_PLATFORM=y
+CONFIG_XNU_ARMCPU=y
+CONFIG_XNU_NATIVE_AES=y
+CONFIG_XNU_NATIVE_UFS=y
+CONFIG_XNU_NATIVE_ARCH_TIMER=y
+CONFIG_XNU_NATIVE_PAN=y
+CONFIG_XNU_DT_PANIC_REGION=y
+CONFIG_XNU_TRUST_CACHE_RUNTIME=y
+CONFIG_XNU_NATIVE_CS_HASH_CACHE=y
+
+# --- the owner-signed verified-root chain ---
+CONFIG_XNU_VERIFIED_ROOT_PROBE=y
+CONFIG_XNU_OWNER_ROOT_AUDIT=y
+CONFIG_XNU_OWNER_ROOT_TRUST=y
+# Stage 7: the SystemOS cache chain and boot manifest. The four
+# native_verified_block_* symbols are implemented in NativeUfs.cpp +
+# OwnerVerifiedBlock.c on this board (commit b03ea0fbe added
+# volume_device + manifest_sha384), so the UFS driver answers them instead of
+# NativeVirtioBlock.
+CONFIG_XNU_OWNER_CACHE_MOUNT=y
+CONFIG_XNU_OWNER_CACHE_STARTUP=y
+CONFIG_XNU_OWNER_BOOT_MANIFEST=y
+CONFIG_XNU_CRYPTO_BOOTSTRAP="prelinked"
+CONFIG_XNU_VERIFIED_ROOT_ARCHIVE="{tree}/build/verified-root-bundle/libVerifiedRootBundle.a"
+CONFIG_XNU_EXTRA_LD_ARCHIVES=""
+
+CONFIG_XNU_NATIVE_LEGACY_DISPLAY=n
+CONFIG_XNU_NATIVE_MOBILE_DISPLAY=n
+CONFIG_XNU_NATIVE_ADRENO=n
+CONFIG_XNU_NATIVE_VIRTIO_BLOCK=n
+CONFIG_XNU_NATIVE_RAM_BLOCK=y
+CONFIG_XNU_NATIVE_VIRTIO_CONSOLE=n
+CONFIG_XNU_NATIVE_OFFLINE_GPU=n
+CONFIG_XNU_SHENG_PMGR=n
+CONFIG_XNU_SOURCE_MOCKFS=n
+CONFIG_XNU_ARMVIRT_PLATFORM=n
+CONFIG_XNU_ZONE_PGZ_ALIGNMENT_PROBE=n
+CONFIG_XNU_BOOT_PROGRESS=n
+CONFIG_XNU_OWNER_UNION_SYSTEMOS=y
+CONFIG_XNU_OWNER_DATA_MOUNT=y
+CONFIG_XNU_OWNER_DATA_VOLUME_UUID="C76C5309-AEA7-4AF7-AAD5-9785B87F4822"
