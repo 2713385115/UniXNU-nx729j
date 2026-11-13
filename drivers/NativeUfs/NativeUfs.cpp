@@ -1468,11 +1468,61 @@ static void rootFailureRecord (const char *reason)
   native_ufs_log_sync ();
 }
 
+// A liveness marker that owes nothing to the storage stack.
+//
+// Every stalled boot ends the same way: the log writer stops in the middle of a round and nothing else ever prints.
+// That is exactly what "the machine froze" and "one storage command never came back, and everything queueing behind it
+// stopped too" look like from the outside, and nothing on the disk can tell them apart, because both leave the disk
+// untouched from that moment on. The screen is the only channel left that no disk I/O can block, so one small square
+// advancing along the bottom scan line once per second turns the question into a photo: a square that moved is a
+// kernel that ran. The strip it paints is below the text area, so no glyph the console drew is ever covered, and it
+// starts at pixel 16 to leave the console's own cursor block (the first three pixels of that scan line) alone.
+extern "C" unsigned char vinfo[];
+static void bootLivenessThread (void *, wait_result_t)
+{
+  thread_set_thread_name (current_thread (), "boot_live");
+  uint32_t n = 0;
+  for (;;) {
+    const uint32_t height   = *(volatile uint32_t *) (vinfo + 0);
+    const uint32_t width    = *(volatile uint32_t *) (vinfo + 4);
+    const uint32_t depth    = *(volatile uint32_t *) (vinfo + 8);
+    const uint32_t rowbytes = *(volatile uint32_t *) (vinfo + 12);
+    const uint64_t base     = *(volatile uint64_t *) (vinfo + 16);
+    // Same acceptance test the console applies: a 32-bit direct-colour buffer whose rows are word aligned. Anything
+    // else is left untouched rather than poked at.
+    if (base && !(base & 3) && !(rowbytes & 3) && depth == 32 && width >= 256 && height >= 32) {
+      const uint32_t left = 16, side = 10, step = 16;
+      const uint32_t span = (width - left - side) / step;
+      if (span > 1) {
+        const uint32_t at = left + (n % span) * step;
+        const uint32_t words = width / 4;
+        uint8_t *fb = (uint8_t *) (uintptr_t) base;
+        for (uint32_t row = 0; row < side; ++row) {
+          volatile uint32_t *p = (volatile uint32_t *) (fb + (uint64_t) (height - 1 - row) * rowbytes);
+          for (uint32_t i = left; i < words; ++i) p[i] = 0;
+          for (uint32_t i = at; i < at + side && i < words; ++i) p[i] = 0xffffffffu;
+        }
+        ++n;
+      }
+    }
+    IOSleep (1000);
+  }
+}
+
 // Start the boot log writer once root layout is available and sheng-log=1. Called from startRoot as soon as the
 // geometry is known, so the periodic slot reports a later failure instead of nothing at all.
 static int gBootLogStarted = 0;
+static int gLivenessStarted = 0;
 static void native_ufs_start_log (void)
 {
+  // The marker is started before the log gate on purpose: it must run even for a build that carries no log window,
+  // because the question it answers is about the kernel, not about the log.
+  if (!gLivenessStarted) {
+    gLivenessStarted = 1;
+    thread_t live = nullptr;
+    if (kernel_thread_start (bootLivenessThread, nullptr, &live) == KERN_SUCCESS) thread_deallocate (live);
+    else gLivenessStarted = 0;
+  }
   if (gBootLogStarted) return;
   gBootLogStarted = 1;
   uint32_t mode = 0;
