@@ -1177,6 +1177,28 @@ extern "C" int native_ufs_log_write (uint64_t rel, uint32_t blocks, const void *
   return 1;
 }
 
+// Same write, but never waits for the command lock. The thread holding it can be parked on a doorbell that never clears,
+// and a diagnostic writer queued behind that thread reports the whole machine as dead: no new round, no new command
+// count, no error. Skipping the round instead keeps the writer alive and turns the frozen command counter into a
+// measurement - the slot it does manage to write carries the lba and opcode hostSubmit filled in for the stuck command.
+extern "C" int native_ufs_log_write_try (uint64_t rel, uint32_t blocks, const void *src)
+{
+  if (!gLogRegionBlocks || !src || !blocks || rel >= gLogRegionBlocks || blocks > gLogRegionBlocks - rel) return 0;
+  if (!gHost.lock || !gHost.ready) return 0;
+  if (!IOLockTryLock (gHost.lock)) return 0;
+  int ok = 1;
+  ++gLogWriteCalls;
+  while (blocks) {
+    uint32_t chunk = blocks > kDataMax / 4096 ? static_cast<uint32_t> (kDataMax / 4096) : blocks;
+    if (hostWrite4kLocked (0, gLogRegionFirst + rel, chunk, src, false, 8000000) != kIOReturnSuccess) { ok = 0; break; }
+    src = static_cast<const uint8_t *> (src) + chunk * 4096ULL;
+    rel += chunk;
+    blocks -= chunk;
+  }
+  IOLockUnlock (gHost.lock);
+  return ok;
+}
+
 // The export region below the log window: its size in blocks once the log is open, else 0; writes at a block offset inside it.
 extern "C" uint64_t native_ufs_export_blocks (void) { return gLogRegionBlocks ? kExportBlocks : 0; }
 
@@ -1280,7 +1302,7 @@ static void bootLogPhase (uint32_t round, uint32_t phase, int ok)
             (unsigned long long) gStoreWriteCalls, (unsigned long long) gStoreWriteFails,
             (unsigned long long) gLogWriteCalls, (unsigned long long) gSyncCalls,
             (unsigned long long) gSyncFails);
-  native_ufs_log_write (gLogRegionBlocks - 2, 1, rec);
+  native_ufs_log_write_try (gLogRegionBlocks - 2, 1, rec);
 }
 
 // Publish the header block at the current step of the round. One 4 KiB write at LBA 0, the same block the end of the
@@ -1302,7 +1324,7 @@ static int bootLogPublish (struct boot_log_header &h, uint32_t phase, uint32_t r
   h.msg_lap = msgbufp ? static_cast<uint64_t> (msgbufp->msg_bufx) : 0;
   memset (blk, 0, sizeof blk);
   memcpy (blk, &h, sizeof h);
-  return native_ufs_log_write (0, 1, blk) ? 1 : 0;
+  return native_ufs_log_write_try (0, 1, blk) ? 1 : 0;
 }
 
 static void bootLogThread (void *, wait_result_t)
@@ -1378,8 +1400,8 @@ static void bootLogThread (void *, wait_result_t)
                                 BootLogSlotBlocks * 4096 - static_cast<size_t> (used),
                                 gRootDiagnostic, "periodic snapshot", "UFS STATE");
     stage = "slot";
-    if (!native_ufs_log_write (BootLogSlotFirst + static_cast<uint64_t> (h.slots_written % slot_count) * BootLogSlotBlocks,
-                               BootLogSlotBlocks, buffer)) {
+    if (!native_ufs_log_write_try (BootLogSlotFirst + static_cast<uint64_t> (h.slots_written % slot_count) * BootLogSlotBlocks,
+                                   BootLogSlotBlocks, buffer)) {
       ok = 0;
       bootLogPhase (h.rounds + 1, 2, 0);
     }
@@ -1396,7 +1418,7 @@ static void bootLogThread (void *, wait_result_t)
       bootLogPublish (h, 3, rnd, now);
       // The last block of the text region: it already sits inside the block range the reader pulls in one go, so the
       // tail shows up as the kernel log with no reader change.
-      if (!native_ufs_log_write (BootLogMsgFirst + BootLogMsgBlocks - 1, 1, tail)) {
+      if (!native_ufs_log_write_try (BootLogMsgFirst + BootLogMsgBlocks - 1, 1, tail)) {
         ok = 0;
         bootLogPhase (h.rounds + 1, 4, 0);
       }
@@ -1494,6 +1516,8 @@ static void bootLivenessThread (void *, wait_result_t)
 {
   thread_set_thread_name (current_thread (), "boot_live");
   uint32_t n = 0;
+  uint64_t stallCommand = 0;
+  unsigned stallTicks = 0;
   for (;;) {
     const uint32_t height   = *(volatile uint32_t *) (vinfo + 0);
     const uint32_t width    = *(volatile uint32_t *) (vinfo + 4);
@@ -1516,6 +1540,24 @@ static void bootLivenessThread (void *, wait_result_t)
         }
         ++n;
       }
+    }
+    // The frame buffer is the only channel that survives a command path that stopped answering: no command completion,
+    // no timeout, no storage write. Report where the last submission stopped before touching any register, because the
+    // register read is the thing most likely to hang too.
+    if (gSubmitCommand && gSubmitStage >= 1 && gSubmitStage <= 6) {
+      if (gSubmitCommand == stallCommand) {
+        if (++stallTicks == 3) {
+          IOLog ("NativeUfs: STALL stage=%u cmd=%llu lba=%llx op %02x dir %u bytes %u\n",
+                 gSubmitStage, (unsigned long long) gSubmitCommand,
+                 (unsigned long long) gRootDiagnostic.lba, gRootDiagnostic.opcode,
+                 gSubmitDirection, gSubmitBytes);
+        }
+      } else {
+        stallCommand = gSubmitCommand;
+        stallTicks = 0;
+      }
+    } else {
+      stallTicks = 0;
     }
     IOSleep (1000);
   }
