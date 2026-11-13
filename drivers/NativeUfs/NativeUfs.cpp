@@ -1302,8 +1302,11 @@ static void bootLogThread (void *, wait_result_t)
     if (!ok) {
       ++errors;
       if (errors >= 3) {
-        IOLog ("NativeUfs: boot log writer stopped after %u consecutive failures\n", errors);
-        return;
+        // Keep the writer alive. A dropped command no longer quarantines the transport, so the next round can succeed;
+        // and a writer that exits looks exactly like a boot that froze, which is what every stalled window showed.
+        IOLog ("NativeUfs: boot log writer backing off after %u consecutive failures\n", errors);
+        errors = 0;
+        IOSleep (1000);
       }
     } else errors = 0;
     // One line per round on the frame buffer: the round that never prints is the one that stalled, and the heartbeat above
