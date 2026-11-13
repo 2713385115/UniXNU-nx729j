@@ -355,6 +355,11 @@ static bool hostRecordFailure (UfsTransferEnd end, uint32_t dataBytes, uint32_t 
                                const UfsTransferPoll &state, uint32_t doorbell, uint32_t interrupt)
 {
   if (gRecordingFailure || !gLogOpen || gLogBlocks <= 2) return false;
+  // A doorbell that is still set is exactly the case that quarantines the transport, and it is also the one case this
+  // record cannot escape: hostClearUcd rejects it before the command area is touched, so the attempt would only burn
+  // its timeout and then quarantine from inside the recorder. Give up immediately instead; the phase record written
+  // before the stall is what survives.
+  if (read32 (gHost.hc, 0x58) & 1U) return false;
   gRecordingFailure = true;
   static uint8_t record[4096];
   memset (record, 0, sizeof record);
@@ -375,13 +380,17 @@ static bool hostRecordFailure (UfsTransferEnd end, uint32_t dataBytes, uint32_t 
 }
 
 // SYNCHRONIZE CACHE(10) for the whole LUN: everything written so far is on the medium when this returns.
+// The timeout is deliberately short. This call holds gHost.lock for its whole duration, so a flush the device never
+// completes does not just fail this one caller: every other storage thread queues behind the lock and the boot stops
+// looking like a stalled writer and starts looking like a frozen machine. Three seconds still covers a full flush of
+// this device (a checkpoint commit is milliseconds) and bounds the damage of one that never returns.
 static IOReturn hostSyncCache (void)
 {
   if (!gHost.ready || (!gStoreOpen && !gLogOpen)) return kIOReturnNotReady;
   IOLockLock (gHost.lock);
   uint8_t cdb[10] = { 0x35 };
   uint32_t scsi = 0;
-  IOReturn status = hostScsiDir (0, cdb, 10, 0, 0, 20000000, &scsi);
+  IOReturn status = hostScsiDir (0, cdb, 10, 0, 0, 3000000, &scsi);
   IOLockUnlock (gHost.lock);
   return status;
 }
