@@ -93,7 +93,12 @@ if component == 'NativeAdreno':
 result = subprocess.run(command, cwd=record['directory'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 (out / 'compile.log').write_text(result.stdout)
 if result.returncode:
-    raise SystemExit(result.stdout[-3500:])
+    # The tail alone hides the first diagnostics of a long compile (a 3500-character window ended up starting in the middle
+    # of a warning, so the five errors above it were lost). Every error line is printed first, then the tail for context.
+    lines = result.stdout.splitlines()
+    errors = [line for line in lines if ' error: ' in line or line.lstrip().startswith('error:')]
+    head = '\n'.join(errors[:40])
+    raise SystemExit((head + '\n--- tail ---\n' if head else '') + result.stdout[-3500:])
 data = destination.read_bytes()
 magic, cpu, subtype, kind, count, size = struct.unpack_from('<6I', data)
 if (magic, cpu, subtype, kind) != (0xfeedfacf, 0x100000c, 0, 1):
