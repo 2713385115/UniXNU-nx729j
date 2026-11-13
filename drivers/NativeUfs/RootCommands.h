@@ -366,6 +366,20 @@ static IOReturn hostWrite4k (uint8_t lun, uint64_t lba, uint32_t blocks, const v
   return status;
 }
 
+// Whether another thread holds the command lock. A diagnostic write that queues behind a long page-in looks exactly
+// like a machine that lost every CPU: the writer stops mid-round, both of its witnesses (the command counter and the
+// message cursor) are sampled by that same writer, and nothing is ever recorded. Probing first lets the writer skip a
+// round instead of joining the queue, so its own liveness stops depending on the data path it is watching.
+static bool hostCommandBusy (void)
+{
+  if (!gHost.lock || !gHost.ready) return true;
+  if (IOLockTryLock (gHost.lock)) {
+    IOLockUnlock (gHost.lock);
+    return false;
+  }
+  return true;
+}
+
 // One block, written into the last slot of the log window the moment a transfer is quarantined. This is the only channel
 // that survives the quarantine: the periodic writer's header write needs the same command path and is refused from then
 // on, which is why every stalled boot so far came back as a frozen round counter with no error recorded. The slot is the
