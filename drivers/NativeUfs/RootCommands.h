@@ -54,6 +54,17 @@ static bool hostRecordFailure (UfsTransferEnd end, uint32_t dataBytes, uint32_t 
 // the UTRD data direction (0 none, 1 from host, 2 to host). Direction 1 is reachable only through hostWrite4k, which
 // confines it to the persistent store window. Returns the overall command status
 // (0 = completed) in *ocs. Timeout/fatal status quarantines the allocation.
+// Where the last submission got to, in the only units that survive a bus that stops answering: a plain memory write.
+// 0 idle, 1 the command was counted, 2 the request descriptor is built, 3 the cache flush returned, 4 the completion bit
+// was acknowledged, 5 the doorbell was rung, 6 the poll loop is running, 7 done. A thread that never moves off 4 died
+// inside a register write; one parked at 6 is waiting for a completion. Reading a register to decide which would hang
+// on the same bus, so the liveness thread prints this number before it touches any MMIO.
+static volatile uint32_t gSubmitStage;
+static volatile uint64_t gSubmitCommand;
+static volatile uint64_t gSubmitMat;
+static volatile uint32_t gSubmitBytes;
+static volatile uint32_t gSubmitDirection;
+
 static IOReturn hostSubmit (uint32_t direction, uint32_t dataBytes, uint32_t timeoutUs, uint32_t *ocs)
 {
   *ocs = 15;
@@ -79,6 +90,11 @@ static IOReturn hostSubmit (uint32_t direction, uint32_t dataBytes, uint32_t tim
     return recordTransport (kIOReturnIOError, *ocs);
   }
   gRootDiagnostic.command++;
+  gSubmitStage = 1;
+  gSubmitCommand = gRootDiagnostic.command;
+  gSubmitMat = mach_absolute_time ();
+  gSubmitBytes = dataBytes;
+  gSubmitDirection = direction;
   gRootDiagnostic.type = gHost.virt[kUcdOffset];
   gRootDiagnostic.lun = gHost.virt[kUcdOffset + 2];
   gRootDiagnostic.opcode = gHost.virt[kUcdOffset + (gRootDiagnostic.type == 1 ? 16 : 12)];
@@ -115,13 +131,19 @@ static IOReturn hostSubmit (uint32_t direction, uint32_t dataBytes, uint32_t tim
     prd[2] = 0;
     prd[3] = dataBytes - 1;
   }
+  gSubmitStage = 2;
   cacheCivac (gHost.virt, kDataOffset + dataBytes);
+  gSubmitStage = 3;
   hostWrite (0x20, 1);  // Acknowledge completion only; preserve error evidence.
+  gSubmitStage = 4;
   HardwareTransferPort port;
   clock_interval_to_deadline (timeoutUs, kMicrosecondScale, &port.deadline);
   hostWrite (0x58, 1);
+  gSubmitStage = 5;
   UfsTransferPoll state;
+  gSubmitStage = 6;
   UfsTransferEnd end = pollUfsTransfer (port, state);
+  gSubmitStage = 7;
   gRootDiagnostic.polls = state.polls;
   gRootDiagnostic.dbSeen = state.doorbellSeen;
   gRootDiagnostic.isSeen = state.interruptSeen;
@@ -221,6 +243,7 @@ static IOReturn hostNop (void)
 // IOLock parks the thread forever with the lock held. That is precisely how every silent stall looked from outside - no
 // panic, no error record, the periodic writer and every APFS thread stopped at the same instant.
 static bool gInsideLockedTransfer = false;
+
 
 // Run a SCSI command. direction 0: no data, 1: host -> device from the DMA data area (already filled by the caller), 2: device
 // -> host into the DMA data area. Callers other than hostWrite4k never pass direction 1.
