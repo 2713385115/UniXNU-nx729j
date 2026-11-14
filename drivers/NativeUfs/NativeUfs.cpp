@@ -1580,7 +1580,7 @@ static void bootHeartbeatThread (void *, wait_result_t)
   uint8_t *block = static_cast<uint8_t *> (IOMallocAligned (4096, 4096));
   if (!block) return;
   for (;;) {
-    ++gBeatTicks;
+    gBeatTicks = gBeatTicks + 1;
     if (gBeatBlock) {
       memset (block, 0, 4096);
       snprintf (reinterpret_cast<char *> (block), 4096, "HB beat=%u round=%u mat=%llu stage=%u\n",
