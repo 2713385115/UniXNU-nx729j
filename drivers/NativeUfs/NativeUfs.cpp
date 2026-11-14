@@ -1362,6 +1362,8 @@ static int bootLogPublish (struct boot_log_header &h, uint32_t phase, uint32_t r
 static volatile uint32_t gBeatTicks = 0;
 static volatile uint32_t gLogRoundsSeen = 0;
 static uint64_t gBeatBlock = 0;
+static uint64_t gProbeBlock = 0;
+static OSSharedPtr<IOMemoryMap> gProbeGccKeep;
 static int gBeatStarted = 0;
 
 static void bootLogThread (void *, wait_result_t)
@@ -1392,6 +1394,10 @@ static void bootLogThread (void *, wait_result_t)
   // Very last block of the window: past every slot the writer tiles and past the failure record at blocks-2, so a
   // heartbeat never clobbers evidence.
   if (blocks > BootLogSlotFirst + 2 * BootLogSlotBlocks) gBeatBlock = blocks - 1;
+  // Two blocks below that: the same heartbeat, written only after the bus status registers have been read. Keeping
+  // them apart is the whole point - if the register read is what hangs, blocks-1 still advances and proves the kernel
+  // was running, while blocks-3 stops one beat earlier and shows the last bus state that could be sampled.
+  if (blocks > BootLogSlotFirst + 4 * BootLogSlotBlocks) gProbeBlock = blocks - 3;
   h.msg_first = BootLogMsgFirst;
   h.msg_blocks = BootLogMsgBlocks;
   h.slot_first = BootLogSlotFirst;
@@ -1606,14 +1612,35 @@ static void bootHeartbeatThread (void *, wait_result_t)
 {
   thread_set_thread_name (current_thread (), "boot_beat");
   uint8_t *block = static_cast<uint8_t *> (IOMallocAligned (4096, 4096));
-  if (!block) return;
+  uint8_t *probe = static_cast<uint8_t *> (IOMallocAligned (4096, 4096));
+  if (!block || !probe) return;
+  // Mapped once, kept for the whole boot: the UFS power domain descriptor in the GCC is the only thing that can explain
+  // a register access that never returns - if the domain has been switched off, every MMIO to the host controller waits
+  // on a bus that will never answer.
+  uintptr_t gcc = mapPhys (GCC_BASE + 0x77000, 0x1000, gProbeGccKeep);
   for (;;) {
     gBeatTicks = gBeatTicks + 1;
+    // Block one touches nothing but the clock: no register reads, no locks that a stalled command can hold. Whatever
+    // happens later, this line landing on the medium proves the kernel was still scheduling.
     if (gBeatBlock) {
       memset (block, 0, 4096);
       snprintf (reinterpret_cast<char *> (block), 4096, "HB beat=%u round=%u mat=%llu stage=%u\n",
                 gBeatTicks, gLogRoundsSeen, (unsigned long long) mach_absolute_time (), gSubmitStage);
       native_ufs_log_write_try (gBeatBlock, 1, block);
+    }
+    // Block two samples the two buses that are upstream of the controller: the GCC power/clock state and the SMMU fault
+    // registers. Neither goes through the UFS data path, so a frozen boot leaves a readable answer here instead of the
+    // silence every previous version ended on.
+    if (gProbeBlock && gcc) {
+      uint32_t gdscr = read32 (gcc, GCC_UFS_PHY_GDSCR - 0x77000);
+      uint32_t axi = read32 (gcc, GCC_UFS_PHY_AXI_ENABLE - 0x77000);
+      uint32_t smmuFault = gHost.smmu ? read32 (gHost.smmu, 0x1800) : 0;
+      uint32_t smmuAddr = gHost.smmu ? read32 (gHost.smmu, 0x1804) : 0;
+      memset (probe, 0, 4096);
+      snprintf (reinterpret_cast<char *> (probe), 4096, "PB beat=%u round=%u mat=%llu gdscr=%08x axi=%08x smmu=%08x/%08x ready=%u\n",
+                gBeatTicks, gLogRoundsSeen, (unsigned long long) mach_absolute_time (),
+                gdscr, axi, smmuFault, smmuAddr, gHost.ready ? 1U : 0U);
+      native_ufs_log_write_try (gProbeBlock, 1, probe);
     }
     IOSleep (2000);
   }
