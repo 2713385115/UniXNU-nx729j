@@ -99,6 +99,10 @@ def main():
                         help='Explicit DarwinBoot contiguous window request, 256 MiB..8 GiB in 2 MiB steps')
     parser.add_argument('--root-match-volume-uuid', default=None,
                         help='/chosen/root-matching: select the root by the UUID of an IOMedia (the standard source mechanism)')
+    parser.add_argument('--boot-manifest-hash', default=None,
+                        help='/chosen/boot-manifest-hash: the 48-byte (96 hex digit) boot-set identity that launchd\'s '
+                             'mount(8) phase 1 names /private/preboot/<hash> from. Without it that first boot task '
+                             'exits 66 and the userland boot chain stops there (asteroids/uke pass one for the same reason)')
     parser.add_argument('--unique-chip-id', type=lambda value: int(value, 16), default=None,
                         help='/chosen/unique-chip-id (8 bytes) and --chip-id (4 bytes) seed XNU IOPlatformUUID; software identity seeds, not Apple silicon IDs')
     parser.add_argument('--chip-id', type=lambda value: int(value, 16), default=None)
@@ -120,6 +124,10 @@ def main():
     parser.add_argument('--text-fixup', action='append', default=[],
                         help='/chosen/text-fixups entry <file name>,<file offset>,<original>,<replacement> for the kernel\'s signed-text fixups')
     args = parser.parse_args()
+    if args.boot_manifest_hash is not None:/n        try:/n            digest = bytes.fromhex(args.boot_manifest_hash)
+        except ValueError:/n            parser.error('--boot-manifest-hash must be 96 hex digits (48 bytes, sha2-384)')
+        if len(digest) != 48:
+            parser.error('--boot-manifest-hash must be 96 hex digits (48 bytes, sha2-384)')
     if (args.unique_chip_id is None) != (args.chip_id is None):
         parser.error('--unique-chip-id and --chip-id must be supplied together')
     if args.unique_chip_id is not None and not (0 < args.unique_chip_id < 1 << 64 and 0 < args.chip_id < 1 << 32):
@@ -179,6 +187,8 @@ def main():
                                                '<key>IOPropertyMatch</key><dict><key>UUID</key><string>' +
                                                args.root_match_volume_uuid.upper() + '</string></dict></dict>\0').encode())]
                            if args.root_match_volume_uuid else [] ),
+                        *([('boot-manifest-hash', bytes.fromhex(args.boot_manifest_hash))]
+                          if args.boot_manifest_hash else [] ),
                         # Strict policy for the original AMFI: platform code only. This keeps AMFI
                         # enforcing; it does not relax it.
                         ('amfi-only-platform-code', struct.pack('<I', 1)),
