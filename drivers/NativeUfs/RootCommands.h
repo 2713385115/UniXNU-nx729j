@@ -134,7 +134,18 @@ static IOReturn hostSubmit (uint32_t direction, uint32_t dataBytes, uint32_t tim
   gSubmitStage = 2;
   cacheCivac (gHost.virt, kDataOffset + dataBytes);
   gSubmitStage = 3;
-  hostWrite (0x20, 1);  // Acknowledge completion only; preserve error evidence.
+  // Interrupt status is write-one-to-clear, and clearing only bit 0 leaves every other raised bit set for the rest of the
+  // boot. A UTMRCS or UTE left standing keeps the controller from accepting the next request: the doorbell write below
+  // then never returns, which is exactly the shape every stalled boot has - the last line on the medium is the submit
+  // print, and then no completion, no timeout and no failure record, because the thread that would have written them is
+  // parked inside a register write. The fatal bits were already tested a few lines above, so everything still set here is
+  // stale rather than news: acknowledge all of it.
+  {
+    uint32_t pending = read32 (gHost.hc, 0x20);
+    if (pending) {
+      hostWrite (0x20, pending);
+    }
+  }
   gSubmitStage = 4;
   HardwareTransferPort port;
   clock_interval_to_deadline (timeoutUs, kMicrosecondScale, &port.deadline);
