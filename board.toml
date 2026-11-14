@@ -238,7 +238,8 @@ skip_setup_tool = "scripts/seed-data-skip-setup.py"
 # stops there. Turn it back on only after verifying the three sites against a
 # rebuilt kernel. The console log now travels through the payload diagnostic
 # (tools/make-payload-diag.py) instead of the screen.
-panic_screen = false
+panic_screen = true
+entry_probe_reset_delay = 6   # 官方阶段3：MMU 打开后等 6 秒再复位
 # Trust caches of THIS board's IPSW (iPad7,1 / 17.7.11 / 21H461). The two sheng
 # values this block originally carried belong to another iPad model, so payload.py
 # rejected the correct file as "not one of the trust caches this board accepts".
