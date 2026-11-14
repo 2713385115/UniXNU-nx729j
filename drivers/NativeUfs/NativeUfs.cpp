@@ -1635,9 +1635,14 @@ static void bootLivenessThread (void *, wait_result_t)
     const uint32_t depth    = *(volatile uint32_t *) (vinfo + 8);
     const uint32_t rowbytes = *(volatile uint32_t *) (vinfo + 12);
     const uint64_t base     = *(volatile uint64_t *) (vinfo + 16);
-    // Same acceptance test the console applies: a 32-bit direct-colour buffer whose rows are word aligned. Anything
-    // else is left untouched rather than poked at.
-    if (base && !(base & 3) && !(rowbytes & 3) && depth == 32 && width >= 256 && height >= 32) {
+    // The depth field is not the gate. The loader publishes this board's geometry with the packed depth byte left at
+    // zero, and requiring 32 here is why this marker has never drawn a single pixel: the one channel that no storage
+    // stall can block stayed dark for exactly the boot that needed it. A row stride of exactly width * 4 says more
+    // about the surface than a field the loader demonstrably leaves at zero - it can only come from a 32-bit
+    // direct-colour mode - so that is the test now. depth stays in the expression as an upper bound, because it is
+    // masked to one byte and anything above 32 means this is not the surface the console would use either.
+    if (base && !(base & 3) && !(rowbytes & 3) && depth <= 32 && rowbytes == (uint64_t) width * 4 &&
+        width >= 256 && height >= 32) {
       const uint32_t left = 16, side = 10, step = 16;
       const uint32_t span = (width - left - side) / step;
       if (span > 1) {
