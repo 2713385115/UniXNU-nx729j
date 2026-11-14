@@ -1457,7 +1457,10 @@ static void bootLogThread (void *, wait_result_t)
       // thing a second CPU can do about that, both as a recovery and as the only way the stuck thread ever returns.
       const uint64_t stalled = bootLogSubmitStalledUs ();
       bool recovered_now = false;
-      if (busy_rounds >= 15 && stalled > 3000000ULL && busy_rounds - last_recover >= 50) {
+      // Nine seconds, not three: a write carries an eight second deadline, and the whole point of this check is not to
+      // confuse the slowest legitimate transfer with a hung one. No command can outlive its own deadline, so nine
+      // seconds of a stage that is neither idle nor done is a thread that is not coming back.
+      if (busy_rounds >= 15 && stalled > 9000000ULL && busy_rounds - last_recover >= 50) {
         IOLog ("NativeUfs: submit cmd %llu stuck at stage %u for %llu ms; resetting the controller\n",
                (unsigned long long) gSubmitCommand, (unsigned) gSubmitStage,
                (unsigned long long) (stalled / 1000));
@@ -1659,6 +1662,18 @@ static void bootLivenessThread (void *, wait_result_t)
                  gSubmitStage, (unsigned long long) gSubmitCommand,
                  (unsigned long long) gRootDiagnostic.lba, gRootDiagnostic.opcode,
                  gSubmitDirection, gSubmitBytes);
+        }
+        // Ten seconds is past every deadline this driver sets, so nothing legitimate is still in flight. This thread is
+        // the only one that can act on it: it never takes the command lock, and the stalled thread may well be the log
+        // writer itself - the window showed a round that published its phase and then never returned from the message
+        // write, which is a stall the writer cannot report or repair from the inside.
+        if (stallTicks >= 10 && (stallTicks % 10) == 0) {
+          IOLog ("NativeUfs: resetting the controller from the liveness thread: stage %u cmd %llu\n",
+                 gSubmitStage, (unsigned long long) gSubmitCommand);
+          if (hostHardResetController ()) {
+            gHost.poisoned = false;
+            gHost.ready = true;
+          }
         }
       } else {
         stallCommand = gSubmitCommand;
