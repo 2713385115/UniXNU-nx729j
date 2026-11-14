@@ -942,6 +942,14 @@ static bool hostBringUp (const char **why)
     gRootDiagnostic.cba2r = read32 (gHost.smmu, 0x1800 + 4 * (report[0] >> 16));
   }
   if (!hostStartQueue (why)) return false;
+  // Auto-hibernate is the one controller feature that turns "the bus was idle" into "every MMIO waits forever". After
+  // AHIT ticks the host controller lowers its own power state and needs a UIC wake-up this driver never issues, so the
+  // next doorbell write parks in a bus cycle that cannot complete - no completion, no timeout, no failure record. The
+  // timer is not written by this driver at all: whatever the bootloader left is what runs, which is why the stall point
+  // moves with how busy the boot happened to be. Disabling it costs one register write and is what the Linux UFS driver
+  // does for the same reason (ufshcd_disable_auto_bh).
+  gRootDiagnostic.ahit = read32 (gHost.hc, 0x18);
+  write32 (gHost.hc, 0x18, 0);
   gRootDiagnostic.stage = "NOP OUT";
   // NOP OUT proves the transport before touching the SCSI layer.
   if (hostNop () != kIOReturnSuccess) {
