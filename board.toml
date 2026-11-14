@@ -282,11 +282,13 @@ cpu_regs = "0,0x100,0x200,0x300,0x400,0x500,0x600,0x700"   # [DTB] /cpus reg 0x0
 packed_data_ramdisk = true
 persistent_data = true
 ipad_identity = true
-# mount(8) phase 1 (launchd's first boot task) exits with 66 without /chosen/boot-manifest-hash; it names
-# /private/preboot/<hash> from it. There is no Apple personalization manifest here, so this is an explicit
-# bring-up boot-set identity, not Apple data: the same value asteroids (same 21H461 IPSW, same OS volume
-# UUID) uses to boot past this point.
-boot_manifest_hash = "5fd2fc139b688ddf071aa815c1ea75d26bcd994a528cf02e365661eab5139ec7b580d63ca9319e218962a2236f23faca"
+# Do NOT set boot_manifest_hash here.  XNU_OWNER_BOOT_MANIFEST already publishes
+# /chosen/boot-manifest-hash itself (native_owner_publish_boot_manifest), and it refuses to
+# overwrite a value that is already present: status 3, no owner identity at all.  Injecting a
+# foreign hash (for example another board's boot set) therefore replaces our own identity with
+# one that names a /private/preboot directory this root does not have.  Measured 2026-11-15:
+# with the hash injected AppleARMSFRManifest logged 'Found HASH property' and the kernel died at
+# 20.34 s; without it the same kernel reaches launchd and the shared cache.
 unique_chip_id = "required"         # the platform seed is not stored in any repository
 
 # No [[bootimg.dtb_node]] here, unlike sheng.
