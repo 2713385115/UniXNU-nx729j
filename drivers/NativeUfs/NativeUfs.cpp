@@ -1327,6 +1327,15 @@ static int bootLogPublish (struct boot_log_header &h, uint32_t phase, uint32_t r
   return native_ufs_log_write_try (0, 1, blk) ? 1 : 0;
 }
 
+// Liveness that no printf can block. Every stalled boot so far ended with the writer mid-round and nothing else ever
+// printing, which cannot distinguish "the machine stopped" from "the message buffer lock was never released". This
+// thread touches neither: it stamps a counter straight onto the medium and records the last round the writer finished,
+// so the pair stops together only if the kernel did.
+static volatile uint32_t gBeatTicks = 0;
+static volatile uint32_t gLogRoundsSeen = 0;
+static uint64_t gBeatBlock = 0;
+static int gBeatStarted = 0;
+
 static void bootLogThread (void *, wait_result_t)
 {
   thread_set_thread_name (current_thread (), "boot_log");
@@ -1352,6 +1361,9 @@ static void bootLogThread (void *, wait_result_t)
   h.boot_id = boot_log_ticks ();
   h.first_lba = first;
   h.window_blocks = static_cast<uint32_t> (blocks);
+  // Very last block of the window: past every slot the writer tiles and past the failure record at blocks-2, so a
+  // heartbeat never clobbers evidence.
+  if (blocks > BootLogSlotFirst + 2 * BootLogSlotBlocks) gBeatBlock = blocks - 1;
   h.msg_first = BootLogMsgFirst;
   h.msg_blocks = BootLogMsgBlocks;
   h.slot_first = BootLogSlotFirst;
@@ -1431,6 +1443,7 @@ static void bootLogThread (void *, wait_result_t)
       ok = 0;
       bootLogPhase (h.rounds, 5, 0);
     }
+    gLogRoundsSeen = h.rounds;
     const unsigned round_ms = static_cast<unsigned> ((boot_log_ticks () - round_start) * 1000 / f);
     if (round_ms > h.max_round_ms) h.max_round_ms = round_ms;
     // Flushing the whole LUN holds the command lock while everything else waits behind it, so it is rare and it no
@@ -1561,6 +1574,23 @@ static void bootLivenessThread (void *, wait_result_t)
   }
 }
 
+static void bootHeartbeatThread (void *, wait_result_t)
+{
+  thread_set_thread_name (current_thread (), "boot_beat");
+  uint8_t *block = static_cast<uint8_t *> (IOMallocAligned (4096, 4096));
+  if (!block) return;
+  for (;;) {
+    ++gBeatTicks;
+    if (gBeatBlock) {
+      memset (block, 0, 4096);
+      snprintf (reinterpret_cast<char *> (block), 4096, "HB beat=%u round=%u mat=%llu stage=%u\n",
+                gBeatTicks, gLogRoundsSeen, (unsigned long long) mach_absolute_time (), gSubmitStage);
+      native_ufs_log_write_try (gBeatBlock, 1, block);
+    }
+    IOSleep (2000);
+  }
+}
+
 // Start the boot log writer once root layout is available and sheng-log=1. Called from startRoot as soon as the
 // geometry is known, so the periodic slot reports a later failure instead of nothing at all.
 static int gBootLogStarted = 0;
@@ -1574,6 +1604,12 @@ static void native_ufs_start_log (void)
     thread_t live = nullptr;
     if (kernel_thread_start (bootLivenessThread, nullptr, &live) == KERN_SUCCESS) thread_deallocate (live);
     else gLivenessStarted = 0;
+  }
+  if (!gBeatStarted) {
+    gBeatStarted = 1;
+    thread_t beat = nullptr;
+    if (kernel_thread_start (bootHeartbeatThread, nullptr, &beat) == KERN_SUCCESS) thread_deallocate (beat);
+    else gBeatStarted = 0;
   }
   if (gBootLogStarted) return;
   gBootLogStarted = 1;
