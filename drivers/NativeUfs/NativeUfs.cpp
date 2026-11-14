@@ -1199,6 +1199,34 @@ extern "C" int native_ufs_log_write_try (uint64_t rel, uint32_t blocks, const vo
   return ok;
 }
 
+// The panic path hands the accumulated text here, from ext_paniclog_write_panicdata(). That is the last moment the
+// panicking CPU still owns a working command channel, and it is the only chance this board has to keep a panic: there is
+// no Apple PRAM for the embedded header, no ext paniclog handle to carry it, and the ramoops mirror lands in a carve-out
+// the 9008 firehose refuses to peek. Ten blocks below the two the writer already owns (blocks-1 heartbeat, blocks-2
+// phase) carry a magic, an index and a slice of the text, so a sequence cut short is still readable and still ordered.
+// Everything is try-lock: a UFS command parked on a dead doorbell must not convert a panic into an unreadable hang.
+extern "C" int native_ufs_panic_dump (const char *text, unsigned long len)
+{
+  if (!gLogRegionBlocks || !text || !len || gLogRegionBlocks < 16) return 0;
+  if (!gHost.lock || !gHost.ready) return 0;
+  const uint32_t blocks = 10;
+  const uint64_t base = gLogRegionBlocks - 2 - blocks;
+  if (!IOLockTryLock (gHost.lock)) return 0;
+  static uint8_t blk[4096] __attribute__((aligned(4096)));
+  unsigned long written = 0;
+  for (uint32_t i = 0; i < blocks && written < len; ++i) {
+    memset (blk, 0, sizeof blk);
+    snprintf (reinterpret_cast<char *> (blk), sizeof blk, "PANICTXT %u/%u len=%lu\n", i + 1, blocks, len);
+    size_t hdr = strlen (reinterpret_cast<const char *> (blk));
+    size_t chunk = len - written > sizeof blk - hdr ? sizeof blk - hdr : len - written;
+    memcpy (blk + hdr, text + written, chunk);
+    written += chunk;
+    if (hostWrite4kLocked (0, gLogRegionFirst + base + i, 1, blk, false, 8000000) != kIOReturnSuccess) break;
+  }
+  IOLockUnlock (gHost.lock);
+  return written ? 1 : 0;
+}
+
 // The export region below the log window: its size in blocks once the log is open, else 0; writes at a block offset inside it.
 extern "C" uint64_t native_ufs_export_blocks (void) { return gLogRegionBlocks ? kExportBlocks : 0; }
 
