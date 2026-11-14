@@ -282,6 +282,11 @@ cpu_regs = "0,0x100,0x200,0x300,0x400,0x500,0x600,0x700"   # [DTB] /cpus reg 0x0
 packed_data_ramdisk = true
 persistent_data = true
 ipad_identity = true
+# mount(8) phase 1 (launchd's first boot task) exits with 66 without /chosen/boot-manifest-hash; it names
+# /private/preboot/<hash> from it. There is no Apple personalization manifest here, so this is an explicit
+# bring-up boot-set identity, not Apple data: the same value asteroids (same 21H461 IPSW, same OS volume
+# UUID) uses to boot past this point.
+boot_manifest_hash = "5fd2fc139b688ddf071aa815c1ea75d26bcd994a528cf02e365661eab5139ec7b580d63ca9319e218962a2236f23faca"
 unique_chip_id = "required"         # the platform seed is not stored in any repository
 
 # No [[bootimg.dtb_node]] here, unlike sheng.
