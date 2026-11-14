@@ -1642,7 +1642,10 @@ static void bootHeartbeatThread (void *, wait_result_t)
                 gdscr, axi, smmuFault, smmuAddr, gHost.ready ? 1U : 0U);
       native_ufs_log_write_try (gProbeBlock, 1, probe);
     }
-    IOSleep (2000);
+    // 500 ms, not 2 s: both blocks carry gSubmitStage, and the whole point of that field is to say where the last command
+    // stopped. A two second gap left the final beat almost a second before the stall every time, so it reported the
+    // previous command's 7 instead of the stuck one's 4 or 6. One beat per half second puts the answer inside the window.
+    IOSleep (500);
   }
 }
 
