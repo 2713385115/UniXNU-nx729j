@@ -57,6 +57,8 @@ static bool hostClearStuckDoorbell (void);
 // with a thread parked in the poll look identical from the outside, and both end the boot. Toggling the controller is
 // also the only thing another CPU can do to make a hung register access on this interconnect complete.
 static bool hostHardResetController (void);
+// Same idea without the controller reset: re-arm the request list after any transfer that did not complete.
+static void hostRearmRequestList (void);
 
 // Issue the UPIU already placed at gHost.virt + kUcdOffset through request slot 0. `direction` is
 // the UTRD data direction (0 none, 1 from host, 2 to host). Direction 1 is reachable only through hostWrite4k, which
@@ -198,17 +200,20 @@ static IOReturn hostSubmit (uint32_t direction, uint32_t dataBytes, uint32_t tim
       // carries this record needs that same path, so after the quarantine nothing else can land on the medium. The record
       // path resets the controller to drop the stuck request, so the doorbell is read again afterwards.
       hostRecordFailure (end, dataBytes, timeoutUs, state, doorbellNow, interruptNow);
-      if (hostClearStuckDoorbell ()) {
-        // The request was dropped and the request list is armed again: the LUN configuration the device accepted is
-        // untouched, so the next command can use the same slot. Calling that state "poisoned" is what made one slow
-        // transfer end the boot - the caller gets the error and retries instead.
-        IOLog ("NativeUfs: %s at cmd %llu recovered: stale request dropped, transport kept alive\n",
-               end == UfsTransferEnd::Timeout ? "timeout" : "fatal",
-               (unsigned long long) gRootDiagnostic.command);
-      } else {
-        gHost.poisoned = true;
-        gHost.ready = false;
-      }
+    }
+    // Both shapes end here, and both need the same thing before the next command: a request list whose state is known.
+    // The "dropped" shape - clear doorbell, no fatal status - used to return straight to the caller, and the command
+    // after it rang a doorbell for a list the controller no longer owned. That is the shape of every stalled boot on
+    // this board: one lost command, and then a submit that never returns.
+    hostRearmRequestList ();
+    if (wedged && (read32 (gHost.hc, 0x58) & 1U)) {
+      // Only a request the controller still owns after a re-arm means the controller itself is gone.
+      gHost.poisoned = true;
+      gHost.ready = false;
+    } else {
+      IOLog ("NativeUfs: %s at cmd %llu: request list re-armed (stage %u)\n",
+             end == UfsTransferEnd::Timeout ? "timeout" : "fatal",
+             (unsigned long long) gRootDiagnostic.command, (unsigned) gSubmitStage);
     }
     return recordTransport (end == UfsTransferEnd::Timeout ? kIOReturnTimeout : kIOReturnIOError, *ocs);
   }
@@ -474,6 +479,21 @@ static bool hostCommandBusy (void)
 // on, which is why every stalled boot so far came back as a frozen round counter with no error recorded. The slot is the
 // one rootFailureRecord already uses, so a boot that fails early and a boot that stalls late land in the same place.
 static bool gRecordingFailure = false;
+// Put the request list back into a state this driver can reason about without touching the controller's enable bit.
+// A transfer that did not complete leaves one of two things behind - a request the controller still owns, or a request it
+// dropped - and this driver cannot tell which without a register read that may not return. Stopping the list, rewriting
+// its base and starting it again is two register writes and defines the state either way; carrying the ambiguity into
+// the next command is what a stalled boot looks like.
+static void hostRearmRequestList (void)
+{
+  if (!gHost.hc || !gHost.virt) return;
+  write32 (gHost.hc, 0x60, 0);
+  write32 (gHost.hc, 0x50, static_cast<uint32_t> (gHost.phys));
+  write32 (gHost.hc, 0x54, static_cast<uint32_t> (gHost.phys >> 32));
+  write32 (gHost.hc, 0x20, 0xffffffffU);
+  write32 (gHost.hc, 0x60, 1);
+}
+
 // Unconditional controller reset for the writer. hostClearStuckDoorbell above only acts when the doorbell is still set,
 // which is exactly the case the writer cannot rely on: a thread parked in the interrupt status write leaves the doorbell
 // clear and the controller just as gone. Costing two milliseconds on an already wedged boot is the cheap side of this
