@@ -52,6 +52,11 @@ static bool hostRecordFailure (UfsTransferEnd end, uint32_t dataBytes, uint32_t 
 // Same reason: the submit path has to be able to drop a request the previous command left behind before it decides the
 // controller is gone. Defined with the write path; idempotent, and answers true when the doorbell is already clear.
 static bool hostClearStuckDoorbell (void);
+// The same reset, run unconditionally from the log writer when a submission has not moved for three seconds. The writer
+// cannot see why the command lock is held: a clear doorbell with a thread parked in the status write and a set doorbell
+// with a thread parked in the poll look identical from the outside, and both end the boot. Toggling the controller is
+// also the only thing another CPU can do to make a hung register access on this interconnect complete.
+static bool hostHardResetController (void);
 
 // Issue the UPIU already placed at gHost.virt + kUcdOffset through request slot 0. `direction` is
 // the UTRD data direction (0 none, 1 from host, 2 to host). Direction 1 is reachable only through hostWrite4k, which
@@ -469,6 +474,30 @@ static bool hostCommandBusy (void)
 // on, which is why every stalled boot so far came back as a frozen round counter with no error recorded. The slot is the
 // one rootFailureRecord already uses, so a boot that fails early and a boot that stalls late land in the same place.
 static bool gRecordingFailure = false;
+// Unconditional controller reset for the writer. hostClearStuckDoorbell above only acts when the doorbell is still set,
+// which is exactly the case the writer cannot rely on: a thread parked in the interrupt status write leaves the doorbell
+// clear and the controller just as gone. Costing two milliseconds on an already wedged boot is the cheap side of this
+// trade - the alternative is a machine that answers nothing and a window frozen at the round before.
+static bool hostHardResetController (void)
+{
+  if (!gHost.hc || !gHost.virt) return false;
+  const uint32_t hce = read32 (gHost.hc, 0x34);
+  write32 (gHost.hc, 0x34, hce & ~1U);
+  IODelay (2000);
+  write32 (gHost.hc, 0x34, hce | 1U);
+  IODelay (2000);
+  write32 (gHost.hc, 0x24, 0);                  // interrupts stay masked, as hostBringUp left them
+  write32 (gHost.hc, 0x60, 0);                  // stop the request list before moving its base
+  write32 (gHost.hc, 0x50, static_cast<uint32_t> (gHost.phys));
+  write32 (gHost.hc, 0x54, static_cast<uint32_t> (gHost.phys >> 32));
+  write32 (gHost.hc, 0x20, 0xffffffffU);        // drop every stale status bit
+  write32 (gHost.hc, 0x60, 1);                  // arm it again
+  IODelay (2000);
+  IOLog ("NativeUfs: controller reset by the log writer: hce %08x -> %08x doorbell %08x\n",
+         hce, read32 (gHost.hc, 0x34), read32 (gHost.hc, 0x58));
+  return true;
+}
+
 // The transport is quarantined by a doorbell that never came back, and that same doorbell is what makes every later
 // write impossible - including the one record that would say which command killed it. Disabling the controller clears
 // the stuck request without touching the LUN configuration the device already accepted, so the recorder gets one more
