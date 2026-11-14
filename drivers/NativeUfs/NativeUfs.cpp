@@ -1181,11 +1181,19 @@ extern "C" int native_ufs_log_write (uint64_t rel, uint32_t blocks, const void *
 // and a diagnostic writer queued behind that thread reports the whole machine as dead: no new round, no new command
 // count, no error. Skipping the round instead keeps the writer alive and turns the frozen command counter into a
 // measurement - the slot it does manage to write carries the lba and opcode hostSubmit filled in for the stuck command.
+// Set for the one round that follows a controller reset, and only by the writer that performed it. Without it the
+// writer has no way to land a byte while a thread is parked inside a transfer: the reset drops the request, but the lock
+// that thread holds is not released by a hardware reset, so every round behind it is refused and a wedged boot still
+// leaves nothing behind. The data path is not running during that round by definition - the submit that owns the lock
+// has already exceeded its own deadline - so the shared command buffer is not in use.
+static bool gLogBypassLock = false;
+
 extern "C" int native_ufs_log_write_try (uint64_t rel, uint32_t blocks, const void *src)
 {
   if (!gLogRegionBlocks || !src || !blocks || rel >= gLogRegionBlocks || blocks > gLogRegionBlocks - rel) return 0;
   if (!gHost.lock || !gHost.ready) return 0;
-  if (!IOLockTryLock (gHost.lock)) return 0;
+  const bool bypass = gLogBypassLock;
+  if (!bypass && !IOLockTryLock (gHost.lock)) return 0;
   int ok = 1;
   ++gLogWriteCalls;
   while (blocks) {
@@ -1195,7 +1203,7 @@ extern "C" int native_ufs_log_write_try (uint64_t rel, uint32_t blocks, const vo
     rel += chunk;
     blocks -= chunk;
   }
-  IOLockUnlock (gHost.lock);
+  if (!bypass) IOLockUnlock (gHost.lock);
   return ok;
 }
 
@@ -1344,6 +1352,19 @@ static void bootLogPhase (uint32_t round, uint32_t phase, int ok)
 // round would have written anyway, so a stalled round costs a handful of small writes and leaves the exact step it
 // reached on the medium. Without this a round that stalls after its slot write looks identical to a machine that lost
 // every CPU at once, which is the ambiguity every stalled boot so far has ended in.
+// How long the submission in flight has been in flight, on the counter mach_absolute_time reads. Zero when the stage is
+// idle or done, and zero when the stamp is ahead of the clock. The writer needs this because "the command lock is busy"
+// covers two very different things: a long page-in, which ends by itself, and a thread parked in a register access, which
+// never ends and takes the boot with it.
+static uint64_t bootLogSubmitStalledUs (void)
+{
+  if (gSubmitStage == 0 || gSubmitStage == 7) return 0;
+  const uint64_t now = mach_absolute_time ();
+  if (now <= gSubmitMat) return 0;
+  uint64_t frq = 0; __asm__ volatile ("mrs %0, cntfrq_el0" : "=r" (frq)); if (!frq) frq = 19200000;
+  return (now - gSubmitMat) * 1000000ULL / frq;
+}
+
 static int bootLogPublish (struct boot_log_header &h, uint32_t phase, uint32_t round, unsigned uptime)
 {
   static uint8_t blk[4096];
@@ -1420,7 +1441,7 @@ static void bootLogThread (void *, wait_result_t)
   // alive; this says where it died, and unlike the phase record it survives on a round that writes nothing but its
   // own slot, so a stall with no phase block still reads back as "the round before stopped at <stage>".
   const char *stage = "start";
-  unsigned busy_rounds = 0, busy_total = 0;
+  unsigned busy_rounds = 0, busy_total = 0, recoveries = 0, last_recover = 0;
   for (;;) {
     // Never queue behind the data path. A round that joins the command lock during a long transfer is indis-
     // tinguishable from a dead machine on the medium, which is the one question three boots could not answer.
@@ -1428,8 +1449,36 @@ static void bootLogThread (void *, wait_result_t)
       ++busy_rounds;
       ++busy_total;
       if (busy_rounds == 25) IOLog ("NativeUfs: log writer yielding, command lock busy for 5s\n");
-      IOSleep (200);
-      continue;
+      // A submission that has not moved for three seconds is not a long transfer: every read carries a three second
+      // deadline and every write eight, and the poll loop prints while it waits. Three seconds of silence from a stage
+      // that is neither idle nor done therefore means the thread holding the lock is parked in a register access that is
+      // not coming back - and the writer waiting quietly behind it is why a wedged boot leaves no evidence at all: no
+      // round, no command count, no error, only a window frozen at the round before. Toggling the controller is the one
+      // thing a second CPU can do about that, both as a recovery and as the only way the stuck thread ever returns.
+      const uint64_t stalled = bootLogSubmitStalledUs ();
+      bool recovered_now = false;
+      if (busy_rounds >= 15 && stalled > 3000000ULL && busy_rounds - last_recover >= 50) {
+        IOLog ("NativeUfs: submit cmd %llu stuck at stage %u for %llu ms; resetting the controller\n",
+               (unsigned long long) gSubmitCommand, (unsigned) gSubmitStage,
+               (unsigned long long) (stalled / 1000));
+        if (hostHardResetController ()) {
+          ++recoveries;
+          last_recover = busy_rounds;
+          recovered_now = true;
+          // The reset dropped whatever the controller still owned, so the quarantine it may have caused no longer
+          // describes the hardware. Leaving it set is what turned one lost command into a storage stack that answered
+          // NotReady for the rest of the boot.
+          gHost.poisoned = false;
+          gHost.ready = true;
+        }
+      }
+      if (!recovered_now) {
+        IOSleep (200);
+        continue;
+      }
+      // Fall through and write this round without the lock: the reset gave the controller back, but the thread that
+      // owns the lock is still parked, and its round of evidence is exactly the one worth keeping.
+      gLogBypassLock = true;
     }
     const uint64_t round_start = boot_log_ticks ();
     const uint32_t rnd = h.rounds + 1;
@@ -1445,10 +1494,13 @@ static void bootLogThread (void *, wait_result_t)
     // stops moving is far more often a time base that stopped than a CPU that did. host=poisoned,ready records whether
     // the transport gave up before the writer did.
     int used = snprintf (reinterpret_cast<char *> (buffer), BootLogSlotBlocks * 4096,
-                         "#slot %u t=%us tag=%s stage=%s mat=%llu host=%d%d busy=%u/%u\n",
+                         "#slot %u t=%us tag=%s stage=%s mat=%llu host=%d%d busy=%u/%u "
+                         "submit=%u/%llu stalled=%llus rec=%u\n",
                          h.slots_written, now, h.tag, stage,
                          (unsigned long long) mach_absolute_time (), gHost.poisoned, gHost.ready,
-                         busy_rounds, busy_total);
+                         busy_rounds, busy_total, (unsigned) gSubmitStage,
+                         (unsigned long long) gSubmitCommand,
+                         (unsigned long long) (bootLogSubmitStalledUs () / 1000000ULL), recoveries);
     if (used > 0 && static_cast<size_t> (used) < BootLogSlotBlocks * 4096)
       formatUfsRootDiagnostics (reinterpret_cast<char *> (buffer) + used,
                                 BootLogSlotBlocks * 4096 - static_cast<size_t> (used),
@@ -1478,7 +1530,7 @@ static void bootLogThread (void *, wait_result_t)
     if (ok) ++h.slots_written; else ++h.write_errors;
     h.rounds++;
     h.state = 2;
-    if (!(h.rounds % 30)) h.gpt_last = native_ufs_store_gpt_check ();
+    if (!(h.rounds % 30) && !gLogBypassLock) h.gpt_last = native_ufs_store_gpt_check ();
     // The round's result goes out with the published header: same block, one write, and it now carries the phase that
     // says the round finished instead of a separate copy at the end.
     if (!bootLogPublish (h, 5, h.rounds, now)) {
@@ -1492,12 +1544,15 @@ static void bootLogThread (void *, wait_result_t)
     // longer decides whether the round succeeded: the writes already returned, and this only asks the device to move
     // them from its own cache to the medium. The previous build flushed every round with a 20 s timeout and a flush
     // that never completed froze the whole storage stack for those twenty seconds.
-    if (!(h.rounds % 30)) {
+    // Both of these take the command lock the blocking way, which on a bypassed round is the lock the parked thread
+    // still owns: a flush every thirty rounds would turn the writer's one chance at evidence into a second hang.
+    if (!(h.rounds % 30) && !gLogBypassLock) {
       stage = "sync";
       native_ufs_log_sync ();
     }
     stage = "done";
     busy_rounds = 0;
+    gLogBypassLock = false;
     if (!ok) {
       ++errors;
       if (errors >= 3) {
