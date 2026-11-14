@@ -1391,13 +1391,14 @@ static void bootLogThread (void *, wait_result_t)
   h.boot_id = boot_log_ticks ();
   h.first_lba = first;
   h.window_blocks = static_cast<uint32_t> (blocks);
-  // Very last block of the window: past every slot the writer tiles and past the failure record at blocks-2, so a
-  // heartbeat never clobbers evidence.
-  if (blocks > BootLogSlotFirst + 2 * BootLogSlotBlocks) gBeatBlock = blocks - 1;
-  // Two blocks below that: the same heartbeat, written only after the bus status registers have been read. Keeping
-  // them apart is the whole point - if the register read is what hangs, blocks-1 still advances and proves the kernel
-  // was running, while blocks-3 stops one beat earlier and shows the last bus state that could be sampled.
-  if (blocks > BootLogSlotFirst + 4 * BootLogSlotBlocks) gProbeBlock = blocks - 3;
+  // blocks-1 is the failure record (hostRecordFailure) and blocks-2 the phase record, so the heartbeat used to be
+  // written straight over the one line that says why a boot stopped: every stalled boot read back as "HB beat=" and the
+  // record was gone. blocks-5 and blocks-4 are outside the slot ring, which ends at BootLogSlotFirst + slot_count * 8,
+  // and are only reused by a panic dump - which matters more than a beat.
+  if (blocks > BootLogSlotFirst + 16) gBeatBlock = blocks - 5;
+  // One block above that: the same heartbeat, written only after the bus status registers have been read, so a register
+  // access that never returns leaves blocks-5 advancing and the last sample here.
+  if (blocks > BootLogSlotFirst + 16) gProbeBlock = blocks - 4;
   h.msg_first = BootLogMsgFirst;
   h.msg_blocks = BootLogMsgBlocks;
   h.slot_first = BootLogSlotFirst;
