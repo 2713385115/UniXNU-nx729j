@@ -49,6 +49,9 @@ static uint32_t loadBe32 (const uint8_t *at)
 // the window globals it writes through are declared with the other window state.
 static bool hostRecordFailure (UfsTransferEnd end, uint32_t dataBytes, uint32_t timeoutUs,
                                const UfsTransferPoll &state, uint32_t doorbell, uint32_t interrupt);
+// Same reason: the submit path has to be able to drop a request the previous command left behind before it decides the
+// controller is gone. Defined with the write path; idempotent, and answers true when the doorbell is already clear.
+static bool hostClearStuckDoorbell (void);
 
 // Issue the UPIU already placed at gHost.virt + kUcdOffset through request slot 0. `direction` is
 // the UTRD data direction (0 none, 1 from host, 2 to host). Direction 1 is reachable only through hostWrite4k, which
@@ -72,13 +75,23 @@ static IOReturn hostSubmit (uint32_t direction, uint32_t dataBytes, uint32_t tim
       (dataBytes ? (direction != 1 && direction != 2) : direction != 0)) return kIOReturnBadArgument;
   if (gHost.poisoned) return kIOReturnNotReady;
   if (read32 (gHost.hc, 0x58) != 0) {
-    // The doorbell is still set: a command this driver issued never completed. Nothing can be written after this, so the
-    // reason goes to kprintf (the frame buffer console) as well, where it survives a dead UFS.
-    IOLog ("NativeUfs: poisoned: doorbell still %08x (lba %llx op %02x); no further storage I/O\n",
-           read32 (gHost.hc, 0x58), (unsigned long long) gRootDiagnostic.lba, gRootDiagnostic.opcode);
-    gHost.poisoned = true;
-    gHost.ready = false;
-    return recordTransport (kIOReturnBusy, *ocs);
+    // A request from an earlier command is still owned by the controller. Disabling and re-enabling the controller drops
+    // it without touching the LUN configuration the device already accepted, so this is the difference between one lost
+    // command and a boot that never moves again: the quarantine this used to take unconditionally turned every single
+    // stuck request into a storage stack that answered NotReady for the rest of the boot. Only a doorbell that survives
+    // the reset means the controller itself is gone.
+    if (hostClearStuckDoorbell ()) {
+      IOLog ("NativeUfs: stale request dropped before submit (lba %llx op %02x); controller reset\n",
+             (unsigned long long) gRootDiagnostic.lba, gRootDiagnostic.opcode);
+    } else {
+      // Nothing can be written after this, so the reason goes to kprintf (the frame buffer console) as well, where it
+      // survives a dead UFS.
+      IOLog ("NativeUfs: poisoned: doorbell still %08x (lba %llx op %02x); no further storage I/O\n",
+             read32 (gHost.hc, 0x58), (unsigned long long) gRootDiagnostic.lba, gRootDiagnostic.opcode);
+      gHost.poisoned = true;
+      gHost.ready = false;
+      return recordTransport (kIOReturnBusy, *ocs);
+    }
   }
   if (read32 (gHost.hc, 0x20) & kUfsFatalStatus) {
     IOLog ("NativeUfs: poisoned: interrupt %08x has a fatal bit (lba %llx op %02x)\n",
@@ -177,10 +190,20 @@ static IOReturn hostSubmit (uint32_t direction, uint32_t dataBytes, uint32_t tim
            (unsigned long long) gRootDiagnostic.command);
     if (wedged) {
       // Written before the quarantine is set, while the command path still answers: the header write that normally
-      // carries this record needs that same path, so after the quarantine nothing else can land on the medium.
+      // carries this record needs that same path, so after the quarantine nothing else can land on the medium. The record
+      // path resets the controller to drop the stuck request, so the doorbell is read again afterwards.
       hostRecordFailure (end, dataBytes, timeoutUs, state, doorbellNow, interruptNow);
-      gHost.poisoned = true;
-      gHost.ready = false;
+      if (hostClearStuckDoorbell ()) {
+        // The request was dropped and the request list is armed again: the LUN configuration the device accepted is
+        // untouched, so the next command can use the same slot. Calling that state "poisoned" is what made one slow
+        // transfer end the boot - the caller gets the error and retries instead.
+        IOLog ("NativeUfs: %s at cmd %llu recovered: stale request dropped, transport kept alive\n",
+               end == UfsTransferEnd::Timeout ? "timeout" : "fatal",
+               (unsigned long long) gRootDiagnostic.command);
+      } else {
+        gHost.poisoned = true;
+        gHost.ready = false;
+      }
     }
     return recordTransport (end == UfsTransferEnd::Timeout ? kIOReturnTimeout : kIOReturnIOError, *ocs);
   }
@@ -350,6 +373,14 @@ static IOReturn hostRead4k (uint8_t lun, uint64_t lba, uint32_t blocks, void *ds
                       0, uint8_t (blocks >> 8), uint8_t (blocks), 0 };
   uint32_t scsi = 0;
   IOReturn status = hostScsi (lun, cdb, 10, true, blocks * 4096U, 3000000, &scsi);
+  // A request the controller dropped is not a failed read. The submit path resets the controller when it finds a doorbell
+  // it did not get back, so a retry here starts from an armed request list; without it the error went straight to the
+  // file system and one lost command ended the boot.
+  if (status != kIOReturnSuccess && !gHost.poisoned) {
+    IOLog ("NativeUfs: read retry lba %llx blocks %u after %08x\n",
+           (unsigned long long) lba, blocks, status);
+    status = hostScsi (lun, cdb, 10, true, blocks * 4096U, 3000000, &scsi);
+  }
   if (status == kIOReturnSuccess) {
     memcpy (dst, gHost.virt + kDataOffset, blocks * 4096U);
   }
