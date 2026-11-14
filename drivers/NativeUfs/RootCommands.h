@@ -167,6 +167,12 @@ static IOReturn hostSubmit (uint32_t direction, uint32_t dataBytes, uint32_t tim
     }
   }
   gSubmitStage = 4;
+  // A request list that lost its enable bit accepts a doorbell write and never acknowledges it, and nothing in this
+  // driver ever reads that bit back. It is one register read to check and one write to restore - the difference between
+  // a command that runs and a boot that stops here.
+  if (!(read32 (gHost.hc, 0x60) & 1U)) {
+    write32 (gHost.hc, 0x60, 1);
+  }
   HardwareTransferPort port;
   clock_interval_to_deadline (timeoutUs, kMicrosecondScale, &port.deadline);
   hostWrite (0x58, 1);
