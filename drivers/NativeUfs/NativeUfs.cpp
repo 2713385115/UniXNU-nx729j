@@ -1208,10 +1208,17 @@ extern "C" int native_ufs_log_write_try (uint64_t rel, uint32_t blocks, const vo
 extern "C" int native_ufs_panic_dump (const char *text, unsigned long len)
 {
   if (!gLogRegionBlocks || !text || !len || gLogRegionBlocks < 16) return 0;
-  if (!gHost.lock || !gHost.ready) return 0;
+  // No lock, no quarantine and no "ready" gate. A panic is the last thing this board can say: the console it prints to is
+  // invisible on this panel, the ramoops mirror cannot be read back over 9008, and the CPU that hit the bug is often the
+  // one still holding the command lock - which is why ten blocks of panic text came back zero on every run so far. A
+  // request left in the controller is dropped the way a stuck doorbell is, an earlier quarantine is overridden, and the
+  // write goes out without the lock: with the machine dying there is nothing left to protect.
+  if (!gHost.hc || !gHost.virt) return 0;
+  (void) hostClearStuckDoorbell ();
+  gHost.poisoned = false;
+  gHost.ready = true;
   const uint32_t blocks = 10;
   const uint64_t base = gLogRegionBlocks - 2 - blocks;
-  if (!IOLockTryLock (gHost.lock)) return 0;
   static uint8_t blk[4096] __attribute__((aligned(4096)));
   unsigned long written = 0;
   for (uint32_t i = 0; i < blocks && written < len; ++i) {
@@ -1221,9 +1228,9 @@ extern "C" int native_ufs_panic_dump (const char *text, unsigned long len)
     size_t chunk = len - written > sizeof blk - hdr ? sizeof blk - hdr : len - written;
     memcpy (blk + hdr, text + written, chunk);
     written += chunk;
-    if (hostWrite4kLocked (0, gLogRegionFirst + base + i, 1, blk, false, 8000000) != kIOReturnSuccess) break;
+    // Half a second per block: ten blocks must not turn a panic into ten eight-second waits on a controller that is gone.
+    if (hostWrite4kLocked (0, gLogRegionFirst + base + i, 1, blk, false, 500000) != kIOReturnSuccess) break;
   }
-  IOLockUnlock (gHost.lock);
   return written ? 1 : 0;
 }
 
