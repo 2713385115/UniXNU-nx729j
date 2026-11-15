@@ -91,8 +91,10 @@ defconfig = "nx729j_defconfig"
 #       same 190 slots from scripts/prelink-storage-bindings.json, measured
 #       statically out of a build (scripts/scan-prelink-storage.py).
 #   build-arm-driver.py NativeVirtioBlock / NativeRamBlock   link against that audit.
-#   build-sheng-platform-power.py   needs kits/sheng/ShengPlatformPower.cpp, which no published
-#       repository contains. The equivalent effect (skipping AMFI's AON latch) is a binary patch.
+#   build-sheng-platform-power.py   Enabled 2026-11-15: kits/sheng/ShengPlatformPower.cpp is now
+#       published here (same source as package/ShengPlatformPower.cpp). Without the linked
+#       _sheng_pmgr_run the unchanged AMFI panics with "AMFI: No PMGR?", so this builder
+#       is required whenever CONFIG_XNU_SHENG_PMGR=y.
 #   build-arm-driver.py NativeAdreno, build-native-adreno-kits.py,
 #   build-native-adreno-accelerator.py, build-native-legacy-display.py
 #       need an exact original GPU/framebuffer candidate.
@@ -144,6 +146,9 @@ archives = [
   # NativeUfs and build-verified-root-bundle.py: it merges into libNativeUfs.a and
   # reads the policy count.
   "build-owner-verified-block.py",
+  # Original PMGR nub for AMFI's AON latch. Must run after the bootstrap pass has
+  # produced the XNU compile records it reads (IOPlatformExpert.cpo.json).
+  "build-sheng-platform-power.py",
 ]
 
 [kernel.prelink]
