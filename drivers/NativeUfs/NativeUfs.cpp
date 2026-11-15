@@ -1637,6 +1637,8 @@ static void bootLivenessThread (void *, wait_result_t)
   uint32_t n = 0;
   uint64_t stallCommand = 0;
   unsigned stallTicks = 0;
+  uint32_t lastBeat = 0;
+  unsigned beatStall = 0;
   for (;;) {
     const uint32_t height   = *(volatile uint32_t *) (vinfo + 0);
     const uint32_t width    = *(volatile uint32_t *) (vinfo + 4);
@@ -1694,6 +1696,23 @@ static void bootLivenessThread (void *, wait_result_t)
       }
     } else {
       stallTicks = 0;
+    }
+    // The submission check above only sees a command stuck in flight. Every silent
+    // boot read back from 9008 had stage=7 (nothing in flight) with HB and PB frozen
+    // at the same beat, so it slipped past this thread entirely. The heartbeat
+    // thread touches nothing but the clock; when its beat stops advancing the kernel
+    // is no longer scheduling. Turn that silence into a real panic so the panic
+    // screen dump carries a stack instead of leaving an empty window.
+    const uint32_t beat = gBeatTicks;
+    if (beat == lastBeat) {
+      if (++beatStall == 15) {
+        panic ("nx729j liveness: boot_beat stalled %us beat=%u stage=%u cmd=%llu round=%u",
+               (unsigned) beatStall, beat, (unsigned) gSubmitStage,
+               (unsigned long long) gSubmitCommand, (unsigned) gLogRoundsSeen);
+      }
+    } else {
+      beatStall = 0;
+      lastBeat = beat;
     }
     IOSleep (1000);
   }
