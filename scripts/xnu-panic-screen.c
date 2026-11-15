@@ -40,6 +40,13 @@ struct ctx {
 #endif
 #define PANIC_TEXT_BYTES 256
 
+/* The storage log's panic writer (package/BootLog.c, boot_log_panic_flush): a panic parks this core before the log writer's
+ * round can publish, and that writer is usually the thread that panicked, so without this call the message never reaches the
+ * medium and a run cannot be read back over EDL. 0 = this kernel has no such writer. */
+#ifndef PANIC_FLUSH
+#define PANIC_FLUSH 0UL
+#endif
+
 __attribute__((noreturn)) static void park (void)
 {
   for (;;) {
@@ -253,6 +260,11 @@ __attribute__((noreturn, used, section(".text.b_main"))) void panic_screen_main 
   }
   format (&g, fmt, args);
   g.log = 0;
+  /* The message is complete: hand it to the storage log before this core parks. It polls the controller and takes no lock
+   * that a stopped CPU could hold (NativeUfs native_ufs_log_panic), so it is safe with interrupts masked. */
+  if (PANIC_FLUSH) {
+    ((int (*)(void))PANIC_FLUSH) ();
+  }
   __asm__ volatile ("dsb sy");
   /* Sample the active CPU translation regime, without changing it. This is
    * panic-time evidence only; it does not establish early mappings or EL0 ABI. */
