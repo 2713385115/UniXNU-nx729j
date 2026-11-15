@@ -80,10 +80,18 @@ while j < len(policy_args):
     j += 1
 policy_command += ['-mgeneral-regs-only', '-Wall', '-Wextra', '-Werror']
 subprocess.run(policy_command, cwd=policy_record['directory'], check=True, timeout=90)
+# Every board probe upstream would have compiled in (BootLog, BootUiTraceProbe, BootProcessProbe, the
+# legacy display and HID probes, the Adreno audits, the cpufreq sampler) is absent on this board, and a
+# static link turns each of their `weak_import` declarations into an undefined symbol. This file defines
+# all of them weakly, so a ported probe still wins the symbol.
+stub_source = KIT / 'BootProbeStub.c'
+stub_obj = OUT / 'BootProbeStub.o'
+stub_command = [str(stub_source) if arg == str(policy_source) else str(stub_obj) if arg == str(policy_obj) else arg for arg in policy_command]
+subprocess.run(stub_command, cwd=policy_record['directory'], check=True, timeout=90)
 
 archive = OUT / 'libBootProgress.a'
 archive.unlink(missing_ok=True)
-subprocess.run(['xcrun', 'ar', 'rcs', str(archive), str(obj), str(fault_obj), str(policy_obj)], check=True, timeout=30)
+subprocess.run(['xcrun', 'ar', 'rcs', str(archive), str(obj), str(fault_obj), str(policy_obj), str(stub_obj)], check=True, timeout=30)
 (OUT / 'build-report.json').write_text(json.dumps({
     'kit_dir': str(KIT.relative_to(ROOT)) if KIT.is_relative_to(ROOT) else str(KIT),
     'watchdog_policy_sha256': hashlib.sha256(policy_source.read_bytes()).hexdigest(),
@@ -93,6 +101,7 @@ subprocess.run(['xcrun', 'ar', 'rcs', str(archive), str(obj), str(fault_obj), st
     'core_sha256': hashlib.sha256((source.parent / 'BootProgressCore.h').read_bytes()).hexdigest(),
     'display_sha256': hashlib.sha256((source.parent / 'BootProgressDisplay.h').read_bytes()).hexdigest(),
     'pulse_sha256': hashlib.sha256((source.parent / 'BootProgressPulse.h').read_bytes()).hexdigest(),
+    'stub_sha256': hashlib.sha256(stub_source.read_bytes()).hexdigest(),
     'archive_sha256': hashlib.sha256(archive.read_bytes()).hexdigest(),
     'hardware_execution': False,
 }, indent=2) + '\n')
