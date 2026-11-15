@@ -24,7 +24,8 @@
 #
 #   NATIVE_VIRTIO_BLOCK   no virtio transport on this board
 #   SHENG_PMGR            needs kits/sheng/ShengPlatformPower.cpp (unpublished)
-#   BOOT_PROGRESS         needs kits/sheng/BootProgress.c (unpublished)
+#   BOOT_PROGRESS         ENABLED: the official stage-7 diagnostic page is carried in this
+#                         repository's package/BootProgress.c (kit = nx729j).
 #   NATIVE_LEGACY_DISPLAY / NATIVE_ADRENO
 #                         need an exact original framebuffer/GPU candidate
 #   SOURCE_MOCKFS         a QEMU test fixture, not a device component
@@ -77,7 +78,7 @@ CONFIG_XNU_SHENG_PMGR=n
 CONFIG_XNU_SOURCE_MOCKFS=n
 CONFIG_XNU_ARMVIRT_PLATFORM=n
 CONFIG_XNU_ZONE_PGZ_ALIGNMENT_PROBE=n
-CONFIG_XNU_BOOT_PROGRESS=n
+CONFIG_XNU_BOOT_PROGRESS=y
 # Stage 7 third attempt: stop composing the SystemOS cryptex into "/" as a writable
 # union layer, and let dyld map the shared cache straight off the read-only volume.
 #
