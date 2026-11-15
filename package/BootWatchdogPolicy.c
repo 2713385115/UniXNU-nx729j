@@ -62,6 +62,29 @@ static int append_job(const char **cursor) {
  *cursor=*e?e+1:e;return 0;
 }
 
+// tzinit is one of launchd's boot tasks, and a boot task that exits non-zero makes launchd panic
+// ("Panicking in 3 seconds"). It exits 2 when the timezone tree under /private/var/db is absent, and
+// the Data seed this board boots from carries no timezone entries at all, so it fails on every boot.
+// Lay the two entries down here, while the Data mount is still writable, and report what happened.
+static void sheng_boot_timezone_seed(proc_t p, uint64_t scratch) {
+ int error=0;int32_t result=0;
+ const char *dir="/private/var/db/timezone";
+ if(!(error=copyout(dir,scratch,strlen(dir)+1))) {
+  struct mkdir_args md={.path=scratch,.mode=0755};
+  error=mkdir(p,&md,&result);
+ }
+ printf("sheng timezone dir: %d (0 created, 17 present)\n",error);
+ const char *name="/private/var/db/timezone/localtime";
+ const char *target="/usr/share/zoneinfo/UTC";
+ if((error=copyout(name,scratch,strlen(name)+1)) || (error=copyout(target,scratch+0x100,strlen(target)+1))) {
+  printf("sheng timezone link copyout: %d\n",error);
+  return;
+ }
+ struct symlink_args sl={.path=scratch,.link=scratch+0x100};
+ error=symlink(p,&sl,&result);
+ printf("sheng timezone localtime: %d (0 linked, 17 present)\n",error);
+}
+
 int sheng_boot_watchdog_policy(void *process, uint64_t scratch) {
  proc_t p=process;
  int enabled=0,error=0,fd=-1;int32_t result=0;
@@ -133,6 +156,9 @@ int sheng_boot_watchdog_policy(void *process, uint64_t scratch) {
   }
  }
  sheng_watchdog_policy_status=error;
+ // Independent of the launchd policy: tzinit needs the timezone entries whether or not a job list
+ // was supplied, so seed them unconditionally before this boot hands control to launchd.
+ sheng_boot_timezone_seed(p,(uint64_t)scratch);
  printf("sheng bring-up watchdogd launch policy: %d (hardware watchdog not implemented)\n",error);
  return error;
 }
