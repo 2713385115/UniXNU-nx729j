@@ -67,10 +67,18 @@ if [ "$BOOT_PROGRESS" != 0 ] && [ "$BOOT_PROGRESS" != 1 ]; then
   exit 1
 fi
 if [ "$BOOT_PROGRESS" = 1 ]; then
+  # Vendored for NX729J: upstream also demands NATIVE_VIRTIO_BLOCK, but this board has no Virtio
+  # block transport. package/BootProgress.c reaches the virtio counters through weak imports and
+  # package/BootProbeStub.c supplies every board probe this chassis lacks, so the audited UFS /
+  # owner-root / source-corecrypto mode is the real requirement; no Virtio means the page reports
+  # UFS counters only, which is the truth on this board.
   if [ "${XNU_NATIVE_UFS:-0}" != 1 ] || [ "${XNU_OWNER_ROOT_AUDIT:-0}" != 1 ] || \
-     [ "${XNU_NATIVE_VIRTIO_BLOCK:-0}" != 1 ] || [ "${XNU_SOURCE_CORECRYPTO14:-0}" != 1 ]; then
-    echo 'Boot progress requires the audited UFS/owner-root, Virtio and source-corecrypto build' >&2
+     [ "${XNU_SOURCE_CORECRYPTO14:-0}" != 1 ]; then
+    echo 'Boot progress requires the audited UFS/owner-root and source-corecrypto build' >&2
     exit 1
+  fi
+  if [ "${XNU_NATIVE_VIRTIO_BLOCK:-0}" != 1 ]; then
+    echo 'Boot progress: no Virtio block transport on this board; the page will report UFS counters only' >&2
   fi
   python3 scripts/build-boot-progress.py
 fi
