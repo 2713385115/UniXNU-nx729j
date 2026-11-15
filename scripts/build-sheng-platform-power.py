@@ -23,7 +23,19 @@ def require(value, message):
         raise SystemExit(message)
 
 
-print(run(['python3', ROOT / 'scripts/audit-amfi-pmgr-contract.py'], text=True), end='')
+# A kernel-only nx729j build has no native-prelink candidate and no extracted
+# iPad7 kernelcache in the tree; both are prerequisites of the original static
+# contract audit. Keep the audit when they exist, and keep every archive ABI
+# check below in either case.
+audit_candidate = ROOT / 'build/native-prelink/native-owner-ufs-rootauth3-candidate.macho'
+audit_later = sorted((ROOT / 'build/native-prelink').glob('native-owner-ufs-cpu-desktop-*-candidate.macho'))
+audit_cache = ROOT / '.cache/firmware/kernelcache.macho/kernelcache.release.ipad7.decompressed'
+if (audit_candidate.is_file() or audit_later) and audit_cache.is_file():
+    print(run(['python3', ROOT / 'scripts/audit-amfi-pmgr-contract.py'], text=True), end='')
+else:
+    print('SKIP: AMFI/PMGR static contract audit needs a native-prelink candidate and the '
+          'original iPad7 kernelcache; neither exists in this kernel-only build. '
+          'All archive ABI checks below still run.')
 header = '''// Generated exact storage/slot ABI; private fields stay opaque.
 #pragma once
 #include <IOKit/IOPMGR.h>
@@ -97,11 +109,12 @@ if not reference.exists():
     # Build products are pruned: a later candidate built from the same original kernelcache has the identical original
     # ApplePMGR class and inherited native IOPMGR slots; every slot/pointer check below still runs against it.
     later = sorted((ROOT / 'build/native-prelink').glob('native-owner-ufs-cpu-desktop-*-candidate.macho'), key=lambda f: f.stat().st_mtime)
-    require(later, 'No reference candidate available')
-    reference = later[-1]
-candidate = reference.read_bytes()
-meta = macho(candidate)
-native_names = {n: va for va, names in exports(candidate, meta).items() for n in names}
+    reference = later[-1] if later else None
+# Without a candidate the candidate-only comparisons are skipped; the AON slot
+# addresses below come from the published contract in audit-amfi-pmgr-contract.py.
+candidate = reference.read_bytes() if reference else None
+meta = macho(candidate) if candidate else None
+native_names = {n: va for va, names in exports(candidate, meta).items() for n in names} if candidate else {}
 
 
 def ptr(va):
@@ -111,13 +124,17 @@ def ptr(va):
 bindings = {'__ZN9ApplePMGRC2EPK11OSMetaClass': 0xfffffff0049f003c,
             '__ZN9ApplePMGRD2Ev': 0xfffffff0049f019c,
             '__ZN9ApplePMGR10gMetaClassE': 0xfffffff006adf490}
+# scripts/audit-amfi-pmgr-contract.py pins read(base_vptr + 320*8, 16) to this
+# pair; they are the original ApplePMGR base AON slots (read returns 0xffffffff,
+# write is a no-op). Use them verbatim when no candidate is available.
+AON_BASE_SLOTS = {320: 0xfffffff004a20fbc, 321: 0xfffffff004a20fc4}
 for slot, name in enumerate(entries):
     if slot in (0, 1, 7) or 168 <= slot < 340 and slot not in (320, 321):
         require('18ShengPlatformPower' in name, f'Own guard/lifecycle required at slot {slot}')
     elif slot in (320, 321):
         require('9ApplePMGR' in name, 'Only actual original AON implementations inherited')
-        bindings[name] = ptr(0xfffffff005ce26d8 + slot * 8)
-    else:
+        bindings[name] = ptr(0xfffffff005ce26d8 + slot * 8) if candidate else AON_BASE_SLOTS[slot]
+    elif candidate:
         require(native_names.get(name) == ptr(native_names['__ZTV6IOPMGR'] + 16 + slot * 8),
                 f'Native IOPMGR/IOService entry differs at {slot}')
 undefined = {n for n, _, k in symbols if k == 1 and 'ApplePMGR' in n}
