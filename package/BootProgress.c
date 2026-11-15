@@ -69,8 +69,14 @@ extern volatile uint32_t native_ufs_integrity_failures, native_ufs_blocks_publis
 extern volatile uint32_t native_ufs_probe_calls __attribute__((weak_import)), native_ufs_matched __attribute__((weak_import));
 extern volatile uint32_t native_ufs_root_step __attribute__((weak_import));
 extern const char *volatile native_ufs_root_failure __attribute__((weak_import));
-extern volatile uint32_t native_virtio_ready, native_virtio_read_requests, native_virtio_read_failures;
-extern volatile uint64_t native_virtio_verified_blocks;
+// NX729J has no Virtio block transport (NATIVE_VIRTIO_BLOCK=n), so these counters are never
+// defined on this board. Keep the references weak -- an ordinary declaration would make the
+// kernel link fail -- and gate every read on the symbol actually being present.
+extern volatile uint32_t native_virtio_ready __attribute__((weak_import));
+extern volatile uint32_t native_virtio_read_requests __attribute__((weak_import));
+extern volatile uint32_t native_virtio_read_failures __attribute__((weak_import));
+extern volatile uint64_t native_virtio_verified_blocks __attribute__((weak_import));
+#define NX729J_VIRTIO_LINKED (&native_virtio_ready)
 extern void native_ufs_progress_text(char *, size_t);
 extern unsigned int vm_page_free_count;
 extern unsigned int vm_page_active_count,vm_page_inactive_count,vm_page_wire_count,vm_page_speculative_count;
@@ -214,7 +220,7 @@ static void draw(unsigned now) {
     now, now-visible->activity_at, irq_count, thread_count, visible->dropped,
     native_owner_root_accepted, nprocs, vm_page_free_count); line(1,b,0xffffffff);
   snprintf(b,sizeof(b),"%s requests=%llu verified4K=%llu failures=%llu integrity=%u published=%u",
-    native_virtio_ready && !native_ufs_blocks_published ? "OFFLINE VIRTIO" : "UFS",
+    NX729J_VIRTIO_LINKED && native_virtio_ready && !native_ufs_blocks_published ? "OFFLINE VIRTIO" : "UFS",
     visible->reads,visible->verified,visible->failures,native_ufs_integrity_failures,native_ufs_blocks_published);
   if(&native_ufs_root_step && !native_ufs_blocks_published) {
     // Nothing published yet: how far the root start got (probe calls, match, step, last soft-failure reason).
@@ -649,21 +655,27 @@ void boot_progress_irq(uint64_t pc,uint64_t psr,uint64_t sp) {
 void boot_progress_poll(void) {
   if (!enabled || state.frozen || !take()) return;
   unsigned now=seconds();
-  unsigned offline=native_virtio_ready && !native_ufs_blocks_published;
+  unsigned offline=NX729J_VIRTIO_LINKED && native_virtio_ready && !native_ufs_blocks_published;
   unsigned reason=bp_poll(&state,now,
     offline ? native_virtio_read_requests : __atomic_load_n(&native_ufs_block_reads,__ATOMIC_RELAXED),
     offline ? native_virtio_verified_blocks : __atomic_load_n(&native_ufs_verified_blocks,__ATOMIC_RELAXED),
     offline ? native_virtio_read_failures : __atomic_load_n(&native_ufs_block_failures,__ATOMIC_RELAXED));
-  if (state.frozen) { render_snapshot=state;draw(now); }
-  boot_progress_reason=reason;
-  if(state.frozen) {
+  if (state.frozen) {
+    // NX729J port: upstream parks here forever with every interrupt masked
+    // ("intentionally retain the complete screen"), because a dead board is
+    // acceptable for an unattended bench run. NativeUfs calls this observer
+    // from its block-verify path while a window lock is held -- the board then
+    // stops inside the storage driver before the persistent log writer opens,
+    // and the next reset leaves no evidence at all. Keep the snapshot on the
+    // screen and keep the machine alive: the page is the diagnostic, not the
+    // reset.
     boot_progress_reason=reason;boot_progress_frozen=1;
     boot_progress_stop_checkpoint();
-    // Intentionally retain the complete screen. No reset, storage writes,
-    // unsafe MMIO snapshot, panic lock, or resubmission of in-flight I/O.
-    __asm__ volatile("msr daifset,#15\n\tdsb sy" ::: "memory");
-    for (;;) __asm__ volatile("wfe");
+    render_snapshot=state;draw(now);
+    release();
+    return;
   }
+  boot_progress_reason=reason;
   release();
 }
 static void pulse_monitor(void *arg, wait_result_t result) {
