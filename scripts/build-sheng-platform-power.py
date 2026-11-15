@@ -45,6 +45,10 @@ header += '};\nstatic_assert(sizeof(ApplePMGR)==0x4b8a8,"Original provider stora
 (OUT / 'OriginalPMGRABI.h').write_text(header)
 (OUT / 'GuardedPMGRSlots.inc').write_text(guards)
 source = ROOT / 'kits/sheng/ShengPlatformPower.cpp'
+if not source.is_file():
+    # defconfig maps this repository's package/ to kits/nx729j in the build tree;
+    # the identical source is published there too.
+    source = ROOT / 'kits/nx729j/ShengPlatformPower.cpp'
 obj = OUT / 'ShengPlatformPower.o'
 record = json.loads((ROOT / 'build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/iokit/DEVELOPMENT/IOPlatformExpert.cpo.json').read_text().strip().rstrip(','))
 command, i = [], 0
