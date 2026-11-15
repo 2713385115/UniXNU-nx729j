@@ -660,16 +660,22 @@ void boot_progress_poll(void) {
     offline ? native_virtio_read_requests : __atomic_load_n(&native_ufs_block_reads,__ATOMIC_RELAXED),
     offline ? native_virtio_verified_blocks : __atomic_load_n(&native_ufs_verified_blocks,__ATOMIC_RELAXED),
     offline ? native_virtio_read_failures : __atomic_load_n(&native_ufs_block_failures,__ATOMIC_RELAXED));
-  if (state.frozen) { render_snapshot=state;draw(now); }
-  boot_progress_reason=reason;
-  if(state.frozen) {
+  if (state.frozen) {
+    // NX729J port: upstream parks here forever with every interrupt masked
+    // ("intentionally retain the complete screen"), because a dead board is
+    // acceptable for an unattended bench run. NativeUfs calls this observer
+    // from its block-verify path while a window lock is held -- the board then
+    // stops inside the storage driver before the persistent log writer opens,
+    // and the next reset leaves no evidence at all. Keep the snapshot on the
+    // screen and keep the machine alive: the page is the diagnostic, not the
+    // reset.
     boot_progress_reason=reason;boot_progress_frozen=1;
     boot_progress_stop_checkpoint();
-    // Intentionally retain the complete screen. No reset, storage writes,
-    // unsafe MMIO snapshot, panic lock, or resubmission of in-flight I/O.
-    __asm__ volatile("msr daifset,#15\n\tdsb sy" ::: "memory");
-    for (;;) __asm__ volatile("wfe");
+    render_snapshot=state;draw(now);
+    release();
+    return;
   }
+  boot_progress_reason=reason;
   release();
 }
 static void pulse_monitor(void *arg, wait_result_t result) {
