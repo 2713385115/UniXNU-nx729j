@@ -21,7 +21,6 @@ extern int native_ufs_log_write(uint64_t, uint32_t, const void *) __attribute__(
 extern uint64_t native_ufs_export_blocks(void) __attribute__((weak_import));
 extern int native_ufs_export_write(uint64_t, uint32_t, const void *) __attribute__((weak_import));
 extern int native_ufs_log_sync(void) __attribute__((weak_import));
-extern int native_ufs_log_panic(void) __attribute__((weak_import));
 extern unsigned native_ufs_store_gpt_check(void) __attribute__((weak_import));
 extern uint32_t cs_text_fixup_parsed __attribute__((weak_import));
 extern uint32_t cs_text_fixup_applied __attribute__((weak_import));
@@ -103,43 +102,6 @@ extern struct boot_log_msgbuf *msgbufp;
 
 enum {LogBlock = 4096, LogMsgFirst = 1, LogMsgBlocks = 32, LogSlotFirst = 33, LogSlotBlocks = 8, LogPeriodMs = 2000, LogMaxErrors = 3,
       LogExportStage = 64};   // export bytes staged per write: 256 KiB
-
-// ---- the panic path ------------------------------------------------------------------------------------------------
-// A panic parks the CPU that took it before the writer's round can publish (scripts/xnu-panic-screen.c), and that writer is
-// very often the thread that panicked in the first place: everything printed after the last published round -- the panic
-// message included -- would then only ever reach memory. The panic screen calls this before it parks. NativeUfs's
-// native_ufs_log_panic() stops host commands from waiting on the host lock (they poll, TransferPoll.h), so the write also
-// works with interrupts masked, and the text goes to block 1, where every reader starts the message buffer.
-char boot_log_panic_block[LogBlock] __attribute__((aligned(LogBlock)));
-int boot_log_panic_flush(void) {
-  if (!&native_ufs_log_write) return 0;
-  // Newer NativeUfs switches the host to a panic slot that never waits; the pinned one has no such call and the plain write
-  // below is all there is (it takes the slot lock, so a panic taken inside a storage command cannot report itself).
-  if (&native_ufs_log_panic && !native_ufs_log_panic()) return 0;   // no log window this boot (sheng-log=0, root never opened)
-  char *b = boot_log_panic_block;
-  static const char head[] = "\n*** kernel panic, written from the panic screen ***\n";
-  size_t at = 0;
-  for (unsigned i = 0; head[i] && at + 2 < LogBlock; ++i) b[at++] = head[i];
-  if (&boot_progress_panic_text) {
-    for (unsigned i = 0; i < 255 && at + 2 < LogBlock; ++i) {
-      const char c = boot_progress_panic_text[i];
-      if (!c) break;
-      b[at++] = (c == '\n' || (c >= 32 && c < 127)) ? c : '?';
-    }
-  } else {
-    static const char none[] = "(no panic text buffer in this kernel)\n";
-    for (unsigned i = 0; none[i] && at + 2 < LogBlock; ++i) b[at++] = none[i];
-  }
-  b[at++] = '\n';
-  for (unsigned i = (unsigned)at; i < LogBlock; ++i) b[i] = 0;
-  int ok = native_ufs_log_write(LogMsgFirst, 1, b);
-  if (&native_ufs_log_sync) native_ufs_log_sync();
-  return ok;
-}
-// The panic payload is patched into the kernel after linking and reaches this function by symbol; the store in boot_log_tick
-// keeps that symbol alive without relying on the linker never stripping an unreferenced text section.
-int (*boot_log_panic_log)(void) = boot_log_panic_flush;
-
 struct boot_log_header {
   char magic[8];                 // "SHLOG001"
   uint32_t version, header_bytes;
@@ -636,7 +598,6 @@ static void writer(void *arg, wait_result_t result) {
 // Called by the board page's monitor once a second; starts the writer the first time when sheng-log=1.
 void boot_log_tick(unsigned now) {
   (void)now;
-  boot_log_panic_log = boot_log_panic_flush;   // keeps the panic writer's symbol in the kernel for the panic payload
   if (boot_log_started) return;
   boot_log_started = 1;
   uint32_t mode = 0;
