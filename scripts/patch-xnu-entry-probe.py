@@ -198,13 +198,14 @@ def assemble_c(source, va, workdir, symbols):
         if not any(base <= text and text + 256 <= base + size for base, size, _, _ in SEGMENTS):
             raise SystemExit('Invalid _boot_progress_panic_text')
         definitions.append(f'-DPANIC_TEXT={text:#x}UL')
-    # Optional: the storage log's panic writer (package/BootLog.c) that puts the message on the medium before the screen parks.
-    # Without it the text only exists in memory and on the panel, and a run that dies here cannot be read back over EDL.
-    flush = symbols.get('_boot_log_panic_flush')
-    if flush is not None and any(base <= flush and flush < base + size for base, size, _, _ in SEGMENTS):
-        definitions.append(f'-DPANIC_FLUSH={flush:#x}UL')
+    # Optional: the storage driver's panic channel (drivers/NativeUfs native_ufs_panic_dump) that puts the text on the medium
+    # before the screen parks the core. Without it the message only exists in memory and on the panel, and a run that dies
+    # here has to be photographed instead of read back over EDL.
+    dump = symbols.get('_native_ufs_panic_dump')
+    if dump is not None and any(base <= dump and dump < base + size for base, size, _, _ in SEGMENTS):
+        definitions.append(f'-DPANIC_DUMP={dump:#x}UL')
     else:
-        print(f'warning: no _boot_log_panic_flush in the kernel: the panic message will not reach the log')
+        print(f'warning: no _native_ufs_panic_dump in the kernel: the panic message will not reach the log')
     subprocess.run([clang, '--target=aarch64-none-elf', '-ffreestanding', '-fno-builtin', '-fno-stack-protector',
                     '-mgeneral-regs-only', '-fno-pic', '-mcmodel=tiny', '-Oz', f'-DVINFO={VINFO_VA:#x}UL',
                     *definitions, f'-I{font_dir}', '-c', source, '-o', obj], check=True)
