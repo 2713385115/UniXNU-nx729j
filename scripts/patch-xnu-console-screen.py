@@ -199,9 +199,15 @@ def main():
 
     original = read_word(data, cnputs)
     if original != CNPUTS_FIRST:
-        raise SystemExit('__cnputs at %#x starts with %#010x, expected %#010x (sub sp, sp, #0x80). '
-                         'Already patched, or a different kernel build.'
-                         % (cnputs, original, CNPUTS_FIRST))
+        # A kernel whose __cnputs starts differently is not the one this optional
+        # frame-buffer console was written for.  The panic screen is patched by a
+        # separate script before this one runs, so do not fail the whole build over
+        # a decoration the board does without: leaving the kernel untouched here
+        # keeps that (already applied) panic channel intact.
+        print('__cnputs at %#x starts with %#010x, expected %#010x; '
+              'console screen skipped (different kernel layout, kernel left unchanged).'
+              % (cnputs, original, CNPUTS_FIRST))
+        return
 
     # 先用一个占位地址量出代码大小（-fno-pic 下地址不影响指令长度），再选洞。
     with tempfile.TemporaryDirectory() as tmp:
