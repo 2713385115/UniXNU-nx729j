@@ -67,10 +67,17 @@ if [ "$BOOT_PROGRESS" != 0 ] && [ "$BOOT_PROGRESS" != 1 ]; then
   exit 1
 fi
 if [ "$BOOT_PROGRESS" = 1 ]; then
+  # Vendored change for NX729J: a board without a Virtio block transport still benefits from the
+  # diagnostic page. BootProgress.c reads the virtio counters through weak imports and gates every
+  # read on the symbol being present, so only the audited UFS/owner-root and source-corecrypto modes
+  # are hard requirements here; missing Virtio is a downgrade to "UFS only", not a build error.
   if [ "${XNU_NATIVE_UFS:-0}" != 1 ] || [ "${XNU_OWNER_ROOT_AUDIT:-0}" != 1 ] || \
-     [ "${XNU_NATIVE_VIRTIO_BLOCK:-0}" != 1 ] || [ "${XNU_SOURCE_CORECRYPTO14:-0}" != 1 ]; then
-    echo 'Boot progress requires the audited UFS/owner-root, Virtio and source-corecrypto build' >&2
+     [ "${XNU_SOURCE_CORECRYPTO14:-0}" != 1 ]; then
+    echo 'Boot progress requires the audited UFS/owner-root and source-corecrypto build' >&2
     exit 1
+  fi
+  if [ "${XNU_NATIVE_VIRTIO_BLOCK:-0}" != 1 ]; then
+    echo 'Boot progress: no Virtio block transport on this board; the page will report UFS counters only' >&2
   fi
   python3 scripts/build-boot-progress.py
 fi
