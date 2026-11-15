@@ -23,7 +23,8 @@
 # Still off, and why:
 #
 #   NATIVE_VIRTIO_BLOCK   no virtio transport on this board
-#   SHENG_PMGR            needs kits/sheng/ShengPlatformPower.cpp (unpublished)
+#   SHENG_PMGR            now enabled: kits/sheng/ShengPlatformPower.cpp is published here;
+#                         without _sheng_pmgr_run AMFI panics with "No PMGR?" on native-ufs-root=1.
 #   BOOT_PROGRESS         ENABLED: the official stage-7 diagnostic page is carried in this
 #                         repository's package/BootProgress.c (kit = nx729j).
 #   NATIVE_LEGACY_DISPLAY / NATIVE_ADRENO
@@ -74,7 +75,7 @@ CONFIG_XNU_NATIVE_VIRTIO_BLOCK=n
 CONFIG_XNU_NATIVE_RAM_BLOCK=y
 CONFIG_XNU_NATIVE_VIRTIO_CONSOLE=n
 CONFIG_XNU_NATIVE_OFFLINE_GPU=n
-CONFIG_XNU_SHENG_PMGR=n
+CONFIG_XNU_SHENG_PMGR=y
 CONFIG_XNU_SOURCE_MOCKFS=n
 CONFIG_XNU_ARMVIRT_PLATFORM=n
 CONFIG_XNU_ZONE_PGZ_ALIGNMENT_PROBE=n
