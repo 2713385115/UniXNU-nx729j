@@ -1301,6 +1301,11 @@ struct boot_log_header {
   char tag[32];
   uint32_t export_first, export_blocks, export_bytes, export_generation;
   uint32_t export_below;
+  // Official BootLog.c version 4/5 words, at scripts/read-sheng-log.py's fixed offsets 140/148.
+  // They must precede the nx729j phase extension below so the reader decodes the right words:
+  // diag file export (unused on this board) and the message stream's form / head / resync count.
+  uint32_t diag_first, diag_bytes;
+  uint32_t msg_mode, msg_resyncs, msg_head_lo, msg_head_hi;
   // Appended after the original 144-byte layout so older readers stay correct. The writer republishes this block at
   // every step of a round and records which step it reached: a boot that stops dead inside a round then still leaves
   // "round N, phase P" on the medium, which is the one thing a single end-of-round header could never say.
@@ -1334,6 +1339,62 @@ static uint32_t boot_log_copy_tail (uint8_t *out, uint32_t bytes)
     if (c) out[i] = static_cast<uint8_t> (c);
   }
   return want;
+}
+
+// ---- Official version 5 message stream (UniXNU/UniXNU-sheng package/BootLog.c:2509-2556) ----
+// The kernel's own msgbuf is a ring: boot_log_copy_tail() publishes a snapshot of that ring, so a
+// round that never runs loses everything kprintf'ed after the previous one. Version 5 instead
+// appends the bytes the kernel wrote since the last round into a second ring on the medium; the
+// official reader (messages()) unwraps it with msg_head. msg_mode=1 names that form. Ported line
+// for line from the official writer, with native_ufs_log_write_try in place of its log_write.
+static uint8_t *gMsgRing = nullptr;
+static struct { const char *bufc; int size, bufx, synced; uint64_t head, written; } gMsgStream;
+
+static void bootLogStreamAppend (uint8_t c)
+{
+  if (!c) return;
+  const uint64_t cap = BootLogMsgBlocks * 4096ULL;
+  gMsgRing[gMsgStream.head % cap] = c;
+  ++gMsgStream.head;
+}
+
+static uint64_t bootLogStreamRound (uint32_t *resyncs)
+{
+  struct boot_log_msgbuf *m = msgbufp;
+  const uint64_t before = gMsgStream.head;
+  if (!m || !m->msg_bufc || m->msg_size <= 0) return 0;
+  const int size = m->msg_size;
+  int x = m->msg_bufx;
+  if (x < 0 || x >= size) x = 0;
+  if (!gMsgStream.synced || gMsgStream.bufc != m->msg_bufc || gMsgStream.size != size) {
+    if (gMsgStream.synced) ++*resyncs;
+    const int window = BootLogMsgBlocks * 4096;
+    for (int i = size > window ? size - window : 0; i < size; ++i)
+      bootLogStreamAppend (static_cast<uint8_t> (m->msg_bufc[(x + i) % size]));
+    gMsgStream.bufc = m->msg_bufc; gMsgStream.size = size; gMsgStream.synced = 1;
+  } else {
+    for (int i = gMsgStream.bufx; i != x; i = i + 1 == size ? 0 : i + 1)
+      bootLogStreamAppend (static_cast<uint8_t> (m->msg_bufc[i]));
+  }
+  gMsgStream.bufx = x;
+  return gMsgStream.head - before;
+}
+
+static int bootLogStreamWrite (void)
+{
+  if (gMsgStream.written == gMsgStream.head) return 1;
+  uint64_t first = gMsgStream.written / 4096, end = (gMsgStream.head + 4095) / 4096;
+  if (end - first > BootLogMsgBlocks) first = end - BootLogMsgBlocks;
+  int ok = 1;
+  while (ok && first < end) {
+    const uint32_t at = static_cast<uint32_t> (first % BootLogMsgBlocks);
+    uint32_t n = static_cast<uint32_t> (end - first);
+    if (n > BootLogMsgBlocks - at) n = BootLogMsgBlocks - at;
+    ok = native_ufs_log_write_try (BootLogMsgFirst + at, n, gMsgRing + static_cast<uint64_t> (at) * 4096);
+    first += n;
+  }
+  if (ok) gMsgStream.written = gMsgStream.head;
+  return ok;
 }
 
 // One block per failure point, at a fixed LBA (the window's second-to-last block, so it sits beside the quarantine
@@ -1414,13 +1475,18 @@ static void bootLogThread (void *, wait_result_t)
   }
   uint8_t *buffer = static_cast<uint8_t *> (IOMallocAligned (BootLogMsgBlocks * 4096, 4096));
   if (!buffer) return;
+  // The version 5 stream ring is a second 128 KiB buffer, independent of the slot buffer.
+  gMsgRing = static_cast<uint8_t *> (IOMallocAligned (BootLogMsgBlocks * 4096, 4096));
+  if (gMsgRing) memset (gMsgRing, 0, BootLogMsgBlocks * 4096);
+  memset (&gMsgStream, 0, sizeof gMsgStream);
+  IOLog ("NativeUfs: NX729J_V5_STREAM_RING %s\n", gMsgRing ? "enabled" : "no memory");
   const uint32_t slot_count = static_cast<uint32_t> ((blocks - BootLogSlotFirst) / BootLogSlotBlocks);
   IOLog ("NativeUfs: boot log window %llu+%llu blocks, %u slots\n",
          (unsigned long long) first, (unsigned long long) blocks, slot_count);
   struct boot_log_header h;
   memset (&h, 0, sizeof h);
   memcpy (h.magic, "SHLOG001", 8);
-  h.version = 3;
+  h.version = 5;
   h.header_bytes = sizeof h;
   // No export region is produced: the render-server pipeline caches that would fill it do not
   // exist on this board. export_bytes stays 0, so the reader never looks below the window.
@@ -1496,6 +1562,7 @@ static void bootLogThread (void *, wait_result_t)
     const unsigned now = static_cast<unsigned> ((boot_log_ticks () - start) / f);
     int ok = 1;
     bootLogPublish (h, 1, rnd, now);
+    if (gMsgRing) bootLogStreamRound (&h.msg_resyncs);
     // Two commands per round is the budget. Every command this thread issues competes for the single command slot with
     // the thousand-plus writes per second launchd generates, so the writer is kept as light as the evidence allows:
     // one text slot with the live transport snapshot, and the header that publishes it. Everything else is rate
@@ -1529,14 +1596,29 @@ static void bootLogThread (void *, wait_result_t)
     // entire ring and write all 32 blocks. The buffer is the slot buffer, which is already 128 KiB and idle here.
     {
       stage = "msg";
-      h.msg_bytes = boot_log_copy_tail (buffer, BootLogMsgBlocks * 4096);
-      bootLogPublish (h, 3, rnd, now);
-      uint32_t msg_chunks = (h.msg_bytes + 4095) / 4096;
-      if (msg_chunks == 0) msg_chunks = 1;
-      if (!native_ufs_log_write_try (BootLogMsgFirst, msg_chunks, buffer)) {
-        ok = 0;
-        bootLogPhase (h.rounds + 1, 4, 0);
+      if (!gMsgRing) {
+        // Fallback when the stream ring could not be allocated: the version-3 linear snapshot.
+        h.msg_mode = 0;
+        h.msg_bytes = boot_log_copy_tail (buffer, BootLogMsgBlocks * 4096);
+        uint32_t msg_chunks = (h.msg_bytes + 4095) / 4096;
+        if (msg_chunks == 0) msg_chunks = 1;
+        if (!native_ufs_log_write_try (BootLogMsgFirst, msg_chunks, buffer)) {
+          ok = 0;
+          bootLogPhase (h.rounds + 1, 4, 0);
+        }
+      } else {
+        // Version 5: only the blocks the newly appended stream bytes reached, at most two pieces.
+        if (!bootLogStreamWrite ()) {
+          ok = 0;
+          bootLogPhase (h.rounds + 1, 4, 0);
+        }
+        const uint64_t cap = BootLogMsgBlocks * 4096ULL, head = gMsgStream.written;
+        h.msg_mode = 1;
+        h.msg_head_lo = static_cast<uint32_t> (head);
+        h.msg_head_hi = static_cast<uint32_t> (head >> 32);
+        h.msg_bytes = static_cast<uint32_t> (head < cap ? head : cap);
       }
+      bootLogPublish (h, 3, rnd, now);
     }
     if (ok) ++h.slots_written; else ++h.write_errors;
     h.rounds++;
