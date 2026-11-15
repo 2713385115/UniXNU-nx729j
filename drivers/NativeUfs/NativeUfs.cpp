@@ -1397,6 +1397,127 @@ static int bootLogStreamWrite (void)
   return ok;
 }
 
+// ---- Official read-only reset/PON forensics ------------------------------------
+// Ported from UniXNU/UniXNU-sheng@main package/BootReset.c + package/BootResetCore.h.
+// BootResetCore.h states these are the *SM8550* devicetree register facts (arbiter core
+// 0xc400000 / cnfg 0xc42d000 / obsrvr 0xc440000 / chnls 0xc500000, EE 0, SDAM PPID
+// 0x071, reboot-reason cell byte 0x48 bits 7:1), and nx729j is an SM8550, so the
+// addresses need no translation. This is READ ONLY: it never arms the Gunyah watchdog,
+// never writes the reboot cell and never issues PSCI SYSTEM_RESET. The question it
+// answers is why the *previous* reset happened -- the cell and the hypervisor status
+// survive a warm reset, so reading them once at log-open is the whole measurement.
+enum {
+  PON_SPMI_CORE = 0xc400000, PON_SPMI_CORE_SIZE = 0x3000,
+  PON_SPMI_CNFG = 0xc42d000, PON_SPMI_CNFG_SIZE = 0x4000,
+  PON_SPMI_OBS = 0xc440000, PON_SPMI_OBS_SIZE = 0x10000
+};
+enum {
+  PON_PSCI_VERSION = 0x84000000u, PON_PSCI_FEATURES = 0x8400000au,
+  PON_PSCI_RESET = 0x84000009u, PON_PSCI_RESET2_32 = 0x84000012u,
+  PON_PSCI_RESET2_64 = 0xc4000012u,
+  // Linux gunyah_wdt vendor calls: 5 control, 6 status, 7 ping, 8 set time.
+  PON_GUNYAH_WDT_STATUS = 0x86000006u
+};
+enum {
+  PON_BR_VERSION_V7_MIN = 0x70000000u, PON_BR_VERSION_V8_MIN = 0x80000000u,
+  PON_BR_FEATURES = 0x04, PON_BR_FEATURES_APIDS_MASK = 0x7ffu,
+  PON_BR_APID_MAP = 0x2000, PON_BR_CNFG_OWNER = 0x00,
+  PON_BR_OBS_EE_STRIDE = 0x8000, PON_BR_OBS_APID_STRIDE = 0x20,
+  PON_BR_CHNL_APID_STRIDE = 0x1000,
+  PON_BR_CMD = 0x00, PON_BR_STATUS = 0x08, PON_BR_WDATA0 = 0x10, PON_BR_RDATA0 = 0x18,
+  PON_BR_OP_EXT_READL = 1,
+  PON_BR_STATUS_DONE = 1u << 0, PON_BR_STATUS_ERRORS = 0xeu,
+  PON_BR_SDAM_PPID = 0x071, PON_BR_REBOOT_CELL = 0x48, PON_BR_POLLS = 100000
+};
+
+// SMCCC call with two arguments; x0 and x2 come back. The Gunyah watchdog status
+// reports the time since the last ping in x2 (BootReset.c:17).
+static uint64_t ponSmc2 (uint64_t fid, uint64_t a1, uint64_t a2, uint64_t *r2)
+{
+  register uint64_t x0 __asm__("x0") = fid, x1 __asm__("x1") = a1,
+                    x2 __asm__("x2") = a2, x3 __asm__("x3") = 0;
+  __asm__ volatile ("smc #0" : "+r"(x0), "+r"(x1), "+r"(x2), "+r"(x3)
+                    :: "memory", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12",
+                       "x13", "x14", "x15", "x16", "x17");
+  if (r2) *r2 = x2;
+  return x0;
+}
+static uint64_t ponSmc1 (uint64_t fid, uint64_t a1) { return ponSmc2 (fid, a1, 0, nullptr); }
+
+static inline uint32_t ponBrCmd (uint8_t op, uint8_t byte_addr, uint8_t bc)
+{ return ((uint32_t) op << 27) | ((uint32_t) byte_addr << 4) | (bc & 7u); }
+
+struct PonFound { uint32_t version, apids; int apid, owner; };
+static int ponBrFind (volatile uint32_t *core, volatile uint32_t *cnfg, uint8_t ee, struct PonFound *f)
+{
+  f->version = core[0];
+  f->apids = core[PON_BR_FEATURES / 4] & PON_BR_FEATURES_APIDS_MASK;
+  f->apid = -1; f->owner = -1;
+  if (f->version < PON_BR_VERSION_V7_MIN || f->version >= PON_BR_VERSION_V8_MIN) return 1;
+  if (!f->apids || f->apids > 1024) return 2;
+  for (uint32_t i = 0; i < f->apids; ++i) {
+    uint32_t map = core[(PON_BR_APID_MAP + 4 * i) / 4];
+    if (!map || ((map >> 8) & 0xfff) != PON_BR_SDAM_PPID) continue;
+    int owner = (int) (cnfg[(PON_BR_CNFG_OWNER + 4 * i) / 4] & 7u);
+    if (f->apid < 0 || owner == ee) { f->apid = (int) i; f->owner = owner; }
+  }
+  return f->apid < 0 ? 3 : 0;
+}
+static int ponBrWait (volatile uint32_t *base)
+{
+  for (unsigned n = 0; n < PON_BR_POLLS; ++n) {
+    uint32_t s = base[PON_BR_STATUS / 4];
+    if (s & PON_BR_STATUS_DONE) return (s & PON_BR_STATUS_ERRORS) ? 2 : 0;
+  }
+  return 1;
+}
+// One byte of the SDAM peripheral through this EE's observer channel.
+static int ponBrRead8 (volatile uint32_t *obs, uint8_t ee, int apid, uint8_t byte_addr, uint8_t *value)
+{
+  volatile uint32_t *ch = obs + (PON_BR_OBS_EE_STRIDE * ee + PON_BR_OBS_APID_STRIDE * (uint32_t) apid) / 4;
+  ch[PON_BR_CMD / 4] = ponBrCmd (PON_BR_OP_EXT_READL, byte_addr, 0);
+  int rc = ponBrWait (ch);
+  if (rc) return rc;
+  *value = (uint8_t) ch[PON_BR_RDATA0 / 4];
+  return 0;
+}
+
+// Fills a single line: PSCI capabilities, Gunyah watchdog status, SPMI arbiter
+// version/APIDs and the PMIC SDAM reboot-reason cell. Never touches a write channel.
+static void nx729jPonProbe (char *text, size_t cap)
+{
+  uint64_t since = 0;
+  const int64_t wdt = (int64_t) ponSmc2 (PON_GUNYAH_WDT_STATUS, 0, 0, &since);
+  const uint64_t ver = ponSmc1 (PON_PSCI_VERSION, 0);
+  const int64_t fReset = (int64_t) ponSmc1 (PON_PSCI_FEATURES, PON_PSCI_RESET);
+  const int64_t fReset2_32 = (int64_t) ponSmc1 (PON_PSCI_FEATURES, PON_PSCI_RESET2_32);
+  const int64_t fReset2_64 = (int64_t) ponSmc1 (PON_PSCI_FEATURES, PON_PSCI_RESET2_64);
+
+  // mapPhys() is this file's own kext-safe wrapper (IODeviceMemory + kIOMapInhibitCache),
+  // so no ml_io_map_unmappable permanent mapping and no unmap hazard. The shared maps
+  // stay alive for the lifetime of the kext; this runs exactly once per boot.
+  static OSSharedPtr<IOMemoryMap> keepCore, keepCnfg, keepObs;
+  uintptr_t core = mapPhys (PON_SPMI_CORE, PON_SPMI_CORE_SIZE, keepCore);
+  uintptr_t cnfg = mapPhys (PON_SPMI_CNFG, PON_SPMI_CNFG_SIZE, keepCnfg);
+  uintptr_t obs = mapPhys (PON_SPMI_OBS, PON_SPMI_OBS_SIZE, keepObs);
+  int open = 0, find = -1, read = -1;
+  struct PonFound f; memset (&f, 0, sizeof f);
+  uint8_t cell = 0xff;
+  if (!core || !cnfg || !obs) open = 1;
+  else {
+    find = ponBrFind (reinterpret_cast<volatile uint32_t *> (core),
+                      reinterpret_cast<volatile uint32_t *> (cnfg), 0, &f);
+    if (!find) read = ponBrRead8 (reinterpret_cast<volatile uint32_t *> (obs), 0, f.apid,
+                                  PON_BR_REBOOT_CELL, &cell);
+  }
+  snprintf (text, cap,
+            "psci v%x reset=%lld reset2_32=%lld reset2_64=%lld | gunyah_wdt status=%lld since_ping=%llums | "
+            "spmi v%08x apids=%u open=%d find=%d apid=%d owner=%d sdam48=%02x read=%d",
+            (unsigned) ver, (long long) fReset, (long long) fReset2_32, (long long) fReset2_64,
+            (long long) wdt, (unsigned long long) since,
+            f.version, f.apids, open, find, f.apid, f.owner, cell, read);
+}
+
 // One block per failure point, at a fixed LBA (the window's second-to-last block, so it sits beside the quarantine
 // record). Written only when a round actually fails: the steady-state writer cannot afford six commands per round, and
 // the slot text already carries the stage the previous round reached. What is left on the medium is therefore the last
@@ -1501,6 +1622,16 @@ static void bootLogThread (void *, wait_result_t)
   // One block above that: the same heartbeat, written only after the bus status registers have been read, so a register
   // access that never returns leaves blocks-5 advancing and the last sample here.
   if (blocks > BootLogSlotFirst + 16) gProbeBlock = blocks - 4;
+  // One read-only snapshot of why the previous reset happened. The version-5 message
+  // stream carries it to the medium even if the machine dies a second later; the window's
+  // tail blocks are all spoken for (failure/phase/heartbeat/probe/panic dump), so no new
+  // fixed block is claimed here.
+  {
+    char pon[512];
+    memset (pon, 0, sizeof pon);
+    nx729jPonProbe (pon, sizeof pon);
+    IOLog ("NativeUfs: NX729J_PON_PROBE %s\n", pon);
+  }
   h.msg_first = BootLogMsgFirst;
   h.msg_blocks = BootLogMsgBlocks;
   h.slot_first = BootLogSlotFirst;
