@@ -1416,7 +1416,7 @@ enum {
   PON_PSCI_RESET = 0x84000009u, PON_PSCI_RESET2_32 = 0x84000012u,
   PON_PSCI_RESET2_64 = 0xc4000012u,
   // Linux gunyah_wdt vendor calls: 5 control, 6 status, 7 ping, 8 set time.
-  PON_GUNYAH_WDT_STATUS = 0x86000006u
+  PON_GUNYAH_WDT_STATUS = 0x86000006u, PON_GUNYAH_WDT_PING = 0x86000007u
 };
 enum {
   PON_BR_VERSION_V7_MIN = 0x70000000u, PON_BR_VERSION_V8_MIN = 0x80000000u,
@@ -1443,6 +1443,28 @@ static uint64_t ponSmc2 (uint64_t fid, uint64_t a1, uint64_t a2, uint64_t *r2)
   return x0;
 }
 static uint64_t ponSmc1 (uint64_t fid, uint64_t a1) { return ponSmc2 (fid, a1, 0, nullptr); }
+
+// The Gunyah watchdog is armed by the bootloader on some power-on paths and left armed: status 0 means armed, and it
+// bites with whatever timeout the bootloader chose (BootReset.c: "status != 0 -> not armed"). Nothing in this kernel
+// pings it, which is the only explanation that fits the same image running 490 s on one boot and 34 s on the next:
+// since_ping was 22.2 s at t=23.3 s on both, so the last ping came from the bootloader about a second after reset.
+// Pinging a watchdog that is already armed does not change any state the bootloader set -- it only postpones the bite --
+// so this stays inside the read-only contract above: never control, never set time, never reset.
+static uint32_t gWdtState;   // 0 not yet asked, 1 armed (pinging), 2 not armed (leave it alone)
+static uint32_t gWdtPings;
+
+static void nx729jWdtKeepAlive (uint32_t round)
+{
+  if (!gWdtState) {
+    const int64_t status = (int64_t) ponSmc1 (PON_GUNYAH_WDT_STATUS, 0);
+    gWdtState = status ? 2u : 1u;
+    IOLog ("NativeUfs: NX729J_WDT_PROBE status=%lld armed=%d\n", (long long) status, gWdtState == 1u);
+  }
+  if (gWdtState != 1u) return;
+  ponSmc1 (PON_GUNYAH_WDT_PING, 0);
+  ++gWdtPings;
+  if (!round || !(round % 30)) IOLog ("NativeUfs: NX729J_WDT_PING n=%u round=%u\n", gWdtPings, round);
+}
 
 static inline uint32_t ponBrCmd (uint8_t op, uint8_t byte_addr, uint8_t bc)
 { return ((uint32_t) op << 27) | ((uint32_t) byte_addr << 4) | (bc & 7u); }
@@ -1787,6 +1809,9 @@ static void bootLogThread (void *, wait_result_t)
         IOSleep (1000);
       }
     } else errors = 0;
+    // The bootloader arms the Gunyah watchdog on some power-on paths and the kernel has never pinged it; the round
+    // cadence is the cheapest place to keep it fed, two seconds apart inside the first minute and ten after that.
+    nx729jWdtKeepAlive (h.rounds);
     // One line per round on the frame buffer: the round that never prints is the one that stalled, and the heartbeat above
     // then says whether it stalled inside a transfer.
     IOLog ("NativeUfs: log round %u t=%us ok %d errs %u\n", h.rounds, h.uptime_s, ok, errors);
