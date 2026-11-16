@@ -1,5 +1,53 @@
 # 适配进度：红魔 8 Pro+ 现在到哪一步了
 
+> 当前状态更新：2026-11-16。以下历史记录保留；本节按 UniXNU 官方 bring-up 七阶段和驱动清单汇报。
+
+## 官方启动阶段
+
+**第 6 阶段“存储与根卷”通过；第 7 阶段“用户态”部分通过，尚未到可用桌面。**
+
+最近一次已回读设备启动的 `boot_id` 是 `0x1f44cebb`，使用 `out/boot-s7union-t.img`：
+
+| 官方第 7 阶段检查项 | 观测 |
+|---|---|
+| `launchd` 从根卷启动 | 内核尝试加载 `/sbin/launchd`；PID 1 随后两次报 `vm_shared_region_start_address() failed`，不能算用户态通过 |
+| Data 卷挂载 | `disk1s1 mount-complete ... Data`，已观察到 |
+| 显示服务或控制台输出 | 该轮日志未见 `backboardd`、`SpringBoard`、`CARenderServer` 或 `NativeAdrenoMetal` 启动记录 |
+| 启动进度层最后检查点 | 未见最终启动检查点 |
+
+该轮 `OS` 与 `SystemOS` 已由 UFS 发布，根卷 `disk5s1` 和 Data 卷均挂载；union 缓存路径为 `/`，缓存目录和 `/System` 探测成功。但 `/private/preboot/Cryptexes` 与其 `OS` 子目录探测返回 `ENOENT`；之后 launchd 的 shared-region 起始地址初始化失败。`op 0x28`、`dir=2` 是 UFS READ(10)，不是 union copy-up 写入；日志约有 18,432 个 128 KiB 读命令（约 2.36 GB），最后观测到约 39.38 秒。此处应继续查 shared-region / Cryptex 路径，不再把读流误判成写放大。
+
+镜像回读核验：`boot-s7union-t.img` 相对 `boot-s7union.img` 只改变 `EFI/UniXNU/unixnu.toml`；内核、ADT、GPU sidecar、trust cache、Data seed 均逐文件相同。该单变量检查证明镜像组成未被诊断参数修改，但不代表第 7 阶段通过。
+
+### 当前阻塞与下一步
+
+1. 对照目标 XNU 源码和 dyld 调用链，定位 `vm_shared_region_start_address()` 返回失败的条件；同时核实 SystemCryptex 已挂载而 preboot Cryptex 路径缺失时，shared cache 应从哪个实际挂载点解析。
+2. 在启动镜像里加入能区分“进程未进入 shared-region syscall”“起始地址不可用”“cache 映射失败”的最小诊断，并保留当前可启动基线；静态验证后再启动。
+3. 只有新 `boot_id` 的日志出现 shared-region/cache 成功、显示服务或控制台输出及启动进度层最后检查点，才把第 7 阶段标记为通过。
+
+阶段 7 CI 候选 `nx729j_stage7_defconfig` 的 `kernel.json` 将 `loadable`、`abi_qualified`、`runtime_qualified` 和 `instruction_relocation_complete` 标为 false；它不是本次已启动的 union 内核，也不能据“CI success”单独认定具备启动资格。
+
+## 官方驱动适配清单
+
+驱动清单是独立于启动阶段的工作序列：
+
+| 官方驱动顺序 | NX729J 当前状态 |
+|---|---|
+| 平台、CPU、中断、内存 | 已进入内核并运行；仍需按官方配置/记录格式补齐可复现证据 |
+| 存储、根卷、持久 Data | UFS、OS/SystemOS、APFS 根卷和 Data 已在设备日志中观察到 |
+| 显示与亮度 | 启动日志尚无用户态显示服务证据；需继续验证 framebuffer、显示绑定和背光 |
+| 输入 | Goodix GT9916 目前只有硬件/协议资料，尚无设备触控验证 |
+| GPU 与 Metal | 有 GPU addon 构建/打包产物；最新启动日志未证明 Metal 服务成功加载或绘制 |
+| Wi-Fi、蓝牙、USB、音频、电源 | 尚未按官方子系统指南逐项验证；不计入 bring-up 阶段编号 |
+
+## 仓库规范迁移
+
+按官方迁移指南复核发现，当前仓库仍是旧版单体 `board.toml` 布局，缺少格式 2 所需的 `porting.toml` 等记录/输入文件。启动已推进到第 7 阶段，不等于官方移植步骤 1-8 或驱动清单已全部完成。下一项仓库工作是逐步迁移配置并运行官方 `porting-record.py check`，迁移时保留现有设备值、构建链和已启动基线。
+
+官方依据：[构建与启动](https://unixnu.com/zh/building)、[移植设备步骤](https://unixnu.com/zh/porting/steps)、[bring-up 阶段](https://unixnu.com/zh/porting/bring-up)、[驱动适配](https://unixnu.com/zh/porting/drivers)、[设备仓库迁移](https://unixnu.com/zh/porting/migration)。
+
+---
+
 最后更新：2026-10-22 15:10（**阶段 A 真机验证通过**）
 
 一句话总结：**我们编的 UEFI 在红魔 8 Pro+ 上完整启动成功了**——SEC → PEI → DXE → BDS
