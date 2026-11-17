@@ -10,8 +10,18 @@ args = parser.parse_args()
 source = args.source
 text = source.read_text(encoding="utf-8")
 
-if "NX729J_WDT_PROBE" in text or "nx729j_wdt_keepalive" in text:
-    raise SystemExit("watchdog diagnostic is already present; refusing a duplicate patch")
+already_present = "NX729J_WDT_PROBE" in text or "nx729j_wdt_keepalive" in text
+if already_present:
+    # The device repository may already carry the diagnostic commit.  Keep the
+    # pre-build step idempotent so CI can validate that checkout instead of
+    # failing before the kernel build starts.
+    if "NX729J_WDT_PING" not in text or "PON_GUNYAH_WDT_STATUS" not in text:
+        raise SystemExit("incomplete watchdog diagnostic in source")
+    if args.check:
+        print(f"PASS: watchdog diagnostic already present in {source}")
+    else:
+        print(f"PASS: watchdog diagnostic already present in {source}")
+    raise SystemExit(0)
 
 anchor = 'static uint64_t boot_log_ticks (void)'
 anchor_start = text.index(anchor)
