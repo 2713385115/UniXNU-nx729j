@@ -20,7 +20,11 @@
 > 但**显示服务仍无输出**，官方判据③④未通过。
 >
 > 接手请先读 [docs/progress/](docs/progress/README.md)：启动台账（每次 `boot_id` 的字段与结论）、
-> 工作记录、交接与下一步。下面这段文字来自上游 sheng 参考设备，不代表本分支。
+> 工作记录、交接与下一步。**要现成镜像和原始日志窗口**，直接下 Release
+> [`s7-handoff-2026-11-17`](https://github.com/2713385115/UniXNU-nx729j/releases/tag/s7-handoff-2026-11-17)
+> （5 颗可刷镜像 + 4 份 32 MiB SHLOG 窗口），清单与哈希见
+> [docs/progress/IMAGES.md](docs/progress/IMAGES.md)。
+> 下面这段文字来自上游 sheng 参考设备，不代表本分支。
 
 # UniXNU-nx729j
 

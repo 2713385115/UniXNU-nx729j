@@ -3,8 +3,9 @@
 这台设备的每一次结论都来自 9008 回读的 SHLOG 窗口，不看屏幕、不拍照。本文件是唯一的判据来源：
 新增一轮启动就在这里加一行，改结论就改对应行的证据，不另开文档。
 
-镜像路径相对仓库根；`out/` 下的镜像不随仓库发布，SHA-256 记在下面，重建方式见
-[NEXT-STEPS](NEXT-STEPS.md)。
+镜像路径相对仓库根。`out/` 下的镜像和 32 MiB 窗口不随 git 发布，改放在
+Release `s7-handoff-2026-11-17`；SHA-256、内嵌内核哈希与逐颗用途见
+[IMAGES](IMAGES.md)，重建方式见 [NEXT-STEPS](NEXT-STEPS.md)。
 
 ## 读数字段口径
 
@@ -48,6 +49,10 @@ msgbuf 是环形缓冲：跑久了会覆盖自己的开头。所以「某标记�
 另一条工具链在 2026-11-17 另取过 `0x150eb656`（uptime 362 s、58 轮、0 写错，含 launchd 高唤醒与
 SpringBoard/corpse 循环），见 `STATUS-STAGE7-EXIT-DIAGNOSTIC-2026-11-17.md`。它没有本仓库的解码产物，
 所以不并入上表，但结论一致：短窗口 + 反复重启。
+
+`0x267a1232`（最好那一轮）的原始 32 MiB 窗口已经被之后的回读覆盖，本机没有副本，上表数字是
+仅存的记录；它的镜像 `boot-s7pmgr-skip.img` 在 Release 里，重跑一轮即可拿回原始字节。
+另外四轮的原始窗口已随 Release 发布，见 [IMAGES](IMAGES.md)。
 
 ## 按官方 bring-up 阶段 7 判据横切
 

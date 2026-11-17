@@ -1,0 +1,1045 @@
+[   21.590101]:  vm_cache_geometry_colors: 0
+[   21.590111]: do_cacheid() - 512 bytes Unknown cache (I:256 D:256 (separate)), 16-way assoc, 64 bytes/line
+[   21.590244]: nx729j kld: __KLD 0xfffffff00c028000+0x4000 __KLDDATA 0xfffffff00c030000+0x4000
+[   21.591088]: kprintf initialized
+[   21.591103]: Serial mode specified: 00000003
+[   21.591116]: initialize_screen: b=B8000000, w=0000045C, h=000009B0, r=00001170, d=00000000
+[   22.192756]: pe_arm_init_interrupts: args: 0xfffffff00c072860
+[   22.192764]: pe_arm_map_interrupt_controller: soc_phys:  0x17000000
+[   22.192770]: pe_arm_map_interrupt_controller: failed to find the interrupt-controller.
+[   22.192777]: pe_arm_init_debug: failed to find cpu-debug-interface
+[   22.192805]: Darwin Kernel Version 23.6.0: Sun Nov 15 14:13:38 UTC 2026; runner:ios-obj/DEVELOPMENT_ARM64_BCM2837
+[   22.295169]: pmap_startup() init/release time: 75890 microsec
+[   22.295207]: pmap_startup() delayed init/release of 0 pages
+[   22.295222]: vm_page_bootstrap: 1189968 free pages, 55216 wired pages, (up to 0 of which are delayed free)
+[   22.303564]: VM boostrap: 51 maps, 153 entries and 128 holes available
+[   22.310489]: Maximum number of VM swap files: 5
+[   22.310703]: ipc_kernel_copy_map     : 0xfffffff000958000 - 0xfffffff001158000 (8M)
+[   22.310723]: gIOKitPageableFixed3    : 0xfffffff181800000 - 0xfffffff187800000 (96M)
+[   22.310744]: bsd_pageable            : 0xfffffff187800000 - 0xfffffff1888c2000 (16M)
+[   22.310765]: gIOKitPageableFixed1    : 0xfffffff1888c2000 - 0xfffffff18e8c2000 (96M)
+[   22.310780]: gIOKitPageableFixed2    : 0xfffffff18e8c2000 - 0xfffffff1948c2000 (96M)
+[   22.310795]: zones                   : 0xfffffff1948c2000 - 0xfffffff7948c2000 (24G)
+[   22.310816]: kmem_ptr_range          : 0xfffffff7948c2000 - 0xfffffff853c02000 (3059M)
+[   22.310838]: ipc_kernel_map          : 0xfffffff853c02000 - 0xfffffff855c02000 (32M)
+[   22.310853]: io_submap               : 0xfffffff855c02000 - 0xfffffff856402000 (8M)
+[   22.310872]: gIOKitPageableFixed0    : 0xfffffff856402000 - 0xfffffff85c402000 (96M)
+[   22.310891]: mb                      : 0xfffffff85c402000 - 0xfffffff862402000 (96M)
+[   22.310911]: kmem_ptr_range_meta     : 0xfffffff862402000 - 0xfffffff862492000 (576K)
+[   22.310929]: zone_meta               : 0xfffffff862492000 - 0xfffffff86928b000 (109M)
+[   22.310944]: compressor              : 0xfffffff86928b000 - 0xfffffff9c12a2000 (5G)
+[   22.310963]: kmem_sprayqtn_range     : 0xfffffff9c12a2000 - 0xfffffffa54d69000 (2362M)
+[   22.310979]: kmem_data_range         : 0xfffffffa54d69000 - 0xfffffffbfee78000 (6G)
+[   22.310998]: bufferhdr               : 0xfffffffbfee78000 - 0xfffffffbff5fc000 (7M)
+[   22.311101]: kmem_large_ranges[1]    : 0 - 0 (0B)
+[   22.311112]: kmem_large_ranges[2]    : 0 - 0 (0B)
+[   22.311122]: kmem_large_ranges[3]    : 0 - 0 (0B)
+[   22.311131]: kmem_large_ranges[4]    : 0xfffffff9d39fae00 - 0xfffffffa54d69000 (2067M)
+[   22.311147]: kmem_large_ranges[5]    : 0xfffffffa8a18ae00 - 0xfffffffbfee78000 (5G)
+[   22.311187]: "vm_compressor_mode" is 8
+[   22.311197]: mapping deprecated VM_PAGER_FREEZER_DEFAULT to VM_PAGER_FREEZER_COMPRESSOR_NO_SWAP
+[   22.318010]: Unable to find vm tag  for btlog
+[   22.318104]: zone_init: pgzalloc  0xfffffff1948c2000:0xfffffff1951fd000 (9M) [1181 slots]
+[   22.318139]: zone_init: map VM    0xfffffff1951fd000:0xfffffff27b700000 (3685M)
+[   22.318163]: zone_init: map RO    0xfffffff27b700000:0xfffffff2c8356000 (1228M)
+[   22.318186]: zone_init: map GEN0  0xfffffff2c8356000:0xfffffff3ae85a000 (3685M)
+[   22.318208]: zone_init: map GEN1  0xfffffff3ae85a000:0xfffffff494d5e000 (3685M)
+[   22.318230]: zone_init: map GEN2  0xfffffff494d5e000:0xfffffff57b262000 (3685M)
+[   22.318254]: zone_init: map GEN3  0xfffffff57b262000:0xfffffff661766000 (3685M)
+[   22.318281]: zone_init: map DATA  0xfffffff661766000:0xfffffff7948c2000 (4913M)
+[   22.318310]: zone_init: metadata  0xfffffff8624a2000:0xfffffff8684a2000 (96M)
+[   22.318325]: zone_init: metabits  0xfffffff8684a2000:0xfffffff86927b000 (13M)
+[   22.318346]: zone_init: extra     0:0 (0B)
+[   22.319156]: VM bootstrap done: 39 maps, 112 entries and 116 holes left
+[   22.356512]: IOKit IOMD setownership ENABLED
+[   22.362983]: ATM subsystem is initialized
+[   22.385331]: OSLog stream configured: stream: 8192 bytes, cache: 2112 bytes
+[   22.385347]: OSLog stream verification: 0
+[   22.386030]: Firehose configured: 16 chunks, 8 io pages
+[   22.387093]: Log queues configured: slot count: 64, per-slot size: 32768, total size: 2097152
+[   22.387142]: Long logs support configured: size: 16384
+[   22.398011]: Telemetry: Sampling all tasks once per 1 second
+[   22.411055]: Scheduler: Default of clutch
+[   22.411066]: Setting scheduler priority decay band limit 18
+[   22.411091]: standard timeslicing quantum is 10000 us
+[   22.411105]: standard background quantum is 2500 us
+[   22.423035]: BANK subsystem is initialized
+[   22.423078]: mig_table_max_displ = 54 mach_kobj_count = 372
+[   22.438499]: EXT_PANICLOG: Initializing list
+[   22.540685]: EXT_PANICLOG: Initializing list
+[   22.540701]: kdp_core zlib memory 0x7000
+[   22.540760]: Registered coredump handler for kernel
+[   22.540773]: Serial requested, consistent debug disabled or debug boot arg not present, configuring debugging over serial
+[   22.540795]: Initializing serial KDP
+[   22.541657]: iBoot version: 
+[   22.541666]: iBoot Stage 2 version: 
+[   22.563576]: corecrypto_kext_start (tracing disabled)
+[   22.563592]: FIPSPOST_KEXT [433108199] fipspost_post:154: [FIPSPOST][Module-ID] Apple corecrypto Module v14.0 [Apple ARM, Kernel, Software, SL1]
+[   22.563638]: FIPSPOST_KEXT [433109121] fipspost_post:162: PASSED: (0 ms) - fipspost_post_hmac
+[   22.564073]: FIPSPOST_KEXT [433117382] fipspost_post:166: PASSED: (0 ms) - fipspost_post_integrity
+[   22.564165]: FIPSPOST_KEXT [433119143] fipspost_post:170: PASSED: (0 ms) - fipspost_post_indicator
+[   22.564174]: FIPSPOST_KEXT [433119312] fipspost_post:171: PASSED: (0 ms) - fipspost_post_aes_ecb
+[   22.564183]: FIPSPOST_KEXT [433119484] fipspost_post:172: PASSED: (0 ms) - fipspost_post_aes_cbc
+[   22.576120]: FIPSPOST_KEXT [433346288] fipspost_post:173: PASSED: (11 ms) - fipspost_post_rsa_sig
+[   22.599338]: FIPSPOST_KEXT [433787425] fipspost_post:174: PASSED: (22 ms) - fipspost_post_ecdsa
+[   22.600177]: FIPSPOST_KEXT [433803373] fipspost_post:175: PASSED: (0 ms) - fipspost_post_ecdh
+[   22.600191]: FIPSPOST_KEXT [433803629] fipspost_post:176: PASSED: (0 ms) - fipspost_post_aes_ccm
+[   22.600205]: FIPSPOST_KEXT [433803906] fipspost_post:177: PASSED: (0 ms) - fipspost_post_aes_cmac
+[   22.600233]: FIPSPOST_KEXT [433804429] fipspost_post:178: PASSED: (0 ms) - fipspost_post_hkdf
+[   22.616188]: FIPSPOST_KEXT [434107575] fipspost_post:179: PASSED: (15 ms) - fipspost_post_pbkdf
+[   22.616252]: FIPSPOST_KEXT [434108785] fipspost_post:180: PASSED: (0 ms) - fipspost_post_drbg_hmac
+[   22.616270]: FIPSPOST_KEXT [434109130] fipspost_post:182: PASSED: (0 ms) - fipspost_post_kdf_ctr
+[   22.616283]: FIPSPOST_KEXT [434109364] fipspost_post:183: PASSED: (0 ms) - fipspost_post_kdf_ctr_cmac
+[   22.616293]: FIPSPOST_KEXT [434109570] fipspost_post:184: PASSED: (0 ms) - fipspost_post_aes_gcm
+[   22.616301]: FIPSPOST_KEXT [434109718] fipspost_post:185: PASSED: (0 ms) - fipspost_post_aes_xts
+[   22.616365]: FIPSPOST_KEXT [434110935] fipspost_post:186: PASSED: (0 ms) - fipspost_post_tdes_ecb
+[   22.616382]: FIPSPOST_KEXT [434111264] fipspost_post:187: PASSED: (0 ms) - fipspost_post_drbg_ctr
+[   22.616388]: FIPSPOST_KEXT [434111369] fipspost_post:210: all tests PASSED (52 ms)
+[   22.616456]: corecrypto_kext_start completed successfully
+[   22.617767]: IONVRAM.cpp:initImageFormat:1433 - NVRAM size is 8192 bytes
+[   22.617797]: IONVRAM.cpp:getNVRAMProperties:1244 - _bankSize=0x2000, _bankCount=0x1, _currentBank=0
+[   22.617937]: IONVRAMCHRPHandler.cpp:unserializeImage:479 - NVRAM : commonPartitionOffset - 0x30, commonPartitionSize - 0x800, systemPartitionOffset - 0xffffffff, systemPartitionSize - 0
+[   22.618227]: ulock_initialize>thread_max=5120, ull_hash_buckets=2048
+[   22.619165]: lockdown_mode: lockdown mode in nvram is off
+[   22.927382]: Darwin Image4 Validator Version 6.3.0: Fri Jul 11 17:30:14 PDT 2025; root:AppleImage4-257.140.2~280/AppleImage4/RELEASE_ARM64
+[   22.927396]: calling mpo_policy_init for AppleImage4
+[   22.927401]: Security policy loaded: AppleImage4 hooks (AppleImage4)
+[   22.927502]: AppleImage4: no legacy blob present
+[   22.927531]: AppleImage4: magazine[pdmg]: failed to read nonce slot data: 2
+[   22.927566]: AppleImage4: magazine[cptx]: failed to read nonce slot data: 2
+[   22.927598]: AppleImage4: magazine[dvdi]: failed to read nonce slot data: 2
+[   22.927631]: AppleImage4: magazine[c1bt]: failed to read nonce slot data: 2
+[   22.927661]: AppleImage4: magazine[c1ab]: failed to read nonce slot data: 2
+[   22.927691]: AppleImage4: magazine[c1gn]: failed to read nonce slot data: 2
+[   22.927721]: AppleImage4: magazine[c1sm]: failed to read nonce slot data: 2
+[   22.927751]: AppleImage4: magazine[c1ep]: failed to read nonce slot data: 2
+[   22.927822]: AppleImage4: root power domain not yet available: 19
+[   22.928304]: AMFI: queried model name from device tree: iPad7,1
+[   22.928317]: calling mpo_policy_init for AMFI
+[   22.928324]: Security policy loaded: Apple Mobile File Integrity (AMFI)
+[   22.928897]: calling mpo_policy_init for Sandbox
+[   22.934101]: Security policy loaded: Seatbelt sandbox policy (Sandbox)
+[   22.934145]: attempting to load 2 external trust cache modules
+[   22.934154]: loaded external trust cache module: 0
+[   22.934160]: loaded external trust cache module: 1
+[   22.934164]: completed loading external trust cache modules
+[   22.934302]: No POST boot-arg set.
+[   22.942324]: PMRD: PMTraceWorker 0xe7c34a177cefb49
+[   22.942657]: PMRD: changePowerStateWithTagToPriv(ON_STATE, 10001)
+[   22.945024]: AppleARMBootPerf: Error: profile handoff region not found (1)
+[   22.945033]: AppleARMBootPerf: Error: failed to publish profile data (1)
+[   22.945056]: AppleARMSFRManifest: Starting
+[   22.945064]: AppleARMSFRManifest: Error: Failed to open reg-entry /chosen/secure-boot-hashes
+[   22.945076]: AppleARMSFRManifest: Error: Failed to find property boot-manifest-hash
+[   22.945083]: AppleARMSFRManifest: Error: Failed to find manifest hash
+[   22.945088]: AppleARMSFRManifest: Error: Failed to locate manifest information
+[   22.945095]: AppleARMSFRManifest: Error: Failed to find entry /chosen/iBoot
+[   22.945102]: AppleARMSFRManifest: Error: Failed to publish sfr manifest
+[   22.945125]: virtual bool CoreAnalyticsHub::start(IOService *)::139:CoreAnalyticsHub start
+[   22.945132]: virtual bool CoreAnalyticsHub::start(IOService *)::139:CoreAnalyticsHub start
+[   22.945494]: Registered CoreAnalyticsHub functions with xnu.virtual bool CoreAnalyticsHub::start(IOService *)::218:CoreAnalyticsHub start completed
+[   22.945508]: virtual bool CoreAnalyticsHub::start(IOService *)::218:CoreAnalyticsHub start completed
+[   22.945744]: PMRD: power event 7 args 0xe7c349fab398f59 0x0
+[   22.945757]: PMRD: power event 7 args 0xe7c349fab397b59 0x0
+[   22.948130]: [0]ml_processor_register>pset_find(cluster_id=0) returned pset 0
+[   22.948138]: [0]ml_processor_register>cpu_id 0xfffffff3aea281a0 cluster_id 0 cpu_number 0 is type 0
+[   22.948307]: Copyright (c) 1982, 1986, 1989, 1991, 1993
+	The Regents of the University of California. All rights reserved.
+
+[   22.948334]: MAC Framework successfully initialized
+[   22.955898]: using 16384 buffer headers and 10240 cluster IO buffer headers
+[   22.956385]: clock_initialize_calendar system does not have monotonic clock
+[   22.956393]: clock_initialize_calendar WARNING: UTC time is less then sys time, (0 s 0 u) UTC (22 s 956348 u) sys
+[   22.956663]: ktriage_register_subsystem_strings: set subsystem 8 strings
+[   22.957587]: apfs_module_start:3232: load: com.apple.filesystems.apfs, v2236.140.6, apfs-2236.140.6, 2025/07/11
+[   22.957967]: ktriage_register_subsystem_strings: set subsystem 7 strings
+[   22.963352]: mbinit: done [96 MB total pool size, (96/0) split]
+[   22.963551]: SK: netagent is enabled by default for this platform
+[   22.965113]: DLIL: running SUM16 self-tests ... PASSED
+[   22.967294]: dlil_init: Waiting for all the create dlil kernel threads to get scheduled at least once.
+[   22.971288]: PMRD: PowerChangeOverride (OFF_STATE->ON_STATE, f, 0x2) tag 0x20064
+[   22.971324]: PMRD: sysPowerDownHandler message kIOMessageSystemCapabilityChange
+[   22.971331]: PMRD: sysPowerDownHandler cap f -> f (flags 1)
+[   22.971663]: dlil_init: All the created dlil kernel threads have been scheduled at least once. Proceeding.
+[   22.972047]: igmp_init: initializing
+[   22.972332]: mld_init: initializing
+[   22.972879]: SK[0]: skmem_region_init              seg_size 16384, md_seg_size 16384, drv_buf_seg_size 65536 [eff 65536], usr_buf_seg_size 16384
+[   22.974778]: Skywalk: running self-tests
+[   22.974783]: Skywalk: sk_copy64_8 ... PASSED
+[   22.974788]: Skywalk: sk_copy32_8 ... PASSED
+[   22.974792]: Skywalk: sk_copy64_16 ... PASSED
+[   22.974797]: Skywalk: sk_copy32_16 ... PASSED
+[   22.974801]: Skywalk: sk_copy64_20 ... PASSED
+[   22.974805]: Skywalk: sk_copy64_24 ... PASSED
+[   22.974809]: Skywalk: sk_copy64_32 ... PASSED
+[   22.974814]: Skywalk: sk_copy32_32 ... PASSED
+[   22.974817]: Skywalk: sk_copy64_40 ... PASSED
+[   22.974822]: Skywalk: sk_copy64_64x ... PASSED
+[   22.974827]: Skywalk: sk_copy64_32x ... PASSED
+[   22.974831]: Skywalk: sk_copy64_8x ... PASSED
+[   22.974836]: Skywalk: sk_copy64_4x ... PASSED
+[   22.974840]: Skywalk: sk_zero_16 ... PASSED
+[   22.974844]: Skywalk: sk_zero_32 ... PASSED
+[   22.974848]: Skywalk: sk_zero_48 ... PASSED
+[   22.974853]: Skywalk: sk_zero_128 ... PASSED
+[   22.974863]: Skywalk: memcmp mask ... PASSED
+[   22.975457]: bsd_autoconf: calling kminit
+[   22.979133]: igmp_domifattach: called for ifp lo
+[   22.979144]: igmp_domifattach: allocated igmp_ifinfo for ifp lo
+[   22.979149]: mld_domifattach: called for ifp lo0
+[   22.979157]: mld_domifattach: allocated mld_ifinfo for ifp lo0
+[   22.979161]: ifnet_attach: All kernel threads created for interface lo0 have been scheduled at least once. Proceeding.
+[   22.979324]: kctl_test_init ctl_sendsize 262144 ctl_recvsize 2097152kctl_test_register: OK kctlref 0xb000b kctlid b ctl_sendsize 262144 ctl_recvsize 2097152skip attaching fsw to lo0 using legacy TX modelReinit'd ND information for interface lo0
+[   22.979624]: AMFI: PMGRAON latched to: ffffffff
+[   22.979648]: AMFI: Enabling developer mode since protected data is not available
+[   22.979691]: PMRD: sysPowerDownHandler message kIOMessageSystemCapabilityChange
+[   22.979697]: PMRD: sysPowerDownHandler cap f -> f (flags 2)
+[   22.979707]: PMRD: tellChangeUp OFF_STATE->ON_STATE
+[   22.979722]: PMRD: PowerChangeDone: OFF_STATE->ON_STATE
+[   22.979728]: PMRD: Force re-evaluating aggressiveness
+[   22.979734]: PMRD: changePowerStateWithTagToPriv(ON_STATE, 30002)
+[   22.979755]: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x10001
+[   22.979762]: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+[   22.979769]: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x302) tag 0x40064
+[   22.979781]: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+[   22.979787]: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x302) tag 0x50064
+[   22.979798]: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+[   22.979810]: PMRD: adjustPowerState ON_STATE, asap 0, idleSleepEnabled 0
+[   22.979815]: PMRD: changePowerStateWithTagToPriv(ON_STATE, 60008)
+[   22.979830]: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x30002
+[   22.979836]: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+[   22.979846]: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x60008
+[   22.979852]: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+[   22.980332]: com.apple.AppleFSCompressionTypeZlib kmod start
+[   22.983125]: com.apple.AppleFSCompressionTypeZlib load succeeded
+[   22.983146]: Setting up notifier for CoreAnalyticsHub
+[   22.983228]: install_apfs_vfs_fs:8248: apfs: speculative telemetry feature ENABLED by boot-arg
+[   22.983283]: apfs_sysctl_register:1407: done registering sysctls.
+[   22.983681]: IOSurfaceRoot::installMemoryRegions()
+[   22.985859]: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x70064
+[   22.985869]: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+[   22.985885]: PMRD: joinAggressiveness IOBlockStorageDriver 0xe7c34a091680659
+[   22.987195]: dev_init:303: disk0 device accelerated crypto: 0 (compiled @ Jul 11 2025 17:34:16)
+[   22.987207]: dev_init:306: disk0 device_handle block size 4096 block count 786432 features 0 internal 
+[   22.987279]: nx_mount:1275: disk0 initializing cache w/hash_size 4096 and cache size 10064
+[   22.989194]: IOCPUInterruptController: not registry member at registerService()
+[   22.989383]: [0]ml_processor_register>pset_find(cluster_id=0) returned pset 0
+[   22.989390]: [0]ml_processor_register>cpu_id 0xfffffff3aea25140 cluster_id 0 cpu_number 1 is type 0
+[   22.989480]: [0]ml_processor_register>pset_find(cluster_id=0) returned pset 0
+[   22.989487]: [0]ml_processor_register>cpu_id 0xfffffff3aea26b20 cluster_id 0 cpu_number 2 is type 0
+[   22.989572]: [0]ml_processor_register>pset_find(cluster_id=0) returned pset 0
+[   22.989578]: [0]ml_processor_register>cpu_id 0xfffffff3aea25020 cluster_id 0 cpu_number 3 is type 0
+[   22.989659]: [0]ml_processor_register>pset_find(cluster_id=0) returned pset 0
+[   22.989666]: [0]ml_processor_register>cpu_id 0xfffffff3aea267c0 cluster_id 0 cpu_number 4 is type 0
+[   22.989746]: [0]ml_processor_register>pset_find(cluster_id=0) returned pset 0
+[   22.989752]: [0]ml_processor_register>cpu_id 0xfffffff3aea26340 cluster_id 0 cpu_number 5 is type 0
+[   22.989833]: [0]ml_processor_register>pset_find(cluster_id=0) returned pset 0
+[   22.989839]: [0]ml_processor_register>cpu_id 0xfffffff3aea29940 cluster_id 0 cpu_number 6 is type 0
+[   22.989920]: [0]ml_processor_register>pset_find(cluster_id=0) returned pset 0
+[   22.989926]: [0]ml_processor_register>cpu_id 0xfffffff3aea27780 cluster_id 0 cpu_number 7 is type 0
+[   22.990187]: cpu_start() cpu: 1
+[   22.990416]: cpu_start() cpu: 2
+[   22.990575]: cpu_start() cpu: 3
+[   22.990843]: cpu_start() cpu: 4
+[   22.991005]: cpu_start() cpu: 5
+[   22.991183]: cpu_start() cpu: 6
+[   22.991343]: cpu_start() cpu: 7
+[   22.991498]: IOSurface disallowing global lookups
+[   22.991884]: AppleImage4: magazine[cptx]: magazine data cannot be written: 30
+[   22.991894]: AppleImage4: magazine[zine]: magazine write failed; may be expected: 30
+[   22.991917]: [System Event] [441246433] [INFO] [Subsystem: nvram] [Event: sync] triggered
+[   22.991928]: IONVRAMCHRPHandler.cpp:serializeVariables:615 - No _nvramController
+[   22.991936]: IONVRAMCHRPHandler.cpp:sync:894 - serializeVariables failed, ret=0xe00002d8[System Event] [441246940] [INFO] [Subsystem: nvram] [Event: sync] completed with ret=e00002d8
+[   22.993254]: nx_mount:1617: disk0 checkpoint search: largest xid 9, best xid 9 @ 7
+[   22.993274]: nx_mount:1644: disk0 stable checkpoint indices: desc 6 data 11
+[   22.993988]: import_iboot_forwarded_roothash:3491: importing root hash (basesystem ? 0)...
+[   22.994004]: apfs_extract_root_hash_arm:13275: could not retrieve system-volume-auth-blob from device tree
+[   22.994012]: import_iboot_forwarded_roothash:3496: apfs_extract_root_hash_and_manifest failed with error: No such file or directory (2)
+[   22.995217]: Waiting on <dict ID="0"><key>IOProviderClass</key><string ID="1">IOMedia</string><key>IOPropertyMatch</key><dict ID="2"><key>UUID</key><string ID="3">04769D26-2CA0-4825-B443-E2E5F88300F2</string></dict></dict>
+[   22.995550]: arm_cpu_init(): cpu 3 online
+[   22.995818]: arm_cpu_init(): cpu 4 online
+[   22.997997]: arm_cpu_init(): cpu 1 online
+[   22.998181]: arm_cpu_init(): cpu 2 online
+[   23.001940]: arm_cpu_init(): cpu 5 online
+[   23.002281]: arm_cpu_init(): cpu 6 online
+[   23.003456]: arm_cpu_init(): cpu 7 online
+[   23.038189]: NativeUfs: NX729J_V5_STREAM_RING enabled
+[   23.038197]: NativeUfs: boot log window 121765883+8192 blocks, 1019 slots
+[   23.039968]: NativeUfs: NX729J_PON_PROBE psci v10001 reset=0 reset2_32=0 reset2_64=0 | gunyah_wdt status=0 since_ping=21567ms | spmi v70000001 apids=768 open=0 find=0 apid=565 owner=0 sdam48=00 read=0
+[   23.040709]: NativeUfs: log round 1 t=0s ok 1 errs 0
+[   23.318813]: NativeUfs: published SystemOS
+[   23.319066]: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x80064
+[   23.319074]: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+[   23.319083]: PMRD: joinAggressiveness IOBlockStorageDriver 0xe7c34a091679a89
+[   23.321195]: dev_init:303: disk2 device accelerated crypto: 0 (compiled @ Jul 11 2025 17:34:16)
+[   23.321201]: dev_init:306: disk2 device_handle block size 4096 block count 806400 features 0 internal 
+[   23.321333]: nx_mount:1275: disk2 initializing cache w/hash_size 4096 and cache size 10064
+[   23.325321]: nx_mount:1617: disk2 checkpoint search: largest xid 14, best xid 14 @ 9
+[   23.325347]: nx_mount:1644: disk2 stable checkpoint indices: desc 8 data 16
+[   23.420997]: NativeUfs: SystemOS volume 8846FE78-2910-4297-AF97-D59BB6F8FC16 ready
+[   23.421016]: NativeUfs: published OS
+[   23.421560]: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x90064
+[   23.421564]: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+[   23.421569]: PMRD: joinAggressiveness IOBlockStorageDriver 0xe7c34a09167c889
+[   23.423539]: dev_init:303: disk4 device accelerated crypto: 0 (compiled @ Jul 11 2025 17:34:16)
+[   23.423543]: dev_init:306: disk4 device_handle block size 4096 block count 1483784 features 0 internal 
+[   23.423661]: nx_mount:1275: disk4 initializing cache w/hash_size 4096 and cache size 10064
+[   23.428618]: nx_mount:1617: disk4 checkpoint search: largest xid 418, best xid 418 @ 3
+[   23.428624]: nx_mount:1644: disk4 stable checkpoint indices: desc 2 data 4
+[   23.429036]: Got boot device = IOService:/NativeUfs/NativeUfsBlock/IOBlockStorageDriver/Native OS Media/AppleAPFSContainerScheme/AppleAPFSMedia/AppleAPFSContainer/DawnUpdate21H461.J120J121J207J208OS@1
+[   23.429057]: BSD root: disk5s1, major 1, minor 8
+[   23.429301]: spec_open : si_devbsdunit initialized to (4), throttle_mask is (0x30), isssd is (0)
+[   23.429338]: apfs_vfsop_mountroot:2965: apfs: mountroot called!
+[   23.429559]: spec_open : si_devbsdunit initialized to (4), throttle_mask is (0x30), isssd is (0)
+[   23.429965]: dev_init:303: disk5 device accelerated crypto: 0 (compiled @ Jul 11 2025 17:34:16)
+[   23.429977]: dev_init:306: disk5 device_handle block size 4096 block count 1483784 features 0 internal 
+[   23.430192]: nx_mount:1275: disk5 initializing cache w/hash_size 4096 and cache size 10064
+[   23.437218]: nx_mount:1617: disk5 checkpoint search: largest xid 418, best xid 418 @ 3
+[   23.437238]: nx_mount:1644: disk5 stable checkpoint indices: desc 2 data 4
+[   23.438218]: apfs_vfsop_mount:2675: disk5 Promoter has been locked 
+[   23.438288]: fs_lookup_root_snapshot_name:373: disk5s1 failed to get root-snapshot-name from DT
+[   23.438300]: apfs_find_named_root_snapshot_xid:2035: disk5s1 failed to retrieve default root snapshot xid: No such file or directory (2)
+[   23.438310]: apfs_find_named_root_snapshot_xid:2073: disk5s1 The global payload bytes pointer is NULL
+[   23.438319]: apfs_vfsop_mount:2714: disk5s1 failed to find named root snapshot: Need authenticator (81)
+[   23.438334]: apfs_log_op_with_proc:3091: disk5s1 mounting volume DawnUpdate21H461.J120J121J207J208OS, requested by: kernel_task (pid 0); parent: kernel_task (pid 0)
+[   23.438484]: handle_mount:817: disk5s1 vol-uuid: 04769D26-2CA0-4825-B443-E2E5F88300F2 block size: 4096 block count: 1483776 (unencrypted; flags: 0x1; features: 8.0.12)
+[   23.440572]: handle_mount:830: disk5s1 setting dev block size to 4096 from 512
+[   23.440601]: apfs_log_op_with_proc:3091: disk5s1 mount-complete volume DawnUpdate21H461.J120J121J207J208OS, requested by: kernel_task (pid 0); parent: kernel_task (pid 0)
+[   23.441475]: is_root_hash_authentication_required_ios:472: disk5s1 Release kext, booting xid: 0
+[   23.441488]: is_root_hash_authentication_required:555: disk5s1 Root Volume, root hash authentication is required
+[   23.443920]: Serial keyboard started
+[   23.443933]: No POST boot-arg set.
+[   23.443971]: vm_free_delayed_pages: initialized 0 free pages
+[   23.444370]: SRT: root probe /private/preboot err=0
+[   23.444399]: SRT: root probe /private/preboot/Cryptexes err=2
+[   23.444411]: SRT: root probe /private/preboot/Cryptexes/OS err=2
+[   23.444422]: SRT: cache mount target /private/preboot
+[   23.444428]: SRT: cache dir DYLD_SHARED_CACHE_DIR=/private/preboot/System/Library/Caches/com.apple.dyld
+[   23.444460]: VM Swap Subsystem is ON
+[   23.444595]: spec_open : si_devbsdunit initialized to (2), throttle_mask is (0xc), isssd is (0)
+[   23.444654]: spec_open : si_devbsdunit initialized to (2), throttle_mask is (0xc), isssd is (0)
+[   23.444745]: dev_init:303: disk3 device accelerated crypto: 0 (compiled @ Jul 11 2025 17:34:16)
+[   23.444748]: dev_init:306: disk3 device_handle block size 4096 block count 806400 features 0 internal 
+[   23.444828]: NativeUfs: submit cmd 256 lba 400928 op 28 dir 2 bytes 4096 db 00000000
+[   23.444897]: Failed to open swap file 30
+[   23.444906]: vm_swap_create_file failed @ 23 secs
+[   23.444910]: vm_swap_create_file failed @ 23 secs
+[   23.444960]: nx_mount:1275: disk3 initializing cache w/hash_size 4096 and cache size 10064
+[   23.448917]: nx_mount:1617: disk3 checkpoint search: largest xid 14, best xid 14 @ 9
+[   23.448927]: nx_mount:1644: disk3 stable checkpoint indices: desc 8 data 16
+[   23.449984]: apfs_log_op_with_proc:3091: disk3s1 mounting volume DawnUpdate21H461.J120J121J207J208SystemCryptex, requested by: init (pid 1); parent: kernel_task (pid 0)
+[   23.450123]: handle_mount:817: disk3s1 vol-uuid: 8846FE78-2910-4297-AF97-D59BB6F8FC16 block size: 4096 block count: 806400 (unencrypted; flags: 0x1; features: 28.0.2)
+[   23.451103]: handle_mount:830: disk3s1 setting dev block size to 4096 from 512
+[   23.451112]: apfs_log_op_with_proc:3091: disk3s1 mount-complete volume DawnUpdate21H461.J120J121J207J208SystemCryptex, requested by: init (pid 1); parent: kernel_task (pid 0)
+[   23.451796]: SRT: probe cache dir err=0
+[   23.451801]: SRT: probe sys dir err=0
+[   23.451805]: SRT: probe cryptexes dir err=2
+[   23.523203]: NativeUfs: OS volume 04769D26-2CA0-4825-B443-E2E5F88300F2 ready
+[   23.881724]: spec_open : si_devbsdunit initialized to (0), throttle_mask is (0x3), isssd is (0)
+[   23.881787]: spec_open : si_devbsdunit initialized to (0), throttle_mask is (0x3), isssd is (0)
+[   23.881890]: dev_init:303: disk1 device accelerated crypto: 0 (compiled @ Jul 11 2025 17:34:16)
+[   23.881894]: dev_init:306: disk1 device_handle block size 4096 block count 786432 features 0 internal 
+[   23.881960]: nx_mount:1275: disk1 initializing cache w/hash_size 4096 and cache size 10064
+[   23.885631]: nx_mount:1617: disk1 checkpoint search: largest xid 301, best xid 301 @ 15
+[   23.885635]: nx_mount:1619: disk1 reloading after unclean unmount, checkpoint xid 301, superblock xid 269
+[   23.885640]: nx_mount:1644: disk1 stable checkpoint indices: desc 14 data 1772
+[   23.885658]: spaceman_metazone_init:111: disk1 no metazone for device 0, of size 3221225472 bytes, block_size 4096
+[   23.886659]: apfs_log_op_with_proc:3091: disk1s1 mounting volume Data, requested by: init (pid 1); parent: kernel_task (pid 0)
+[   23.886703]: handle_mount:817: disk1s1 vol-uuid: C76C5309-AEA7-4AF7-AAD5-9785B87F4822 block size: 4096 block count: 786432 (unencrypted; flags: 0x1; features: 1.0.2)
+[   23.887137]: spaceman_scan_free_blocks:3878: disk1 scan took 0.001244 s (no trims)
+[   23.887143]: spaceman_fxc_print_stats:473: disk1 dev 0 smfree 604963/786432 table 130/130 blocks 604382 2:4649:603670 99.90% range 121456:664976 84.55% scans 1
+[   23.887148]: spaceman_fxc_print_stats:492: disk1 dev 0 scan_stats[2]: foundmax 603670 extents 474 blocks 581 long 2 avg 1 0.09% range 65:182220 23.17%
+[   23.887555]: handle_mount:830: disk1s1 setting dev block size to 4096 from 512
+[   23.887582]: apfs_log_op_with_proc:3091: disk1s1 mount-complete volume Data, requested by: init (pid 1); parent: kernel_task (pid 0)
+[   23.891818]: sheng timezone dir: 17 (0 created, 17 present)
+[   23.895309]: sheng timezone localtime: 17 (0 linked, 17 present)
+[   23.895314]: sheng bring-up watchdogd launch policy: 0 (hardware watchdog not implemented)
+[   23.895326]: load_init_program: attempting to load /usr/appleinternal/sbin/launchd.development
+[   23.895480]: load_init_program: attempting to load /sbin/launchd
+[   23.916709]: shared_region: 0xe7c34a177ce3079 [1(launchd)] check_np(0x16f99db50) vm_shared_region_start_address() failed
+[   23.918106]: shared_region: 0xe7c34a177ce3079 [1(launchd)] check_np(0x16f99d0f0) vm_shared_region_start_address() failed
+[   23.926926]: NativeUfs: submit cmd 512 lba 402152 op 28 dir 2 bytes 32768 db 00000000
+[   24.074921]: NativeUfs: submit cmd 768 lba 403d6a op 28 dir 2 bytes 131072 db 00000000
+[   24.231800]: NativeUfs: submit cmd 1024 lba 405a2a op 28 dir 2 bytes 131072 db 00000000
+[   24.374808]: NativeUfs: submit cmd 1280 lba 4076ca op 28 dir 2 bytes 131072 db 00000000
+[   24.537643]: NativeUfs: submit cmd 1536 lba 40925e op 28 dir 2 bytes 131072 db 00000000
+[   24.683882]: NativeUfs: submit cmd 1792 lba 40aede op 28 dir 2 bytes 131072 db 00000000
+[   24.834836]: NativeUfs: submit cmd 2048 lba 40cb7e op 28 dir 2 bytes 131072 db 00000000
+[   24.998013]: NativeUfs: submit cmd 2304 lba 40e81e op 28 dir 2 bytes 131072 db 00000000
+[   25.041816]: NativeUfs: log round 2 t=2s ok 0 errs 1
+[   25.140230]: NativeUfs: submit cmd 2560 lba 4102e6 op 28 dir 2 bytes 131072 db 00000000
+[   25.288560]: NativeUfs: submit cmd 2816 lba 411fa6 op 28 dir 2 bytes 131072 db 00000000
+[   25.475162]: NativeUfs: submit cmd 3072 lba 413c06 op 28 dir 2 bytes 131072 db 00000000
+[   25.617689]: NativeUfs: submit cmd 3328 lba 4158a6 op 28 dir 2 bytes 131072 db 00000000
+[   25.762919]: NativeUfs: submit cmd 3584 lba 417412 op 28 dir 2 bytes 131072 db 00000000
+[   25.918176]: NativeUfs: submit cmd 3840 lba 419072 op 28 dir 2 bytes 131072 db 00000000
+[   26.065875]: NativeUfs: submit cmd 4096 lba 41acf2 op 28 dir 2 bytes 131072 db 00000000
+[   26.230193]: NativeUfs: submit cmd 4352 lba 41c826 op 28 dir 2 bytes 131072 db 00000000
+[   26.408600]: NativeUfs: submit cmd 4608 lba 41e4c6 op 28 dir 2 bytes 131072 db 00000000
+[   26.566768]: NativeUfs: submit cmd 4864 lba 420106 op 28 dir 2 bytes 131072 db 00000000
+[   26.713660]: NativeUfs: submit cmd 5120 lba 421de6 op 28 dir 2 bytes 131072 db 00000000
+[   26.873293]: NativeUfs: submit cmd 5376 lba 4238f6 op 28 dir 2 bytes 131072 db 00000000
+[   27.015242]: NativeUfs: submit cmd 5632 lba 425596 op 28 dir 2 bytes 131072 db 00000000
+[   27.182429]: NativeUfs: submit cmd 5888 lba 4271f6 op 28 dir 2 bytes 131072 db 00000000
+[   27.349818]: NativeUfs: submit cmd 6144 lba 428d16 op 28 dir 2 bytes 131072 db 00000000
+[   27.522186]: NativeUfs: submit cmd 6400 lba 42a9d6 op 28 dir 2 bytes 131072 db 00000000
+[   27.651395]: NativeUfs: log round 3 t=4s ok 1 errs 0
+[   27.672874]: NativeUfs: submit cmd 6656 lba 42c576 op 28 dir 2 bytes 131072 db 00000000
+[   27.859970]: NativeUfs: submit cmd 6912 lba 4bd569 op 28 dir 2 bytes 4096 db 00000000
+[   27.998198]: NativeUfs: submit cmd 7168 lba 42fd2a op 28 dir 2 bytes 131072 db 00000000
+[   28.145604]: NativeUfs: submit cmd 7424 lba 4319ca op 28 dir 2 bytes 131072 db 00000000
+[   28.287019]: NativeUfs: submit cmd 7680 lba 43366a op 28 dir 2 bytes 131072 db 00000000
+[   28.456068]: NativeUfs: submit cmd 7936 lba 4bd637 op 28 dir 2 bytes 4096 db 00000000
+[   28.612798]: NativeUfs: submit cmd 8192 lba 436dd6 op 28 dir 2 bytes 131072 db 00000000
+[   28.752468]: NativeUfs: submit cmd 8448 lba 438a76 op 28 dir 2 bytes 131072 db 00000000
+[   28.910229]: NativeUfs: submit cmd 8704 lba 4bda31 op 28 dir 2 bytes 4096 db 00000000
+[   29.050242]: NativeUfs: submit cmd 8960 lba 43c376 op 28 dir 2 bytes 131072 db 00000000
+[   29.217206]: NativeUfs: submit cmd 9216 lba 43dee2 op 28 dir 2 bytes 131072 db 00000000
+[   29.364897]: NativeUfs: submit cmd 9472 lba 4beed4 op 28 dir 2 bytes 4096 db 00000000
+[   29.523510]: NativeUfs: submit cmd 9728 lba 4417e2 op 28 dir 2 bytes 131072 db 00000000
+[   29.687152]: NativeUfs: submit cmd 9984 lba 4432c6 op 28 dir 2 bytes 131072 db 00000000
+[   29.847189]: NativeUfs: submit cmd 10240 lba 444f66 op 28 dir 2 bytes 131072 db 00000000
+[   29.991824]: NativeUfs: submit cmd 10496 lba 446c26 op 28 dir 2 bytes 131072 db 00000000
+[   30.134168]: NativeUfs: submit cmd 10752 lba 448886 op 28 dir 2 bytes 131072 db 00000000
+[   30.286690]: NativeUfs: submit cmd 11008 lba 44a396 op 28 dir 2 bytes 131072 db 00000000
+[   30.414352]: NativeUfs: submit cmd 11264 lba 44c036 op 28 dir 2 bytes 131072 db 00000000
+[   30.452179]: NativeUfs: log round 4 t=7s ok 1 errs 0
+[   30.557753]: NativeUfs: submit cmd 11520 lba 44dc16 op 28 dir 2 bytes 131072 db 00000000
+[   30.728799]: NativeUfs: submit cmd 11776 lba 44f8d6 op 28 dir 2 bytes 131072 db 00000000
+[   30.825325]: process launchd[1] caught waking the CPU 47874 times over ~6 seconds, averaging 6907 wakes / second and violating a limit of 45000 wakes over 300 seconds.
+[   30.906642]: NativeUfs: submit cmd 12032 lba 4befe6 op 28 dir 2 bytes 4096 db 00000000
+[   31.037469]: NativeUfs: submit cmd 12288 lba 45307e op 28 dir 2 bytes 131072 db 00000000
+[   31.209308]: NativeUfs: submit cmd 12544 lba 454cfe op 28 dir 2 bytes 131072 db 00000000
+[   31.343565]: NativeUfs: submit cmd 12800 lba 45699e op 28 dir 2 bytes 131072 db 00000000
+[   31.486064]: NativeUfs: submit cmd 13056 lba 4584be op 28 dir 2 bytes 131072 db 00000000
+[   31.645681]: NativeUfs: submit cmd 13312 lba 45a11e op 28 dir 2 bytes 131072 db 00000000
+[   31.821930]: NativeUfs: submit cmd 13568 lba 45bd9e op 28 dir 2 bytes 131072 db 00000000
+[   31.997575]: NativeUfs: submit cmd 13824 lba 45d9fa op 28 dir 2 bytes 81920 db 00000000
+[   32.175758]: NativeUfs: submit cmd 14080 lba 45f596 op 28 dir 2 bytes 131072 db 00000000
+[   32.362391]: NativeUfs: submit cmd 14336 lba 4bf0e1 op 28 dir 2 bytes 4096 db 00000000
+[   32.530070]: NativeUfs: submit cmd 14592 lba 462e96 op 28 dir 2 bytes 131072 db 00000000
+[   32.656243]: NativeUfs: log round 5 t=9s ok 1 errs 0
+[   32.688647]: NativeUfs: submit cmd 14848 lba 4648fa op 28 dir 2 bytes 131072 db 00000000
+[   32.847756]: NativeUfs: submit cmd 15104 lba 46659a op 28 dir 2 bytes 131072 db 00000000
+[   33.005987]: NativeUfs: submit cmd 15360 lba 4bf14c op 28 dir 2 bytes 4096 db 00000000
+[   33.144373]: NativeUfs: submit cmd 15616 lba 469cfe op 28 dir 2 bytes 131072 db 00000000
+[   33.305929]: NativeUfs: submit cmd 15872 lba 46b97e op 28 dir 2 bytes 131072 db 00000000
+[   33.448249]: NativeUfs: submit cmd 16128 lba 46d5fe op 28 dir 2 bytes 131072 db 00000000
+[   33.597805]: NativeUfs: submit cmd 16384 lba 46f29e op 28 dir 2 bytes 131072 db 00000000
+[   33.753339]: NativeUfs: submit cmd 16640 lba 470f3e op 28 dir 2 bytes 131072 db 00000000
+[   33.912835]: NativeUfs: submit cmd 16896 lba 472b9e op 28 dir 2 bytes 131072 db 00000000
+[   34.085155]: NativeUfs: submit cmd 17152 lba 4747fe op 28 dir 2 bytes 131072 db 00000000
+[   34.304998]: NativeUfs: submit cmd 17408 lba 47637a op 28 dir 2 bytes 131072 db 00000000
+[   34.646813]: NativeUfs: submit cmd 17664 lba 477d2c op 28 dir 2 bytes 131072 db 00000000
+[   34.657564]: NativeUfs: log round 6 t=11s ok 1 errs 0
+[   34.780089]: NativeUfs: submit cmd 17920 lba 47990c op 28 dir 2 bytes 131072 db 00000000
+[   34.913311]: NativeUfs: submit cmd 18176 lba 47b5ac op 28 dir 2 bytes 131072 db 00000000
+[   35.066349]: NativeUfs: submit cmd 18432 lba 47d22c op 28 dir 2 bytes 131072 db 00000000
+[   35.229385]: NativeUfs: submit cmd 18688 lba 47ed40 op 28 dir 2 bytes 131072 db 00000000
+[   35.378361]: NativeUfs: submit cmd 18944 lba 4809e0 op 28 dir 2 bytes 131072 db 00000000
+[   35.525415]: NativeUfs: submit cmd 19200 lba 482680 op 28 dir 2 bytes 131072 db 00000000
+[   35.674162]: NativeUfs: submit cmd 19456 lba 484340 op 28 dir 2 bytes 131072 db 00000000
+[   35.823115]: NativeUfs: submit cmd 19712 lba 485e70 op 28 dir 2 bytes 131072 db 00000000
+[   35.959322]: NativeUfs: submit cmd 19968 lba 487b10 op 28 dir 2 bytes 131072 db 00000000
+[   36.106282]: NativeUfs: submit cmd 20224 lba 489770 op 28 dir 2 bytes 131072 db 00000000
+[   36.259886]: NativeUfs: submit cmd 20480 lba 4bf388 op 28 dir 2 bytes 4096 db 00000000
+[   36.422702]: NativeUfs: submit cmd 20736 lba 48cf20 op 28 dir 2 bytes 131072 db 00000000
+[   36.585277]: NativeUfs: submit cmd 20992 lba 48ebc0 op 28 dir 2 bytes 131072 db 00000000
+[   36.658874]: NativeUfs: log round 7 t=13s ok 1 errs 0
+[   36.766769]: NativeUfs: submit cmd 21248 lba 4907a0 op 28 dir 2 bytes 131072 db 00000000
+[   36.903635]: NativeUfs: submit cmd 21504 lba 4922d0 op 28 dir 2 bytes 131072 db 00000000
+[   37.057883]: NativeUfs: submit cmd 21760 lba 493f70 op 28 dir 2 bytes 131072 db 00000000
+[   37.206595]: NativeUfs: submit cmd 22016 lba 495bd0 op 28 dir 2 bytes 131072 db 00000000
+[   37.371283]: NativeUfs: submit cmd 22272 lba 497870 op 28 dir 2 bytes 131072 db 00000000
+[   37.520610]: NativeUfs: submit cmd 22528 lba 4993a0 op 28 dir 2 bytes 131072 db 00000000
+[   37.667513]: NativeUfs: submit cmd 22784 lba 4bf47f op 28 dir 2 bytes 4096 db 00000000
+[   37.832313]: NativeUfs: submit cmd 23040 lba 49cca0 op 28 dir 2 bytes 131072 db 00000000
+[   37.982841]: NativeUfs: submit cmd 23296 lba 49e940 op 28 dir 2 bytes 131072 db 00000000
+[   38.111945]: NativeUfs: submit cmd 23552 lba 4a0440 op 28 dir 2 bytes 131072 db 00000000
+[   38.255052]: NativeUfs: submit cmd 23808 lba 4a2100 op 28 dir 2 bytes 131072 db 00000000
+[   38.428560]: NativeUfs: submit cmd 24064 lba 4a3da0 op 28 dir 2 bytes 131072 db 00000000
+[   38.588726]: NativeUfs: submit cmd 24320 lba 4a5a00 op 28 dir 2 bytes 131072 db 00000000
+[   38.659596]: NativeUfs: log round 8 t=15s ok 1 errs 0
+[   38.755480]: NativeUfs: submit cmd 24576 lba 4a7394 op 28 dir 2 bytes 131072 db 00000000
+[   38.907856]: NativeUfs: submit cmd 24832 lba 4a9034 op 28 dir 2 bytes 131072 db 00000000
+[   39.064442]: NativeUfs: submit cmd 25088 lba 4bf576 op 28 dir 2 bytes 4096 db 00000000
+[   39.222209]: NativeUfs: submit cmd 25344 lba 4ac914 op 28 dir 2 bytes 131072 db 00000000
+[   39.580063]: NativeUfs: submit cmd 25600 lba 4bf5bf op 28 dir 2 bytes 4096 db 00000000
+[   40.660887]: NativeUfs: log round 9 t=17s ok 1 errs 0
+[   40.675952]: NativeUfs: submit cmd 25856 lba 4af19c op 28 dir 2 bytes 53248 db 00000000
+[   41.055871]: NativeUfs: submit cmd 26112 lba 4b0b6f op 28 dir 2 bytes 131072 db 00000000
+[   41.564941]: NativeUfs: submit cmd 26368 lba 4bf699 op 28 dir 2 bytes 4096 db 00000000
+[   42.437308]: NativeUfs: submit cmd 26624 lba 4b3583 op 28 dir 2 bytes 131072 db 00000000
+[   42.662168]: NativeUfs: log round 10 t=19s ok 1 errs 0
+[   42.728862]: SRT: 2np enter pid=1 files=54 maps=62
+[   42.729668]: SRT: setup pid=1 files=54 maps=62
+[   42.729683]: SRT: sr=1 rdir_is_root=1
+[   42.729731]: SRT: macf err=0
+[   42.729739]: SRT: uid=0
+[   42.729742]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64
+[   42.730006]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=1 rej=0
+[   42.730020]: SRT: scdir_enforce=0
+[   42.730047]: SRT: macf err=0
+[   42.730052]: SRT: uid=0
+[   42.730055]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.01
+[   42.730198]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=2 rej=0
+[   42.730211]: SRT: scdir_enforce=0
+[   42.730234]: SRT: macf err=0
+[   42.730238]: SRT: uid=0
+[   42.730241]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.02
+[   42.730382]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=3 rej=0
+[   42.730395]: SRT: scdir_enforce=0
+[   42.730417]: SRT: macf err=0
+[   42.730421]: SRT: uid=0
+[   42.730424]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.03
+[   42.730563]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=4 rej=0
+[   42.730576]: SRT: scdir_enforce=0
+[   42.730596]: SRT: macf err=0
+[   42.730600]: SRT: uid=0
+[   42.730603]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.04
+[   42.730740]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=5 rej=0
+[   42.730753]: SRT: scdir_enforce=0
+[   42.730773]: SRT: macf err=0
+[   42.730777]: SRT: uid=0
+[   42.730780]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.05
+[   42.730917]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=6 rej=0
+[   42.730930]: SRT: scdir_enforce=0
+[   42.730949]: SRT: macf err=0
+[   42.730954]: SRT: uid=0
+[   42.730957]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.06
+[   42.731094]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=7 rej=0
+[   42.731107]: SRT: scdir_enforce=0
+[   42.731127]: SRT: macf err=0
+[   42.731131]: SRT: uid=0
+[   42.731134]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.07
+[   42.731272]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=8 rej=0
+[   42.731284]: SRT: scdir_enforce=0
+[   42.731305]: SRT: macf err=0
+[   42.731309]: SRT: uid=0
+[   42.731312]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.08
+[   42.731450]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=9 rej=0
+[   42.731463]: SRT: scdir_enforce=0
+[   42.731484]: SRT: macf err=0
+[   42.731488]: SRT: uid=0
+[   42.731491]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.09
+[   42.731628]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=10 rej=0
+[   42.731641]: SRT: scdir_enforce=0
+[   42.731661]: SRT: macf err=0
+[   42.731666]: SRT: uid=0
+[   42.731670]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.10
+[   42.731807]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=11 rej=0
+[   42.731820]: SRT: scdir_enforce=0
+[   42.731841]: SRT: macf err=0
+[   42.731846]: SRT: uid=0
+[   42.731849]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.11
+[   42.731985]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=12 rej=0
+[   42.731998]: SRT: scdir_enforce=0
+[   42.732019]: SRT: macf err=0
+[   42.732024]: SRT: uid=0
+[   42.732028]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.12
+[   42.732165]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=13 rej=0
+[   42.732178]: SRT: scdir_enforce=0
+[   42.732199]: SRT: macf err=0
+[   42.732204]: SRT: uid=0
+[   42.732207]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.13
+[   42.732345]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=14 rej=0
+[   42.732359]: SRT: scdir_enforce=0
+[   42.732380]: SRT: macf err=0
+[   42.732385]: SRT: uid=0
+[   42.732389]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.14
+[   42.732543]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=15 rej=0
+[   42.732556]: SRT: scdir_enforce=0
+[   42.732578]: SRT: macf err=0
+[   42.732583]: SRT: uid=0
+[   42.732587]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.15
+[   42.732724]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=16 rej=0
+[   42.732737]: SRT: scdir_enforce=0
+[   42.732759]: SRT: macf err=0
+[   42.732764]: SRT: uid=0
+[   42.732767]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.16
+[   42.732903]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=17 rej=0
+[   42.732915]: SRT: scdir_enforce=0
+[   42.732938]: SRT: macf err=0
+[   42.732943]: SRT: uid=0
+[   42.732946]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.17
+[   42.733083]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=18 rej=0
+[   42.733096]: SRT: scdir_enforce=0
+[   42.733118]: SRT: macf err=0
+[   42.733123]: SRT: uid=0
+[   42.733126]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.18
+[   42.733262]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=19 rej=0
+[   42.733275]: SRT: scdir_enforce=0
+[   42.733298]: SRT: macf err=0
+[   42.733302]: SRT: uid=0
+[   42.733306]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.19
+[   42.733443]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=20 rej=0
+[   42.733456]: SRT: scdir_enforce=0
+[   42.733478]: SRT: macf err=0
+[   42.733483]: SRT: uid=0
+[   42.733486]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.20
+[   42.733624]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=21 rej=0
+[   42.733637]: SRT: scdir_enforce=0
+[   42.733659]: SRT: macf err=0
+[   42.733664]: SRT: uid=0
+[   42.733668]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.21
+[   42.733806]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=22 rej=0
+[   42.733819]: SRT: scdir_enforce=0
+[   42.733839]: SRT: macf err=0
+[   42.733843]: SRT: uid=0
+[   42.733847]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.22
+[   42.733984]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=23 rej=0
+[   42.733997]: SRT: scdir_enforce=0
+[   42.734019]: SRT: macf err=0
+[   42.734024]: SRT: uid=0
+[   42.734028]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.23
+[   42.734165]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=24 rej=0
+[   42.734178]: SRT: scdir_enforce=0
+[   42.734200]: SRT: macf err=0
+[   42.734205]: SRT: uid=0
+[   42.734208]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.24
+[   42.734345]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=25 rej=0
+[   42.734358]: SRT: scdir_enforce=0
+[   42.734379]: SRT: macf err=0
+[   42.734384]: SRT: uid=0
+[   42.734388]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.25
+[   42.734524]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=26 rej=0
+[   42.734537]: SRT: scdir_enforce=0
+[   42.734560]: SRT: macf err=0
+[   42.734564]: SRT: uid=0
+[   42.734568]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.26
+[   42.734706]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=27 rej=0
+[   42.734719]: SRT: scdir_enforce=0
+[   42.734741]: SRT: macf err=0
+[   42.734746]: SRT: uid=0
+[   42.734750]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.27
+[   42.734886]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=28 rej=0
+[   42.734900]: SRT: scdir_enforce=0
+[   42.734922]: SRT: macf err=0
+[   42.734927]: SRT: uid=0
+[   42.734931]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.28
+[   42.735067]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=29 rej=0
+[   42.735080]: SRT: scdir_enforce=0
+[   42.735101]: SRT: macf err=0
+[   42.735107]: SRT: uid=0
+[   42.735111]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.29
+[   42.735248]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=30 rej=0
+[   42.735260]: SRT: scdir_enforce=0
+[   42.735282]: SRT: macf err=0
+[   42.735287]: SRT: uid=0
+[   42.735291]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.30
+[   42.735427]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=31 rej=0
+[   42.735440]: SRT: scdir_enforce=0
+[   42.735462]: SRT: macf err=0
+[   42.735467]: SRT: uid=0
+[   42.735470]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.31
+[   42.735607]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=32 rej=0
+[   42.735620]: SRT: scdir_enforce=0
+[   42.735641]: SRT: macf err=0
+[   42.735647]: SRT: uid=0
+[   42.735650]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.32
+[   42.735786]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=33 rej=0
+[   42.735800]: SRT: scdir_enforce=0
+[   42.735823]: SRT: macf err=0
+[   42.735827]: SRT: uid=0
+[   42.735831]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.33.dylddata
+[   42.735968]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=34 rej=0
+[   42.735982]: SRT: scdir_enforce=0
+[   42.736003]: SRT: macf err=0
+[   42.736009]: SRT: uid=0
+[   42.736013]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.34.dyldlinkedit
+[   42.736151]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=35 rej=0
+[   42.736165]: SRT: scdir_enforce=0
+[   42.736208]: SRT: macf err=0
+[   42.736213]: SRT: uid=0
+[   42.736217]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.35
+[   42.736355]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=36 rej=0
+[   42.736368]: SRT: scdir_enforce=0
+[   42.736389]: SRT: macf err=0
+[   42.736394]: SRT: uid=0
+[   42.736398]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.36
+[   42.736535]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=37 rej=0
+[   42.736548]: SRT: scdir_enforce=0
+[   42.736570]: SRT: macf err=0
+[   42.736575]: SRT: uid=0
+[   42.736579]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.37
+[   42.736716]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=38 rej=0
+[   42.736729]: SRT: scdir_enforce=0
+[   42.736751]: SRT: macf err=0
+[   42.736756]: SRT: uid=0
+[   42.736760]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.38
+[   42.736898]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=39 rej=0
+[   42.736912]: SRT: scdir_enforce=0
+[   42.736935]: SRT: macf err=0
+[   42.736940]: SRT: uid=0
+[   42.736943]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.39
+[   42.737081]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=40 rej=0
+[   42.737094]: SRT: scdir_enforce=0
+[   42.737119]: SRT: macf err=0
+[   42.737125]: SRT: uid=0
+[   42.737129]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.40
+[   42.737266]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=41 rej=0
+[   42.737279]: SRT: scdir_enforce=0
+[   42.737302]: SRT: macf err=0
+[   42.737307]: SRT: uid=0
+[   42.737311]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.41
+[   42.737448]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=42 rej=0
+[   42.737461]: SRT: scdir_enforce=0
+[   42.737483]: SRT: macf err=0
+[   42.737489]: SRT: uid=0
+[   42.737493]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.42
+[   42.737630]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=43 rej=0
+[   42.737643]: SRT: scdir_enforce=0
+[   42.737666]: SRT: macf err=0
+[   42.737672]: SRT: uid=0
+[   42.737676]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.43
+[   42.737813]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=44 rej=0
+[   42.737827]: SRT: scdir_enforce=0
+[   42.737848]: SRT: macf err=0
+[   42.737854]: SRT: uid=0
+[   42.737858]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.44
+[   42.737995]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=45 rej=0
+[   42.738009]: SRT: scdir_enforce=0
+[   42.738033]: SRT: macf err=0
+[   42.738039]: SRT: uid=0
+[   42.738043]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.45
+[   42.738180]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=46 rej=0
+[   42.738193]: SRT: scdir_enforce=0
+[   42.738215]: SRT: macf err=0
+[   42.738222]: SRT: uid=0
+[   42.738226]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.46
+[   42.738363]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=47 rej=0
+[   42.738376]: SRT: scdir_enforce=0
+[   42.738400]: SRT: macf err=0
+[   42.738406]: SRT: uid=0
+[   42.738410]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.47
+[   42.738546]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=48 rej=0
+[   42.738559]: SRT: scdir_enforce=0
+[   42.738581]: SRT: macf err=0
+[   42.738588]: SRT: uid=0
+[   42.738593]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.48
+[   42.738729]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=49 rej=0
+[   42.738743]: SRT: scdir_enforce=0
+[   42.738767]: SRT: macf err=0
+[   42.738774]: SRT: uid=0
+[   42.738778]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.49
+[   42.738916]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=50 rej=0
+[   42.738929]: SRT: scdir_enforce=0
+[   42.738954]: SRT: macf err=0
+[   42.738960]: SRT: uid=0
+[   42.738965]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.50
+[   42.739102]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=51 rej=0
+[   42.739116]: SRT: scdir_enforce=0
+[   42.739138]: SRT: macf err=0
+[   42.739145]: SRT: uid=0
+[   42.739149]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.51.dylddata
+[   42.739287]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=52 rej=0
+[   42.739300]: SRT: scdir_enforce=0
+[   42.739321]: SRT: macf err=0
+[   42.739327]: SRT: uid=0
+[   42.739331]: SRT: mountcmp same=0 rootro=1 cachero=1 name=dyld_shared_cache_arm64.52.dyldlinkedit
+[   42.739470]: SRT: carrier why=0 dir=1 rootdev=0x1000008 cachedv=0x1000005 acc=53 rej=0
+[   42.739483]: SRT: scdir_enforce=0
+[   42.739504]: SRT: setup done err=0
+[   42.739510]: SRT: srs err=0
+[   42.868596]: SRT: mapfile kr=0x0 err=0
+[   42.921467]: skip attaching fsw to lo0 using legacy TX modelReinit'd ND information for interface lo0
+[   42.921510]: Reinit'd ND information for interface lo0
+[   42.922921]: release type: UserDT_get_fstab_entries:12205: failed to get filesystem entry at: /filesystems/fstab
+[   42.959727]: ERROR: BindFS bindfs_mount: lookup of /private/preboot/66A6104DFD7FB7E7262BA5E105314987AF7B7E77233541FB2757259FB95803FDE6A99DCED5410552D6FB30D7C074525D/usr/standalone/firmware failed error: 2
+[   42.987532]: DT_get_fstab_entries:12205: failed to get filesystem entry at: /filesystems/fstab
+[   42.987640]: ERROR: BindFS bindfs_mount: lookup of /private/var/hardware/FactoryData/System/Library/Caches/com.apple.factorydata failed error: 2
+[   43.024731]: NativeUfs: submit cmd 26880 lba 2adc75 op 28 dir 2 bytes 4096 db 00000000
+[   43.177562]: /usr/libexec/keybagd[11] ==> (apply-protobox)Couldn't build index for com.apple.dirs_cleaner: Not eligible for acceleration
+[   43.287017]: [System Event] [831053331] [INFO] [Subsystem: launchd] [Event: exclaves-boot] Doing boot task
+[   43.287068]: [System Event] [831054298] [INFO] [Subsystem: launchd] [Event: fsck] Doing boot task
+[   43.287128]: [System Event] [831055447] [INFO] [Subsystem: launchd] [Event: mount-phase-1] Doing boot task
+[   43.287176]: [System Event] [831056350] [INFO] [Subsystem: launchd] [Event: data-protection] Doing boot task
+[   43.287218]: [System Event] [831057143] [INFO] [Subsystem: launchd] [Event: finish-obliteration] Doing boot task
+[   43.287256]: [System Event] [831057863] [INFO] [Subsystem: launchd] [Event: detect-installed-roots] Doing boot task
+[   43.287359]: [System Event] [831059827] [INFO] [Subsystem: launchd] [Event: commit-boot-mode] Doing boot task
+[   43.287428]: [System Event] [831061143] [INFO] [Subsystem: launchd] [Event: restore-datapartition] Doing boot task
+[   43.287464]: [System Event] [831061817] [INFO] [Subsystem: launchd] [Event: restore-datapartition] optional boot task not present
+[   43.287499]: [System Event] [831062481] [INFO] [Subsystem: launchd] [Event: mount-phase-2] Doing boot task
+[   43.287534]: [System Event] [831063156] [INFO] [Subsystem: launchd] [Event: init-with-data-volume] Doing boot task
+[   43.287571]: [System Event] [831063849] [INFO] [Subsystem: launchd] [Event: fixup-mobile-tmp] Doing boot task
+[   43.287606]: [System Event] [831064516] [INFO] [Subsystem: launchd] [Event: fixup-mobile-tmp] /private/var/mobile/tmp already exists, skipping
+[   43.287640]: [System Event] [831065164] [INFO] [Subsystem: launchd] [Event: fixup-mobile-tmp] Finished boot task
+[   43.287673]: [System Event] [831065796] [INFO] [Subsystem: launchd] [Event: MSUEarlyBootTask] Doing boot task
+[   43.287707]: [System Event] [831066433] [INFO] [Subsystem: launchd] [Event: fips] Doing boot task
+[   43.287741]: [System Event] [831067091] [INFO] [Subsystem: launchd] [Event: keybag] Doing boot task
+[   43.287775]: [System Event] [831067723] [INFO] [Subsystem: launchd] [Event: usermanagerd] Doing boot task
+[   43.287808]: [System Event] [831068356] [INFO] [Subsystem: launchd] [Event: dirs_cleaner] Doing boot task
+[   43.287876]: [System Event] [831069646] [INFO] [Subsystem: launchd] [Event: xpcroleaccountd] Doing boot task
+[   43.288137]: /usr/libexec/xpcroleaccountd[14] ==> temporary-sandboxSandbox: xpcroleaccountd(14) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64[System Event] [831143203] [INFO] [Subsystem: launchd] [Event: init_featureflags] Doing boot task
+[   43.292849]: Couldn't build index for com.apple.init_featureflags: Not eligible for acceleration
+[   43.309224]: NativeUfs: submit cmd 27136 lba 2f64bf op 28 dir 2 bytes 4096 db 00000000
+[   43.796093]: [System Event] [840725764] [INFO] [Subsystem: launchd] [Event: auearlyboot] Doing boot task
+[   43.800077]: /System/Library/PrivateFrameworks/MobileAccessoryUpdater.framework/Support/auearlyboot[16] ==> temporary-sandbox[System Event] [840930520] [INFO] [Subsystem: launchd] [Event: tzinit] Doing boot task
+[   43.808203]: Couldn't build index for com.apple.tzinit: Not eligible for acceleration
+[   43.811715]: [System Event] [841022592] [INFO] [Subsystem: launchd] [Event: finish-restore] Doing boot task
+[   43.812675]: /usr/libexec/FinishRestoreFromBackup[18] ==> MobileBackup[System Event] [841090364] [INFO] [Subsystem: launchd] [Event: finish-demo-restore] Doing boot task
+[   43.819586]: [System Event] [841172149] [INFO] [Subsystem: launchd] [Event: sysstatuscheck] Doing boot task
+[   43.823447]: [System Event] [841245506] [INFO] [Subsystem: launchd] [Event: prng_seedctl] Doing boot task
+[   43.824134]: Couldn't build index for com.apple.prng_seedctl: Not eligible for acceleration
+[   43.828734]: [System Event] [841345944] [INFO] [Subsystem: launchd] [Event: launchd_cache_loader] Doing boot task
+[   43.844663]: static IOReturn AppleMobileFileIntegrityUserClient::isCdhashInTrustCache(OSObject *, void *, IOExternalMethodArguments *): Process 22 is checking if a cdhash is in the trust cache
+[   43.844672]: static IOReturn AppleMobileFileIntegrityUserClient::isCdhashInTrustCache(OSObject *, void *, IOExternalMethodArguments *): Returning IOReturn 0x0 to process 22
+[   43.854319]: [System Event] [841832061] [INFO] [Subsystem: launchd] [Event: workload-properties-init] Doing boot task
+[   43.854521]: [System Event] [841835906] [INFO] [Subsystem: launchd] [Event: init-exclavekit] Doing boot task
+[   43.854670]: Couldn't build index for com.apple.init_exclavekit: Not eligible for acceleration
+[   43.854918]: AMFI: Launch Constraint Violation (not enforcing), error info: c[6]p[2]m[3]e[255], (Process was launched as a system service unexpectedly but met System Service constraints) launching proc[vc: 1 pid: 23]: /usr/libexec/init_exclavekit, launch type 1, failure proc [vc: 1 pid: 1]: /sbin/launchd
+[   43.854958]: virtual bool CoreAnalyticsPipe::checkForWork()::193:starting CoreAnalyticsMessenger
+[   43.854969]: bool CoreAnalyticsMessenger::startMessages()::68:startMessage
+[   43.854975]: virtual bool CoreAnalyticsMessenger::attach(IOService *)::81:attaching[System Event] [842762546] [INFO] [Subsystem: launchd] [Event: boot] Early boot complete. Continuing system boot.
+[   43.932640]: tcp listen: [:::49152<->:::0] interface:  (skipped: 0)
+so_gencnt: 18 t_state: LISTEN process: launchd:1 so_qlimit: 0 error: 0 so_error: 0 svc/tc: 0tcp listen: [:::62078<->:::0] interface:  (skipped: 0)
+so_gencnt: 23 t_state: LISTEN process: launchd:1 so_qlimit: 0 error: 0 so_error: 0 svc/tc: 0tcp listen: [0.0.0.0:62078<->0.0.0.0:0] interface:  (skipped: 0)
+so_gencnt: 24 t_state: LISTEN process: launchd:1 so_qlimit: 0 error: 0 so_error: 0 svc/tc: 0NativeUfs: submit cmd 27392 lba 2a67f3 op 28 dir 2 bytes 4096 db 00000000
+[   44.124036]: /System/Library/CoreServices/SpringBoard.app/SpringBoard[27] ==> (apply-protobox)/usr/libexec/UserEventAgent[24] ==> (apply-protobox)/usr/libexec/runningboardd[26] ==> runningboardd/usr/libexec/keybagd[45] ==> (apply-protobox)/usr/libexec/remoted[44] ==> temporary-sandbox/usr/libexec/DumpPanic[48] ==> (apply-protobox)Sandbox: remoted(44) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64/usr/sbin/notifyd[80] ==> notifydSandbox: notifyd(80) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64/System/Library/CoreServices/OTACrashCopier[70] ==> (apply-protobox)Couldn't build index for com.apple.distnoted: Not eligible for acceleration
+[   44.240804]: /usr/sbin/distnoted[79] ==> distnoted/System/Library/PrivateFrameworks/AppleCredentialManager.framework/AppleCredentialManagerDaemon[71] ==> (apply-protobox)Sandbox: distnoted(79) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64/usr/libexec/mtmergeprops[75] ==> (apply-protobox)/usr/libexec/configd[37] ==> (apply-protobox)/usr/libexec/fseventsd[77] ==> (apply-protobox)/usr/libexec/rapportd[74] ==> rapportdSandbox: rapportd(74) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64/usr/libexec/containermanagerd[61] ==> containermanagerdSandbox: containermanagerd(61) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64Sandbox: remoted(44) deny(1) sysctl-read vm.task_no_footprint_for_debug/usr/libexec/timed[57] ==> (apply-protobox)/usr/libexec/driverkitd[63] ==> com.apple.driverkitd/usr/libexec/amfid[47] ==> (apply-protobox)Sandbox: driverkitd(63) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64amfid[47] triggered unnest of range 0x1f8a00000->0x1f8c00000 of DYLD shared region in VM map 0xe7c349d91b93af9. While not abnormal for debuggers, this increases system memory footprint until the target exits.
+[   44.258592]: amfid[47] triggered unnest of range 0x1f8c00000->0x1fde00000 of DYLD shared region in VM map 0xe7c349d91b93af9. While not abnormal for debuggers, this increases system memory footprint until the target exits.
+[   44.259084]: NativeUfs: submit cmd 27648 lba 2b0776 op 28 dir 2 bytes 4096 db 00000000
+[   44.259274]: /usr/libexec/thermalmonitord[53] ==> temporary-sandbox/usr/libexec/logd[25] ==> logdSandbox: logd(25) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64Sandbox: thermalmonitord(53) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64/System/Library/PrivateFrameworks/MobileTimer.framework/Executables/mobiletimerd[50] ==> (apply-protobox)/usr/libexec/audioaccessoryd[62] ==> temporary-sandbox/usr/sbin/mediaserverd[29] ==> mediaserverd/usr/libexec/ptpd[66] ==> ptpd/System/Library/PrivateFrameworks/SleepDaemon.framework/sleepd[65] ==> sleepdSandbox: sleepd(65) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64/System/Library/PrivateFrameworks/MobileAccessoryUpdater.framework/Support/accessoryupdaterd[38] ==> temporary-sandboxSandbox: audioaccessoryd(62) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64/usr/libexec/logd_helper[82] ==> logd_helpervoid CoreAnalyticsHub::handleNagTimerExpiry(IOTimerEventSource *)::751:messageClients of 1 available events
+[   44.412755]: NativeUfs: submit cmd 27904 lba 7341a97 op 28 dir 2 bytes 4096 db 00000000
+[   44.429395]: /usr/libexec/containermanagerd_system[85] ==> containermanagerdSandbox: containermanagerd_system(85) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64/usr/libexec/MobileGestaltHelper[86] ==> (apply-protobox)Couldn't obtain preoslog region: result = -1, preoslog_pa = 0, preoslog_size = 0
+[   44.435778]: MobileGestaltHel[86] triggered unnest of range 0x1f8a00000->0x1f8c00000 of DYLD shared region in VM map 0xe7c349d91cd2099. While not abnormal for debuggers, this increases system memory footprint until the target exits.
+[   44.435791]: MobileGestaltHel[86] triggered unnest of range 0x1f8c00000->0x1fde00000 of DYLD shared region in VM map 0xe7c349d91cd2099. While not abnormal for debuggers, this increases system memory footprint until the target exits.
+[   44.452988]: ustate: caching container path {'systemgroup.com.apple.installcoordinationd' : '/private/var/containers/Shared/SystemGroup/systemgroup.com.apple.installcoordinationd'}int _check_cdhash_in_trustcache(struct proc *, user_addr_t): Only allowed processes can check the trustcache
+[   44.460036]: ustate: caching container path {'com.apple.containermanagerd.13' : '/var/empty'}ustate: caching container path {'systemgroup.com.apple.mobile.installationhelperlogs' : '/private/var/containers/Shared/SystemGroup/1D88EDE6-2CBF-4906-95A7-6ABFEAA34F5D'}ustate: caching container path {'systemgroup.com.apple.osanalytics' : '/private/var/containers/Shared/SystemGroup/systemgroup.com.apple.osanalytics'}ustate: caching container path {'systemgroup.com.apple.lsd' : '/private/var/containers/Shared/SystemGroup/828FA453-4F0C-43A5-AEA0-76F1F68B2B4D'}NativeUfs: submit cmd 28160 lba 733ff42 op 2a dir 1 bytes 4096 db 00000000
+[   44.463468]: ustate: caching container path {'systemgroup.com.apple.media.shared.books' : '/private/var/containers/Shared/SystemGroup/677D71CF-1F6E-4DBB-92A1-B51BB05126A4'}ustate: caching container path {'systemgroup.com.apple.pisco.suinfo' : '/private/var/containers/Shared/SystemGroup/systemgroup.com.apple.pisco.suinfo'}ustate: caching container path {'systemgroup.com.apple.mobilegestaltcache' : '/private/var/containers/Shared/SystemGroup/systemgroup.com.apple.mobilegestaltcache'}ustate: caching container path {'systemgroup.com.apple.media.books.managed' : '/private/var/containers/Shared/SystemGroup/494182BA-20AE-4628-B90D-036BDCDB7A7B'}ustate: caching container path {'systemgroup.com.apple.nsurlstoragedresources' : '/private/var/containers/Shared/SystemGroup/systemgroup.com.apple.nsurlstoragedresources'}ustate: caching container path {'systemgroup.com.apple.regulatory_images' : '/private/var/containers/Shared/SystemGroup/FC8C4DC5-01D9-433D-AFE0-E37B6A58C21A'}ustate: caching container path {'systemgroup.com.apple.lsd.iconscache' : '/private/var/containers/Shared/SystemGroup/systemgroup.com.apple.lsd.iconscache'}ustate: caching container path {'systemgroup.com.apple.mobileactivationd' : '/private/var/containers/Shared/SystemGroup/E17C8070-21E7-40D3-B9A8-6E4E054B7456'}ustate: caching container path {'systemgroup.com.apple.icloud.findmydevice.managed' : '/private/var/containers/Shared/SystemGroup/systemgroup.com.apple.icloud.findmydevice.managed'}ustate: caching container path {'systemgroup.com.apple.configurationprofiles' : '/private/var/containers/Shared/SystemGroup/systemgroup.com.apple.configurationprofiles'}ustate: caching container path {'systemgroup.com.apple.powerlog' : '/private/var/containers/Shared/SystemGroup/87C60190-E734-4F3B-85C9-C71C39547A41'}ustate: caching container path {'com.apple.containermanagerd.2' : '/var/empty'}ustate: caching container path {'com.apple.gamecenter.widgets' : '/private/var/mobile/Containers/Data/Application/FEB6A582-C52E-4126-98B2-E52784AA84A8'}ustate: caching container path {'com.apple.PCViewService' : '/private/var/mobile/Containers/Data/Application/D4398DFE-4596-42D4-9887-7CBFF71A2A25'}ustate: caching container path {'com.apple.RecoverDeviceUI' : '/private/var/mobile/Containers/Data/Application/A2AD132A-433A-4D64-A5BB-CF04BADB608D'}ustate: caching container path {'com.apple.CompassCalibrationViewService' : '/private/var/mobile/Containers/Data/Application/0F02FBEF-520C-4B6E-AEAC-27D3631FF803'}ustate: caching container path {'com.apple.FunCamera.EmojiStickers' : '/private/var/mobile/Containers/Data/Application/0B0178ED-1E9A-48E6-8A81-EC97419208A5'}ustate: caching container path {'com.apple.CarTrip' : '/private/var/mobile/Containers/Data/Application/D88C7A01-3723-426B-861E-ABAE41DF5500'}ustate: caching container path {'com.apple.AXUIViewService' : '/private/var/mobile/Containers/Data/Application/53DF9FA9-FE49-496F-81CA-9F6C8EDDCA4F'}ustate: caching container path {'com.apple.SharingUIService' : '/private/var/mobile/Containers/Data/Application/DC0CC4CC-4482-45AB-B3FC-46FF21FDD852'}ustate: caching container path {'com.apple.Animoji.StickersApp' : '/private/var/mobile/Containers/Data/Application/D9891A62-FF55-4641-9F6E-615A9A046A88'}ustate: caching container path {'com.apple.VoiceOverTouch' : '/private/var/mobile/Containers/Data/Application/BFF0BDEC-E988-4C8C-9D6D-8C125D504D3D'}ustate: caching container path {'com.apple.DiagnosticsReporter' : '/private/var/mobile/Containers/Data/Application/94FF2398-DA60-4D13-B70D-6AA2983B0D7A'}ustate: caching container path {'com.apple.FinanceStub' : '/private/var/mobile/Containers/Data/Application/A824E0A3-C51D-47AB-A6F7-04A02854BA3C'}ustate: caching container path {'com.apple.feedback.remote' : '/private/var/mobile/Containers/Data/Application/7855D9B7-5C17-4E08-A91C-0313509439D8'}ustate: caching container path {'com.apple.webapp' : '/private/var/mobile/Containers/Data/Application/33D86771-D3C2-48A8-A66C-E173595B87CB'}ustate: caching container path {'com.apple.AAUIViewService' : '/private/var/mobile/Containers/Data/Application/1DF6A5B2-6078-4DF4-95C7-2DF65472E479'}ustate: caching container path {'com.apple.CarPlaySetupApp' : '/private/var/mobile/Containers/Data/Application/39A4C6AF-7BA1-4B1F-ADC8-814CDC5A29AB'}ustate: caching container path {'com.apple.Stickers.UserGenerated' : '/private/var/mobile/Containers/Data/Application/8622C6E4-890B-4DFB-A32D-514B4A423D60'}ustate: caching container path {'com.apple.Diagnostics' : '/private/var/mobile/Containers/Data/Application/859D50A4-0228-4FB3-A031-ACE9EB1A056E'}ustate: caching container path {'com.apple.LoginUI' : '/private/var/mobile/Containers/Data/Application/F6CD7A61-F176-4086-968E-AF6939420C7C'}ustate: caching container path {'com.apple.HealthENBuddy' : '/private/var/mobile/Containers/Data/Application/15C3377D-3A12-4F43-97A6-8A7B3F049F37'}ustate: caching container path {'com.apple.MTLReplayer' : '/private/var/mobile/Containers/Data/Application/221D57EC-72E8-4D14-BD21-0EB012387882'}ustate: caching container path {'com.apple.Photos.PhotosUIService' : '/private/var/mobile/Containers/Data/Application/A65D0C94-1631-459C-AE62-FDBCCE659A66'}ustate: caching container path {'com.apple.ScreenSharingViewService' : '/private/var/mobile/Containers/Data/Application/16C8B5C3-64ED-4F72-B553-764F8E8F182E'}ustate: caching container path {'com.apple.ContactsUI.Carousel' : '/private/var/mobile/Containers/Data/Application/6D955A2E-A9E0-4DCE-8BE2-02A65F0314D6'}ustate: caching container path {'com.apple.ClockAngel' : '/private/var/mobile/Containers/Data/Application/BB2C2E6B-7D3E-4246-AAD7-A859EED54CCE'}/System/Library/Frameworks/Accounts.framework/accountsd[88] ==> (apply-protobox)ustate: caching container path {'com.apple.MobileSMS' : '/private/var/mobile/Containers/Data/Application/58EA8D6E-9CEF-4EF9-9092-3C81C1BB6057'}ustate: caching container path {'com.apple.sidecar' : '/private/var/mobile/Containers/Data/Application/08501902-2068-48E3-904A-D24D9B326DAB'}ustate: caching container path {'com.apple.shortcuts.runtime' : '/private/var/mobile/Containers/Data/Application/BEAE6CD3-F86E-40ED-BAE9-47650B4A0EAE'}ustate: caching container path {'com.apple.DemoApp' : '/private/var/mobile/Containers/Data/Application/7FECEA82-4FE8-4485-913F-CDBD7D786F64'}ustate: caching container path {'com.apple.FCAuthenticationUI' : '/private/var/mobile/Containers/Data/Application/1BEBDDCB-6F47-45D1-AD56-0CD1BFA66067'}ustate: caching container path {'com.apple.chrono.WidgetRenderer-Default' : '/private/var/mobile/Containers/Data/Application/385F3AAA-A957-4867-B8F7-5415879E6639'}/usr/libexec/routined[32] ==> routinedustate: caching container path {'com.apple.SharingViewService' : '/private/var/mobile/Containers/Data/Application/817C71AE-51DA-412C-9E1A-ABADB238EFFE'}Sandbox: routined(32) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64ustate: caching container path {'com.apple.TVAccessViewService' : '/private/var/mobile/Containers/Data/Application/E1317D69-DCE1-4279-B3D4-12D60EC1DC3C'}ustate: caching container path {'com.apple.HomeCaptiveViewService' : '/private/var/mobile/Containers/Data/Application/DACDB375-06D8-4894-AEFD-E5E3E8B6B92C'}ustate: caching container path {'com.apple.SafariViewService' : '/private/var/mobile/Containers/Data/Application/0D8E7A72-BEBF-49B8-B203-D51BF8754048'}ustate: caching container path {'com.apple.SubcredentialUIService' : '/private/var/mobile/Containers/Data/Application/F93C0F2D-C2FD-4F59-893D-C5E44F4E8033'}ustate: caching container path {'com.apple.mobilenotes' : '/private/var/mobile/Containers/Data/Application/AC5C0F26-0839-42A6-B0EB-0A4D139CC423'}ustate: caching container path {'com.apple.RemoteiCloudQuotaUI' : '/private/var/mobile/Containers/Data/Application/8403FACF-1A22-4406-95CB-BD7E9E261824'}ustate: caching container path {'com.apple.ScreenTimeWidgetApplication' : '/private/var/mobile/Containers/Data/Application/BA3AD942-2241-43BC-B28B-B7291E8ED2C7'}ustate: caching container path {'com.apple.AuthKitUIService' : '/private/var/mobile/Containers/Data/Application/CD25D99E-DC1F-42BD-B989-39E5431FDCCC'}ustate: caching container path {'com.apple.smsFilter' : '/private/var/mobile/Containers/Data/Application/6422CD14-DBE6-4296-8F4A-C1A79B5391F0'}ustate: caching container path {'com.apple.PDUIApp' : '/private/var/mobile/Containers/Data/Application/3F32CD68-A043-4B43-BBFB-2F6B46E28DB5'}ustate: caching container path {'com.apple.Sharing.AirDropUI' : '/private/var/mobile/Containers/Data/Application/9B5D563E-C393-4A3B-B943-33F2D7B78735'}ustate: caching container path {'com.apple.siri.parsec.HashtagImagesApp' : '/private/var/mobile/Containers/Data/Application/9BCAC0C5-63EC-44DA-A9D1-5FD9113420BA'}ustate: caching container path {'com.apple.HealthPrivacyService' : '/private/var/mobile/Containers/Data/Application/33BD7926-81A8-4C51-9154-7437610D60E5'}ustate: caching container path {'com.apple.HDSViewService' : '/private/var/mobile/Containers/Data/Application/6FE098EE-9DCB-4596-A08B-E3623A961292'}ustate: caching container path {'com.apple.ProximityReaderUIService' : '/private/var/mobile/Containers/Data/Application/D632D3C7-B891-45CC-9C8F-FA97C56223C8'}ustate: caching container path {'com.apple.AppSSOUIService' : '/private/var/mobile/Containers/Data/Application/DA22CEC0-D873-471D-AA95-587CC6E03E04'}ustate: caching container path {'com.apple.TVSetupUIService' : '/private/var/mobile/Containers/Data/Application/7C8A5EF8-406F-444A-9EB7-E47B4034BC4C'}ustate: caching container path {'com.apple.PassbookSecureUIService' : '/private/var/mobile/Containers/Data/Application/56ACA269-D757-4607-BEEB-4BDDC48BC1D1'}ustate: caching container path {'com.apple.UIKit.ColorPickerUIService' : '/private/var/mobile/Containers/Data/Application/9E35792D-E22E-4CE5-A07B-BAAE4F83287F'}ustate: caching container path {'com.apple.SpringBoardEducation' : '/private/var/mobile/Containers/Data/Application/5DC1EDF3-06FF-4DFF-9498-A744E9A048FC'}ustate: caching container path {'com.apple.PassbookUISceneService' : '/private/var/mobile/Containers/Data/Application/D4CF55FD-DEF5-4886-A0ED-9FFD5E145C14'}ustate: caching container path {'com.apple.AutoSettings' : '/private/var/mobile/Containers/Data/Application/4D2F5537-A206-4CC3-8A72-CAEBAFAF60AF'}ustate: caching container path {'com.apple.InputUI' : '/private/var/mobile/Containers/Data/Application/204E8A99-2193-4EFA-A139-B2B7145DD1B1'}ustate: caching container path {'com.apple.PASViewService' : '/private/var/mobile/Containers/Data/Application/302D7518-3D89-46B5-981D-4A3EFAEC3C43'}ustate: caching container path {'com.apple.MediaRemoteUI' : '/private/var/mobile/Containers/Data/Application/92F37118-8CF9-4D91-8531-B41E067F7FD9'}ustate: caching container path {'com.apple.ShortcutsUI' : '/private/var/mobile/Containers/Data/Application/BEC8C552-5FEB-4C81-8C99-A7470C5A2527'}ustate: caching container path {'com.apple.InCallService' : '/private/var/mobile/Containers/Data/Application/A7267DA4-ECF7-4E31-9511-481369648BD5'}ustate: caching container path {'com.apple.MailCompositionService' : '/private/var/mobile/Containers/Data/Application/59C8031F-BF83-4815-A775-469FE55C8D58'}ustate: caching container path {'com.apple.SystemPaperViewService' : '/private/var/mobile/Containers/Data/Application/A593909E-4FA4-4FD6-8ED4-BAFC57FC3340'}ustate: caching container path {'com.apple.PeopleMessageService' : '/private/var/mobile/Containers/Data/Application/8265574A-BCA8-4D7B-83BE-B79AB5E49735'}ustate: caching container path {'com.apple.replaykitangel' : '/private/var/mobile/Containers/Data/Application/AD7FE7C0-64E6-43FD-BF5D-538C6F5AA4B9'}ustate: caching container path {'com.apple.CarCharge' : '/private/var/mobile/Containers/Data/Application/3F67956D-FF4C-4CE9-BB68-94D6569D0684'}ustate: caching container path {'com.apple.fullkeyboardaccess' : '/private/var/mobile/Containers/Data/Application/00EACA3D-0F03-4AA2-A12F-141A0FEA7DD4'}NativeUfs: submit cmd 28416 lba 734221c op 28 dir 2 bytes 4096 db 00000000
+[   44.518327]: ustate: caching container path {'com.apple.HealthENLauncher' : '/private/var/mobile/Containers/Data/Application/34FC71EB-1DDC-4E7A-A05E-1EA6D25EFD9D'}ustate: caching container path {'com.apple.chrono.WidgetRenderer-CarPlay' : '/private/var/mobile/Containers/Data/Application/EB32F863-819F-4A3E-9126-A1F1BDD42004'}ustate: caching container path {'com.apple.CarTirePressure' : '/private/var/mobile/Containers/Data/Application/498567F8-4F52-4734-947F-5A5B49606757'}ustate: caching container path {'com.apple.PaperBoard' : '/private/var/mobile/Containers/Data/Application/D6F88E22-3F51-4DDF-A4B1-6E7A087DCB7A'}ustate: caching container path {'com.apple.Health.Sleep' : '/private/var/mobile/Containers/Data/Application/C5864377-B25B-4C9D-8084-E51B2F91A741'}ustate: caching container path {'com.apple.dockkit.pairinguiservice' : '/private/var/mobile/Containers/Data/Application/0A70C4D9-4965-4367-9C19-2B1751938286'}ustate: caching container path {'com.apple.CarRadio' : '/private/var/mobile/Containers/Data/Application/D68D3940-BAD1-4424-A5F3-4F94E1350DA8'}Sandbox apply: pfd[89] pfdustate: caching container path {'com.apple.icloud.FindMyDevice.FindMyExtensionContainer' : '/private/var/mobile/Containers/Data/Application/974869E9-4F58-4BA6-86EF-78EB823B149A'}ustate: caching container path {'com.apple.icloud.apps.messages.business' : '/private/var/mobile/Containers/Data/Application/7F9DDC70-D60E-45DE-B76F-E3A813A21A2A'}ustate: caching container path {'com.apple.CarClosures' : '/private/var/mobile/Containers/Data/Application/63D280D7-C087-4767-9BA0-49A65A9B439D'}ustate: caching container path {'com.apple.HearingApp' : '/private/var/mobile/Containers/Data/Application/9153AAFB-52FC-4C4D-8E77-4DBE33E89670'}ustate: caching container path {'com.apple.FunCamera.TextPicker' : '/private/var/mobile/Containers/Data/Application/0CB2B735-6D3C-4924-B1DA-D72841FC708E'}ustate: caching container path {'com.apple.AccountAuthenticationDialog' : '/private/var/mobile/Containers/Data/Application/FC9BC5A2-FCCD-4E18-8931-591017779E34'}ustate: caching container path {'com.apple.PublicHealthRemoteUI' : '/private/var/mobile/Containers/Data/Application/1D89C2A5-AEED-4EDC-B649-CB78AA9C4FB5'}ustate: caching container path {'com.apple.WebSheet' : '/private/var/mobile/Containers/Data/Application/EBCDFFD7-FE83-49FB-A572-ECB81C4CF0D2'}ustate: caching container path {'com.apple.ctkui' : '/private/var/mobile/Containers/Data/Application/7F4FE37B-43EE-4AE8-9D07-6D9DAAD572B9'}ustate: caching container path {'com.apple.MobileReplayer' : '/private/var/mobile/Containers/Data/Application/F42A6EBC-4B1E-478A-A4B5-6138D12294C3'}ustate: caching container path {'com.apple.SOSBuddy' : '/private/var/mobile/Containers/Data/Application/F09625F6-39D6-4445-925F-66AD9CEC923A'}ustate: caching container path {'com.apple.CarCamera' : '/private/var/mobile/Containers/Data/Application/AC35A0D6-C4E2-48CF-B778-D50468A92D67'}ustate: caching container path {'com.apple.NewDeviceOutreachApp' : '/private/var/mobile/Containers/Data/Application/C0B96D9C-9598-4468-A079-9864E119E339'}ustate: caching container path {'com.apple.FTMInternal' : '/private/var/mobile/Containers/Data/Application/342BAC4A-EE8F-40A8-A7BF-532B13479112'}ustate: caching container path {'com.apple.PrintKit.Print-Center' : '/private/var/mobile/Containers/Data/Application/3A107056-69F5-4541-87EF-6F6361D0A19C'}ustate: caching container path {'com.apple.CloudKit.ShareBear' : '/private/var/mobile/Containers/Data/Application/4769FB98-0451-4618-823E-42D3DB6FCCCD'}ustate: caching container path {'com.apple.SafetyMonitorApp' : '/private/var/mobile/Containers/Data/Application/418870B2-0E2F-41BA-8122-4238BBDFB84C'}ustate: caching container path {'com.apple.UIKit.FontPickerUIService' : '/private/var/mobile/Containers/Data/Application/AB4044C5-5A30-4A94-8680-DBCFF737886E'}ustate: caching container path {'com.apple.icq' : '/private/var/mobile/Containers/Data/Application/B6282EF4-4EEE-4FEA-8A7E-01382D59598B'}ustate: caching container path {'com.apple.EventViewService' : '/private/var/mobile/Containers/Data/Application/DA24AD5B-E7E8-4398-B440-91EF971EFD6A'}ustate: caching container path {'com.apple.FunCamera.ShapesPicker' : '/private/var/mobile/Containers/Data/Application/BE713643-D235-4E99-97A4-6C833E4529CA'}ustate: caching container path {'com.apple.ClipViewService' : '/private/var/mobile/Containers/Data/Application/647FBA05-F16A-4104-BF82-B3A115FB4460'}ustate: caching container path {'com.apple.FontInstallViewService' : '/private/var/mobile/Containers/Data/Application/60E056C5-C7F5-413C-B233-8C0A4744ECC0'}ustate: caching container path {'com.apple.appleseed.FeedbackAssistant' : '/private/var/mobile/Containers/Data/Application/2F12E7D6-2345-42BB-8055-7AE4AB4C1467'}ustate: caching container path {'com.apple.Maps' : '/private/var/mobile/Containers/Data/Application/D0A81874-8797-4435-9049-EA5185637A9D'}ustate: caching container path {'com.apple.DiagnosticsService' : '/private/var/mobile/Containers/Data/Application/A19A1348-B76A-4D52-9013-A8A318B833EA'}ustate: caching container path {'com.apple.StoreDemoViewService' : '/private/var/mobile/Containers/Data/Application/41B792B9-012D-4CE6-9CBD-D247AF372BB8'}ustate: caching container path {'com.apple.PreviewShell' : '/private/var/mobile/Containers/Data/Application/BD40E162-A510-4636-A6EF-2768C53BF8CD'}ustate: caching container path {'com.apple.ClarityCamera' : '/private/var/mobile/Containers/Data/Application/E9FC1CD5-02A0-4F82-99C7-FFAB8D5936C8'}ustate: caching container path {'com.apple.PassbookStub' : '/private/var/mobile/Containers/Data/Application/EE176CFA-0CF0-4D72-8A08-E2662B5FE941'}ustate: caching container path {'com.apple.AuthenticationServicesUI' : '/private/var/mobile/Containers/Data/Application/AA86B152-C868-4696-A0A8-A4A77A469F91'}ustate: caching container path {'com.apple.iMessageAppsViewService' : '/private/var/mobile/Containers/Data/Application/3C4AFB18-09F6-400E-95CB-5A369807A4B8'}ustate: caching container path {'com.apple.CTNotifyUIService' : '/private/var/mobile/Containers/Data/Application/A5BE11FD-F4BD-43DB-A9E8-E266E374C0D1'}ustate: caching container path {'com.apple.airplayreceiver' : '/private/var/mobile/Containers/Data/Application/98C490A4-387E-480A-9C2A-68C4B60F2E59'}ustate: caching container path {'com.apple.gamecenter.GameCenterUIService' : '/private/var/mobile/Containers/Data/Application/D2A68CBC-8A32-4BBE-9B03-1C3C526B4B9F'}ustate: caching container path {'com.apple.GameCenterRemoteAlert' : '/private/var/mobile/Containers/Data/Application/FEDFD63E-93A9-4C3C-8C00-BAAE7ED56A15'}ustate: caching container path {'com.apple.FaceTimeLinkTrampoline' : '/private/var/mobile/Containers/Data/Application/A92268AC-3A8B-4026-ACB8-EAAE0082D612'}ustate: caching container path {'com.apple.WorkoutRemoteViewService' : '/private/var/mobile/Containers/Data/Application/280461D0-EBFD-4E49-9F9D-980300FF0E1B'}ustate: caching container path {'com.apple.ScreenTimeUnlock' : '/private/var/mobile/Containers/Data/Application/1B8748EC-586A-4076-9301-82EEF5F4D6F6'}ustate: caching container path {'com.apple.FinanceUIService' : '/private/var/mobile/Containers/Data/Application/29FE31A5-3745-40F6-8BE7-30BEA6488472'}ustate: caching container path {'com.apple.musicrecognition' : '/private/var/mobile/Containers/Data/Application/A969A78A-3190-449E-8BBC-0A8B2A0C3332'}ustate: caching container path {'com.apple.AskToMessagesHost' : '/private/var/mobile/Containers/Data/Application/9DD14D86-9ADD-4323-B9B2-534F2E70F832'}ustate: caching container path {'com.apple.iBooks' : '/private/var/mobile/Containers/Data/Application/EF078419-AC9B-4E0C-A266-59DA981DF078'}ustate: caching container path {'com.apple.EyeReliefUI' : '/private/var/mobile/Containers/Data/Application/B3AD9DC8-479E-4677-B0C8-AFB4B7FDCCF7'}ustate: caching container path {'com.apple.NewDeviceSetupUIService' : '/private/var/mobile/Containers/Data/Application/78C8CCA9-D0BE-4B06-8D33-AB53AA5FE65F'}ustate: caching container path {'com.apple.MediaRemoteUIService' : '/private/var/mobile/Containers/Data/Application/76C55187-62CA-4CF2-B080-587BECC89637'}ustate: caching container path {'com.apple.BusinessChatViewService' : '/private/var/mobile/Containers/Data/Application/01515CA5-5D9C-40B5-B107-27A21331ECF3'}ustate: caching container path {'com.apple.findmy.remoteuiservice' : '/private/var/mobile/Containers/Data/Application/CBD441C9-4CA1-48AA-BB81-11BDCCB689C1'}ustate: caching container path {'com.apple.TDGSharingViewService' : '/private/var/mobile/Containers/Data/Application/652FEA9E-D4CD-4FD9-BF2C-F6E974E31482'}ustate: caching container path {'com.apple.facetime' : '/private/var/mobile/Containers/Data/Application/C63B68EF-3B27-4521-9BBE-0E4162449F8D'}ustate: caching container path {'com.apple.CarClimate' : '/private/var/mobile/Containers/Data/Application/D517C0C2-7E70-4F0C-A106-07A265748DEF'}ustate: caching container path {'com.apple.MBHelperApp' : '/private/var/mobile/Containers/Data/Application/F7D51917-4329-4391-ADEE-C4ADD0DEF7E2'}ustate: caching container path {'com.apple.WebContentFilter.remoteUI.WebContentAnalysisUI' : '/private/var/mobile/Containers/Data/Application/03305538-AF49-4074-B2CB-F426EE9D8D55'}ustate: caching container path {'com.apple.PeopleViewService' : '/private/var/mobile/Containers/Data/Application/C7D65919-5D37-4CA2-9BB5-B3DE139B663F'}ustate: caching container path {'com.apple.CBRemoteSetup' : '/private/var/mobile/Containers/Data/Application/EFA982E1-71B3-4E64-8343-FA3183A2FEF9'}ustate: caching container path {'com.apple.FMDMagSafeSetupRemoteUI' : '/private/var/mobile/Containers/Data/Application/8177A2E6-0173-4D8E-90C0-CF2147C15A89'}ustate: caching container path {'com.apple.ShazamEventsApp' : '/private/var/mobile/Containers/Data/Application/BAA5B645-124B-4048-8B29-47DB7E71B07E'}ustate: caching container path {'com.apple.CoreAuthUI' : '/private/var/mobile/Containers/Data/Application/55C623F4-9FD8-4BA0-8905-0B08E27E7BAF'}ustate: caching container path {'com.apple.PassbookUIService' : '/private/var/mobile/Containers/Data/Application/D663380F-CB7F-455B-858C-51C6D93DFD79'}ustate: caching container path {'com.apple.AMSEngagementViewService' : '/private/var/mobile/Containers/Data/Application/E1D7BE7E-C500-4665-993B-AC58730DA9D1'}ustate: caching container path {'com.apple.SleepLockScreen' : '/private/var/mobile/Containers/Data/Application/FE3B57AA-AEA8-4A06-9934-1146E6124E40'}ustate: caching container path {'com.apple.PosterBoard' : '/private/var/mobile/Containers/Data/Application/0D279705-4B7F-4F65-8442-6C86DB3718B3'}ustate: caching container path {'com.apple.datadetectors.DDActionsService' : '/private/var/mobile/Containers/Data/Application/3DA7FBFB-CDA7-4399-9DA4-678CBC44BD1B'}ustate: caching container path {'com.apple.ScreenshotServicesService' : '/private/var/mobile/Containers/Data/Application/85CE6340-A34C-420B-9502-C297E46AFFCB'}ustate: caching container path {'com.apple.CredentialSharingService' : '/private/var/mobile/Containers/Data/Application/9BC841B2-2F22-407D-B15B-40DA193CF89D'}ustate: caching container path {'com.apple.VSViewService' : '/private/var/mobile/Containers/Data/Application/B83797B4-23A1-4B41-9E4E-013DCFD454B6'}ustate: caching container path {'com.apple.SIMSetupUIService' : '/private/var/mobile/Containers/Data/Application/60B34905-CE76-43A1-AB3D-FBC90A99B444'}ustate: caching container path {'com.apple.mobilesafari' : '/private/var/mobile/Containers/Data/Application/992C82CD-0C04-4C58-A04D-E84FBA058ABB'}ustate: caching container path {'com.apple.ClarityPhotos' : '/private/var/mobile/Containers/Data/Application/EDBE3059-E24B-4579-BAC1-D8EDCBD699D4'}ustate: caching container path {'com.apple.APSUIApp' : '/private/var/mobile/Containers/Data/Application/609FCC2E-5D7A-4DE6-A16F-E58DD171D360'}ustate: caching container path {'com.apple.AXRemoteViewService' : '/private/var/mobile/Containers/Data/Application/11BEADA8-0324-4A2D-9B7B-1ADA8D698F32'}ustate: caching container path {'com.apple.siri' : '/private/var/mobile/Containers/Data/Application/08CE7A87-92C4-429E-A268-6D845BA46F0F'}ustate: caching container path {'com.apple.BacklinkIndicator' : '/private/var/mobile/Containers/Data/Application/385B42F4-E966-423A-A810-B471D7452B1D'}ustate: caching container path {'com.apple.AskPermissionUI' : '/private/var/mobile/Containers/Data/Application/BC6183A2-6890-4BEF-8FBD-CC0E3D6C9E09'}ustate: caching container path {'com.apple.Batteries' : '/private/var/mobile/Containers/Data/Application/EC283CF0-683B-4266-BB3E-21314CD3441D'}ustate: caching container path {'com.apple.CTCarrierSpaceAuth' : '/private/var/mobile/Containers/Data/Application/0DC0E8DB-63DF-49CF-B142-D3977211674A'}ustate: caching container path {'com.apple.AppStore' : '/private/var/mobile/Containers/Data/Application/FFF48DAA-F80C-4F47-9DD1-AE054F12C05B'}ustate: caching container path {'com.apple.CompanionViewService' : '/private/var/mobile/Containers/Data/Application/879B8A14-4FB3-4027-80DF-CC7E920142ED'}ustate: caching container path {'com.apple.ProximityReaderSceneUI' : '/private/var/mobile/Containers/Data/Application/C4F60873-BE8B-436C-B6B2-7162F8D4AC28'}ustate: caching container path {'com.apple.TVRemoteUIService' : '/private/var/mobile/Containers/Data/Application/2EEB01CB-EED2-47A4-A5E4-95C6967D7083'}ustate: caching container path {'com.apple.ios.StoreKitUIService' : '/private/var/mobile/Containers/Data/Application/1530AAE3-2802-440C-88F7-2706EAC3531B'}ustate: caching container path {'com.apple.AppDistributionLaunchAngel' : '/private/var/mobile/Containers/Data/Application/2981E69D-E78A-4CDC-9CE4-7E9131319BB1'}ustate: caching container path {'com.apple.podcasts' : '/private/var/mobile/Containers/Data/Application/FA4B4A84-73DD-4F20-AD09-D8505BEBF14F'}ustate: caching container path {'com.apple.BarcodeScanner' : '/private/var/mobile/Containers/Data/Application/FAF872C0-054F-489E-A533-ECE8E85CE9FE'}ustate: caching container path {'com.apple.Home.HomeControlService' : '/private/var/mobile/Containers/Data/Application/E894B7B6-DC20-4064-8CD4-ACAD60820658'}/usr/libexec/lockdownd[67] ==> lockdowndSandbox: no application group container found for group "group.com.apple.hashtagImages"Sandbox: no application group container found for group "group.com.apple.ManagedSettings"/System/Library/PrivateFrameworks/IMCore.framework/imagent.app/imagent[60] ==> imagentSandbox: no system group container path found for group "systemgroup.com.apple.sharedpclogging"/usr/libexec/sharingd[58] ==> sharingd/usr/libexec/nfcd[52] ==> nfcdSandbox: no system group container path found for group "systemgroup.com.apple.cfpreferences.managed"/usr/sbin/cfprefsd[83] ==> cfprefsdSandbox: no system group container path found for group "systemgroup.com.apple.cfpreferences.managed"/usr/sbin/cfprefsd[84] ==> cfprefsdSandbox: no system container path found for ID "com.apple.backboardd"/usr/libexec/backboardd[55] ==> backboarddSandbox: sharingd(58) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64Sandbox: imagent(60) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64NativeUfs: submit cmd 28672 lba 3a474d op 28 dir 2 bytes 4096 db 00000000
+[   44.576674]: int _check_cdhash_in_trustcache(struct proc *, user_addr_t): Only allowed processes can check the trustcache
+[   44.583219]: int _check_cdhash_in_trustcache(struct proc *, user_addr_t): Only allowed processes can check the trustcache
+[   44.587127]: int _check_cdhash_in_trustcache(struct proc *, user_addr_t): Only allowed processes can check the trustcache
+[   44.592463]: int _check_cdhash_in_trustcache(struct proc *, user_addr_t): Only allowed processes can check the trustcache
+[   44.592632]: accountsd[88] Corpse allowed 1 of 5
+[   44.596993]: int _check_cdhash_in_trustcache(struct proc *, user_addr_t): Only allowed processes can check the trustcache
+[   44.601962]: int _check_cdhash_in_trustcache(struct proc *, user_addr_t): Only allowed processes can check the trustcache
+[   44.606500]: int _check_cdhash_in_trustcache(struct proc *, user_addr_t): Only allowed processes can check the trustcache
+[   44.611491]: int _check_cdhash_in_trustcache(struct proc *, user_addr_t): Only allowed processes can check the trustcache
+[   44.613467]: /System/Library/PrivateFrameworks/ChronoCore.framework/Support/chronod[90] ==> temporary-sandboxint _check_cdhash_in_trustcache(struct proc *, user_addr_t): Only allowed processes can check the trustcache
+[   44.618313]: Sandbox: chronod(90) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64int _check_cdhash_in_trustcache(struct proc *, user_addr_t): Only allowed processes can check the trustcache
+[   44.620502]: /usr/libexec/lsd[93] ==> (apply-protobox)mobiletimerd[50] Corpse allowed 2 of 5
+[   44.622067]: int _check_cdhash_in_trustcache(struct proc *, user_addr_t): Only allowed processes can check the trustcache
+[   44.627115]: Sandbox: chronod(90) deny(1) sysctl-read vm.task_no_footprint_for_debugint _check_cdhash_in_trustcache(struct proc *, user_addr_t): Only allowed processes can check the trustcache
+[   44.633089]: int _check_cdhash_in_trustcache(struct proc *, user_addr_t): Only allowed processes can check the trustcache
+[   44.634045]: /System/Library/PrivateFrameworks/DataMigration.framework/XPCServices/com.apple.datamigrator.xpc/com.apple.datamigrator[94] ==> (apply-protobox)/System/Library/PrivateFrameworks/SessionCore.framework/Support/liveactivitiesd[91] ==> temporary-sandboxKextLog: driverkitd is not active
+[   44.639392]: NativeUfs: submit cmd 28928 lba 734899f op 28 dir 2 bytes 4096 db 00000000
+[   44.640829]: Sandbox: liveactivitiesd(91) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64Sandbox: liveactivitiesd(91) deny(1) sysctl-read vm.task_no_footprint_for_debugustate: caching container path {'com.apple.containermanagerd.12' : '/var/empty'}ustate: caching container path {'com.apple.backboardd' : '/private/var/containers/Data/System/3BDA301B-AEE4-49AF-AD91-D5CB28498AB9'}ustate: caching container path {'com.apple.eligibilityd' : '/private/var/containers/Data/System/32626F49-D55B-4281-8CB7-5F9362615023'}ustate: caching container path {'com.apple.mobileactivationd' : '/private/var/containers/Data/System/56C649CC-38FD-4B38-BD8B-D8C6DE4F317D'}ustate: caching container path {'com.apple.lsd' : '/private/var/containers/Data/System/53BDA3A7-9B2B-4BBB-B6AA-27E3BF5A0366'}FBDP mmap:849 marked vp 0xfffffff6612dfe20 "/private/var/mobile/Containers/Data/InternalDaemon/BCDF5856-2063-4811-8CE6-B8365FDFCF82/Library/Caches/com.apple.LaunchServices-5028-v2.csstore" moc 0xfffffff1953cab00 as tracked
+[   44.656249]: KextLog: Loading FileSet KC(s)
+[   44.668971]: KextLog: driverkitd is active
+[   44.687926]: /usr/libexec/audiomxd[95] ==> temporary-sandboxSandbox: audiomxd(95) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64/System/Library/CoreServices/powerd.bundle/powerd[40] ==> (apply-protobox)static IOReturn AppleMobileFileIntegrityUserClient::isCdhashInTrustCache(OSObject *, void *, IOExternalMethodArguments *): Process 93 is checking if a cdhash is in the trust cache
+[   44.698899]: static IOReturn AppleMobileFileIntegrityUserClient::isCdhashInTrustCache(OSObject *, void *, IOExternalMethodArguments *): Returning IOReturn 0x0 to process 93
+[   44.702454]: Sandbox: audiomxd(95) deny(1) file-write-create /private/var/tmp/AudioCapture/System/Library/PrivateFrameworks/CoreAccessories.framework/XPCServices/ACCHWComponentAuthService.xpc/ACCHWComponentAuthService[92] ==> (apply-protobox)NativeUfs: submit cmd 29184 lba 30fddc op 28 dir 2 bytes 4096 db 00000000
+[   44.714346]: /usr/libexec/mobileassetd[96] ==> mobileassetdPMRD: power event 4 args 0xe7c349fab229a39 0x0
+[   44.736654]: PMRD: power event 6 args 0xe7c349fab398739 0x0
+[   44.736666]: PMRD: power event 6 args 0xe7c349fab398739 0x0
+[   44.736690]: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x302) tag 0xa0064
+[   44.736711]: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+[   44.737106]: PMRD: power event 12 args 0xe7c349ec4d2fe49 0x0
+[   44.737112]: PMRD: SleepWake UUID queued: 78B612DD-1BB9-4C1A-8C45-40A2595E8BAD
+[   44.738630]: /usr/libexec/nehelper[97] ==> com.apple.nehelperSandbox: nehelper(97) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64/System/Library/CoreServices/ReportCrash[98] ==> (apply-protobox)Sandbox: no application group container found for group "group.com.apple.reminders"/usr/libexec/seld[49] ==> seld/usr/libexec/remindd[72] ==> temporary-sandboxPMRD: setAggressiveness(0) kPMMinutesToSleep = 2147483647
+[   44.748650]: PMRD: setAggressiveness(0) kPMMinutesToSpinDown = 10
+[   44.748656]: PMRD: setAggressiveness(0) kPMMinutesToDim = 10
+[   44.748663]: PMRD: setAggressiveness(0) kPMEthernetWakeOnLANSettings = 0
+[   44.748781]: PMRD: aggressiveness changed: system 0->2147483647, display 10
+[   44.748794]: PMRD: idle time -> 0 ms (ena 1)
+[   44.748799]: PMRD: idle sleep timer enabled
+[   44.748804]: PMRD: changePowerStateWithTagToPriv(ON_STATE, b000a)
+[   44.748822]: PMRD: idle timer set for 0 milliseconds
+[   44.748851]: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0xb000a
+[   44.748861]: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+[   44.748889]: PMRD: sleep timer expired
+[   44.748893]: PMRD: setAggressiveness(100) kPMMinutesToSpinDown = 0
+[   44.748899]: PMRD: adjustPowerState ON_STATE, asap 1, idleSleepEnabled 1
+[   44.748905]: PMRD: System sleep prevented by kPMSystemRestartBootingInProgress
+[   44.748911]: PMRD: changePowerStateWithTagToPriv(ON_STATE, c0008)
+[   44.748921]: PMRD: disk spindown accelerated, was 10 min
+[   44.748969]: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0xc0008
+[   44.748981]: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+[   44.750270]: PMRD: setAggressiveness(0) kPMPowerSource = 2
+[   44.751788]: chronod[90] Corpse allowed 3 of 5
+[   44.767035]: NativeUfs: submit cmd 29440 lba 2accf3 op 28 dir 2 bytes 4096 db 00000000
+[   44.782249]: PMRD: setAggressiveness(0) kPMMinutesToSleep = 0
+[   44.782335]: PMRD: aggressiveness changed: system 0->0, display 10
+[   44.782342]: PMRD: idle time -> 0 ms (ena 0)
+[   44.782344]: PMRD: idle sleep timer disabled
+[   44.782346]: PMRD: setAggressiveness(200) kPMMinutesToSpinDown = 0
+[   44.782351]: PMRD: adjustPowerState ON_STATE, asap 0, idleSleepEnabled 0
+[   44.782353]: PMRD: changePowerStateWithTagToPriv(ON_STATE, d0008)
+[   44.782357]: PMRD: disk spindown restored to 10 min
+[   44.782370]: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0xd0008
+[   44.782373]: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+[   44.784882]: /usr/libexec/triald[99] ==> triald/System/Library/PrivateFrameworks/CoreDuetContext.framework/Resources/contextstored[54] ==> (apply-protobox)Sandbox: triald(99) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64powerd[40] Corpse allowed 4 of 5
+[   44.797630]: /usr/libexec/PerfPowerServices[69] ==> (apply-protobox)/usr/libexec/PowerUIAgent[100] ==> (apply-protobox)if_updown: utun0 is not attachedigmp_domifattach: called for ifp utun
+[   44.800486]: igmp_domifattach: allocated igmp_ifinfo for ifp utun
+[   44.800492]: mld_domifattach: called for ifp utun0
+[   44.800500]: mld_domifattach: allocated mld_ifinfo for ifp utun0
+[   44.800505]: ifnet_attach: All kernel threads created for interface utun0 have been scheduled at least once. Proceeding.
+[   44.807206]: Reinit'd ND information for interface utun0
+[   44.807226]: _dlil_attach_flowswitch_nexus: not attaching flowswitch to utun0
+[   44.809911]: /usr/libexec/securityd[101] ==> securitydSandbox: securityd(101) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64NativeUfs: submit cmd 29696 lba 2ad153 op 28 dir 2 bytes 4096 db 00000000
+[   44.824637]: contextstored[54] Corpse allowed 5 of 5
+[   44.834609]: /System/Library/PrivateFrameworks/CoreDuetContext.framework/Resources/contextstored[102] ==> (apply-protobox)void CoreAnalyticsHub::handleNagTimerExpiry(IOTimerEventSource *)::751:messageClients of 1 available events
+[   44.863300]: liveactivitiesd[91] Corpse failure, too many 6
+[   44.863310]: Process[91] crashed: liveactivitiesd. Too many corpses being created.
+[   44.866455]: NativeUfs: submit cmd 29952 lba 7348943 op 2a dir 1 bytes 16384 db 00000000
+[   44.888770]: /System/Library/PrivateFrameworks/SessionCore.framework/Support/liveactivitiesd[103] ==> temporary-sandboxtext-fixup: BTAudioHALPlugin+0x38bec (8 bytes) applied
+[   44.889506]: Sandbox: liveactivitiesd(103) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64/usr/libexec/nsurlsessiond[104] ==> nsurlsessiondSandbox: nsurlsessiond(104) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64Sandbox: liveactivitiesd(103) deny(1) sysctl-read vm.task_no_footprint_for_debugNativeUfs: submit cmd 30208 lba 2ae7a7 op 28 dir 2 bytes 4096 db 00000000
+[   44.916063]: contextstored[102] Corpse failure, too many 6
+[   44.916069]: Process[102] crashed: contextstored. Too many corpses being created.
+[   44.927264]: /System/Library/PrivateFrameworks/IMDPersistence.framework/XPCServices/IMDPersistenceAgent.xpc/IMDPersistenceAgent[105] ==> IMDPersistenceAgentSandbox: IMDPersistenceAgent(105) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64Sandbox apply: tccd[39] com.apple.tccdtccd[39] triggered unnest of range 0x1f8a00000->0x1f8c00000 of DYLD shared region in VM map 0xe7c349d91cced39. While not abnormal for debuggers, this increases system memory footprint until the target exits.
+[   44.947464]: tccd[39] triggered unnest of range 0x1f8c00000->0x1fde00000 of DYLD shared region in VM map 0xe7c349d91cced39. While not abnormal for debuggers, this increases system memory footprint until the target exits.
+[   44.950529]: liveactivitiesd[103] Corpse failure, too many 6
+[   44.950545]: Process[103] crashed: liveactivitiesd. Too many corpses being created.
+[   44.950704]: /System/Library/PrivateFrameworks/CoreDuetContext.framework/Resources/contextstored[106] ==> (apply-protobox)NativeUfs: submit cmd 30464 lba 2be353 op 28 dir 2 bytes 32768 db 00000000
+[   44.970865]: Sandbox: no system group container path found for group "systemgroup.com.apple.sharedpclogging"/usr/libexec/dasd[64] ==> temporary-sandboxSandbox: dasd(64) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64/System/Library/PrivateFrameworks/ChronoCore.framework/Support/chronod[107] ==> temporary-sandboxSandbox: chronod(107) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64/System/Library/PrivateFrameworks/SessionCore.framework/Support/liveactivitiesd[108] ==> temporary-sandboxSandbox: liveactivitiesd(108) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64Sandbox: chronod(107) deny(1) sysctl-read vm.task_no_footprint_for_debugNativeUfs: submit cmd 30720 lba 2aac13 op 28 dir 2 bytes 4096 db 00000000
+[   45.014453]: chronod[107] Corpse failure, too many 6
+[   45.014477]: Process[107] crashed: chronod. Too many corpses being created.
+[   45.023794]: Sandbox: liveactivitiesd(108) deny(1) sysctl-read vm.task_no_footprint_for_debug/System/Library/PrivateFrameworks/ChronoCore.framework/Support/chronod[109] ==> temporary-sandboxSandbox: chronod(109) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64Sandbox: chronod(109) deny(1) sysctl-read vm.task_no_footprint_for_debug/System/Library/Frameworks/ManagedSettings.framework/ManagedSettingsAgent[59] ==> temporary-sandboxSandbox: ManagedSettingsAgent(59) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64imagent[60] Corpse failure, too many 6
+[   45.044885]: Process[60] crashed: imagent. Too many corpses being created.
+[   45.048441]: NativeUfs: submit cmd 30976 lba 2af643 op 28 dir 2 bytes 4096 db 00000000
+[   45.055765]: chronod[109] Corpse failure, too many 6
+[   45.055773]: Process[109] crashed: chronod. Too many corpses being created.
+[   45.060073]: contextstored[106] Corpse failure, too many 6
+[   45.060083]: Process[106] crashed: contextstored. Too many corpses being created.
+[   45.064205]: liveactivitiesd[108] Corpse failure, too many 6
+[   45.064224]: Process[108] crashed: liveactivitiesd. Too many corpses being created.
+[   45.065246]: /System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd[112] ==> com.apple.clouddNativeUfs: submit cmd 31232 lba 3be020 op 28 dir 2 bytes 4096 db 00000000
+[   45.128295]: Protobox: DumpPanic(48) deny(1) syscall-mig 46Sandbox apply: mDNSResponder[113] mDNSResponderNativeUfs: submit cmd 31488 lba 2a722a op 28 dir 2 bytes 4096 db 00000000
+[   45.168669]: routined[32] Corpse failure, too many 6
+[   45.168681]: Process[32] crashed: routined. Too many corpses being created.
+[   45.189093]: NativeUfs: submit cmd 31744 lba 2aac05 op 28 dir 2 bytes 4096 db 00000000
+[   45.191372]: Couldn't build index for com.apple.coresymbolicationd: Not eligible for acceleration
+[   45.191788]: /System/Library/PrivateFrameworks/CoreSymbolication.framework/coresymbolicationd[115] ==> coresymbolicationd3 duplicate reports for Protobox: DumpPanic(48) deny(1) syscall-mig 46Sandbox: seld(49) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64/usr/libexec/swcd[116] ==> swcdSandbox: swcd(116) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64Sandbox apply: networkserviceproxy[114] com.apple.networkserviceproxySandbox: remindd(72) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64Corpse released, count at 4
+[   45.260143]: Sandbox: no application group container found for group "group.com.apple.transparency"/usr/libexec/transparencyd[110] ==> transparencydSandbox: transparencyd(110) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64(0): group 1 order is 2147483647
+[   45.312593]: NativeUfs: submit cmd 32000 lba 734019a op 28 dir 2 bytes 12288 db 00000000
+[   45.319384]: Corpse released, count at 3
+[   45.326423]: Sandbox: no system group container path found for group "systemgroup.com.apple.coreanalytics"/System/Library/PrivateFrameworks/CoreAnalytics.framework/Support/analyticsd[87] ==> analyticsdSandbox: analyticsd(87) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64void CoreAnalyticsHub::handleNagTimerExpiry(IOTimerEventSource *)::751:messageClients of 1 available events
+[   45.390808]: NativeUfs: submit cmd 32256 lba 73479aa op 28 dir 2 bytes 4096 db 00000000
+[   45.419340]: NativeUfs: submit cmd 32512 lba 734821d op 28 dir 2 bytes 4096 db 00000000
+[   45.451445]: NativeUfs: submit cmd 32768 lba 7348105 op 28 dir 2 bytes 4096 db 00000000
+[   45.485917]: NativeUfs: submit cmd 33024 lba 7347f11 op 28 dir 2 bytes 4096 db 00000000
+[   45.521143]: NativeUfs: submit cmd 33280 lba 7347e1e op 28 dir 2 bytes 4096 db 00000000
+[   45.525112]: Corpse released, count at 2
+[   45.528116]: Corpse released, count at 1
+[   45.550932]: NativeUfs: submit cmd 33536 lba 7347d1f op 28 dir 2 bytes 4096 db 00000000
+[   45.580942]: NativeUfs: submit cmd 33792 lba 7347c25 op 28 dir 2 bytes 4096 db 00000000
+[   45.603337]: /System/Library/CoreServices/osanalyticshelper[117] ==> temporary-sandboxSandbox: osanalyticshelper(117) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64NativeUfs: submit cmd 34048 lba 7347b52 op 28 dir 2 bytes 4096 db 00000000
+[   45.632761]: SpringBoard[27] Corpse allowed 2 of 5
+[   45.637278]: NativeUfs: submit cmd 34304 lba 7347a99 op 28 dir 2 bytes 8192 db 00000000
+[   45.662792]: NativeUfs: submit cmd 34560 lba 2aafe7 op 28 dir 2 bytes 4096 db 00000000
+[   45.690031]: NativeUfs: submit cmd 34816 lba 73478f0 op 28 dir 2 bytes 4096 db 00000000
+[   45.717226]: Corpse released, count at 1
+[   45.720609]: NativeUfs: submit cmd 35072 lba 73477d1 op 28 dir 2 bytes 4096 db 00000000
+[   45.750743]: NativeUfs: submit cmd 35328 lba 73476d6 op 28 dir 2 bytes 4096 db 00000000
+[   45.782467]: NativeUfs: submit cmd 35584 lba 7347618 op 28 dir 2 bytes 4096 db 00000000
+[   45.803983]: Corpse released, count at 0
+[   45.812789]: NativeUfs: submit cmd 35840 lba 7347535 op 28 dir 2 bytes 4096 db 00000000
+[   45.843455]: NativeUfs: submit cmd 36096 lba 7347408 op 28 dir 2 bytes 4096 db 00000000
+[   45.857952]: void CoreAnalyticsHub::handleNagTimerExpiry(IOTimerEventSource *)::751:messageClients of 1 available events
+[   45.873596]: NativeUfs: submit cmd 36352 lba 73472eb op 28 dir 2 bytes 4096 db 00000000
+[   45.905852]: NativeUfs: submit cmd 36608 lba 73471d0 op 28 dir 2 bytes 4096 db 00000000
+[   45.934899]: NativeUfs: submit cmd 36864 lba 73470a6 op 28 dir 2 bytes 4096 db 00000000
+[   45.964375]: NativeUfs: submit cmd 37120 lba 7346f97 op 28 dir 2 bytes 4096 db 00000000
+[   45.992771]: /usr/libexec/cryptexd[118] ==> (apply-protobox)NativeUfs: submit cmd 37376 lba 7346e82 op 28 dir 2 bytes 4096 db 00000000
+[   46.012139]: NativeUfs: submit cmd 37632 lba 7346d61 op 28 dir 2 bytes 4096 db 00000000
+[   46.040154]: NativeUfs: submit cmd 37888 lba 7346c35 op 28 dir 2 bytes 4096 db 00000000
+[   46.070936]: NativeUfs: submit cmd 38144 lba 7346b14 op 28 dir 2 bytes 4096 db 00000000
+[   46.103268]: NativeUfs: submit cmd 38400 lba 73469ec op 28 dir 2 bytes 4096 db 00000000
+[   46.137740]: NativeUfs: submit cmd 38656 lba 73468c3 op 28 dir 2 bytes 4096 db 00000000
+[   46.169895]: NativeUfs: submit cmd 38912 lba 73467a1 op 28 dir 2 bytes 4096 db 00000000
+[   46.175866]: /System/Library/PrivateFrameworks/BiomeStreams.framework/Support/biomed[43] ==> temporary-sandboxSandbox: no system container path found for ID "com.apple.studentd"Sandbox: no system group container path found for group "systemgroup.com.apple.itunesu.shared"/usr/libexec/studentd[31] ==> studentdSandbox: no application group container found for group "243LU875E5.groups.com.apple.podcasts"/usr/libexec/atc[41] ==> AirTrafficSandbox: studentd(31) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64Sandbox: biomed(43) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64/usr/sbin/WirelessRadioManagerd[42] ==> WirelessRadioManagerdSandbox: WirelessRadioManagerd(42) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64Sandbox: no application group container found for group "group.com.apple.Maps"/System/Library/PrivateFrameworks/MapsSupport.framework/navd[73] ==> navdSandbox: navd(73) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64/System/Library/PrivateFrameworks/AppleMediaServices.framework/amsaccountsd[76] ==> (apply-protobox)/System/Library/PrivateFrameworks/MediaRemote.framework/Support/mediaremoted[33] ==> temporary-sandboxSandbox: no application group container found for group "group.com.apple.weather"/System/Library/PrivateFrameworks/AssistantServices.framework/assistantd[30] ==> temporary-sandboxSandbox: mediaremoted(33) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64/System/Library/PrivateFrameworks/MobileSoftwareUpdate.framework/Support/softwareupdated[51] ==> softwareupdatedSandbox: assistantd(30) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64/System/Library/PrivateFrameworks/AXAssetLoader.framework/Support/axassetsd[34] ==> (apply-protobox)Sandbox: softwareupdated(51) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64/System/Library/PrivateFrameworks/DoNotDisturbServer.framework/Support/donotdisturbd[111] ==> temporary-sandbox/System/Library/PrivateFrameworks/People.framework/peopled[28] ==> (apply-protobox)Sandbox: donotdisturbd(111) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64Couldn't build index for com.apple.aggregated: Not eligible for acceleration
+[   46.196573]: /System/Library/PrivateFrameworks/AggregateDictionary.framework/Support/aggregated[68] ==> (apply-protobox)/System/Library/Frameworks/HealthKit.framework/healthd[36] ==> healthdSandbox: healthd(36) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64/System/Library/PrivateFrameworks/FamilyNotification.framework/familynotificationd[46] ==> (apply-protobox)/System/Library/PrivateFrameworks/AskPermission.framework/Support/askpermissiond[56] ==> (apply-protobox)NativeUfs: submit cmd 39168 lba 366da9 op 28 dir 2 bytes 49152 db 00000000
+[   46.230558]: Sandbox: donotdisturbd(111) deny(1) sysctl-read vm.task_no_footprint_for_debugNativeUfs: submit cmd 39424 lba 366d15 op 28 dir 2 bytes 32768 db 00000000
+[   46.253034]: Sandbox: no system container path found for ID "com.apple.apsd"Sandbox: no system group container path found for group "systemgroup.com.apple.sharedpclogging"/System/Library/PrivateFrameworks/ApplePushService.framework/apsd[120] ==> apsdSandbox: apsd(120) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64process analyticsd[87] caught waking the CPU 45002 times over ~1 seconds, averaging 24562 wakes / second and violating a limit of 45000 wakes over 300 seconds.
+[   46.276134]: NativeUfs: submit cmd 39680 lba 73465cb op 28 dir 2 bytes 4096 db 00000000
+[   46.306989]: NativeUfs: submit cmd 39936 lba 73464b9 op 28 dir 2 bytes 4096 db 00000000
+[   46.318008]: /usr/libexec/mobileactivationd[121] ==> mobileactivationdNativeUfs: submit cmd 40192 lba 7346497 op 28 dir 2 bytes 4096 db 00000000
+[   46.352891]: void CoreAnalyticsHub::handleNagTimerExpiry(IOTimerEventSource *)::751:messageClients of 1 available events
+[   46.366591]: mobileactivationd[121] Corpse allowed 1 of 5
+[   46.367941]: Corpse released, count at 0
+[   46.371008]: /usr/libexec/mobileactivationd[122] ==> mobileactivationdmobileactivationd[122] Corpse allowed 1 of 5
+[   46.403140]: Corpse released, count at 0
+[   46.406185]: /usr/libexec/mobileactivationd[123] ==> mobileactivationdmobileactivationd[123] Corpse allowed 1 of 5
+[   46.440461]: Corpse released, count at 0
+[   46.465028]: NativeUfs: log round 11 t=23s ok 1 errs 0
+[   46.535037]: NativeUfs: submit cmd 40448 lba 2ad8dd op 28 dir 2 bytes 4096 db 00000000
+[   46.536484]: virtual bool CoreAnalyticsUserClient::initWithTask(task_t, void *, UInt32, OSDictionary *)::169:success
+[   46.536515]: virtual bool CoreAnalyticsUserClient::start(IOService *)::120:success
+[   46.536518]: IOReturn CoreAnalyticsHub::setClientGated(CoreAnalyticsUserClient *)::375:adding userClient
+[   46.536522]: IOReturn CoreAnalyticsHub::__newUserClientGated(task_t, void *, UInt32, OSDictionary *, IOUserClient **)::330:Successfully opened
+[   46.536655]: virtual IOReturn CoreAnalyticsUserClient::clientMemoryForType(UInt32, IOOptionBits *, IOMemoryDescriptor **)::285: got memory descriptor with 16432
+[   46.682248]: /System/Library/PrivateFrameworks/UserNotificationsCore.framework/Support/usernotificationsd[119] ==> temporary-sandboxSandbox: usernotificationsd(119) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64NativeUfs: submit cmd 40704 lba 3a95f8 op 28 dir 2 bytes 28672 db 00000000
+[   46.722580]: transparencyd[110] Corpse allowed 1 of 5
+[   46.723568]: Corpse released, count at 0
+[   46.755015]: analyticsd[87] Corpse allowed 1 of 5
+[   46.755194]: virtual IOReturn CoreAnalyticsUserClient::clientDied()::194:external clientDied
+[   46.755201]: virtual IOReturn CoreAnalyticsUserClient::clientClose()::177:clientClose
+[   46.755202]: virtual IOReturn CoreAnalyticsUserClient::clientClose()::180:unregistering from _hub, and clearing _hub reference to CoreAnalyticsUserClient
+[   46.755208]: IOReturn CoreAnalyticsHub::setClientGated(CoreAnalyticsUserClient *)::371:clearing userClient
+[   46.755316]: virtual void CoreAnalyticsUserClient::stop(IOService *)::147:done
+[   46.755361]: virtual void CoreAnalyticsUserClient::free()::95:done
+[   46.758537]: Corpse released, count at 0
+[   46.859205]: void CoreAnalyticsHub::handleNagTimerExpiry(IOTimerEventSource *)::751:messageClients of 1 available events
+[   46.901529]: Sandbox: no system group container path found for group "systemgroup.com.apple.coreanalytics"/System/Library/PrivateFrameworks/CoreAnalytics.framework/Support/analyticsd[125] ==> analyticsdSandbox: analyticsd(125) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64Sandbox: no application group container found for group "group.com.apple.transparency"/usr/libexec/transparencyd[124] ==> transparencydSandbox: transparencyd(124) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64axassetsd[34] Corpse allowed 1 of 5
+[   46.921562]: Corpse released, count at 0
+[   46.927205]: /System/Library/PrivateFrameworks/AXAssetLoader.framework/Support/axassetsd[126] ==> (apply-protobox)NativeUfs: submit cmd 40960 lba 3e4625 op 28 dir 2 bytes 53248 db 00000000
+[   46.939007]: Sandbox: no application group container found for group "group.com.apple.tipsnext"/System/Library/PrivateFrameworks/TelephonyUtilities.framework/callservicesd[127] ==> callservicesdSandbox: callservicesd(127) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64transparencyd[124] Corpse allowed 1 of 5
+[   46.947319]: Corpse released, count at 0
+[   46.962757]: Sandbox: no system container path found for ID "com.apple.geod"Sandbox: no system group container path found for group "systemgroup.com.apple.geod"/System/Library/PrivateFrameworks/GeoServices.framework/geod[128] ==> geodaxassetsd[126] Corpse allowed 1 of 5
+[   47.140181]: virtual bool CoreAnalyticsUserClient::initWithTask(task_t, void *, UInt32, OSDictionary *)::169:success
+[   47.140228]: virtual bool CoreAnalyticsUserClient::start(IOService *)::120:success
+[   47.140231]: IOReturn CoreAnalyticsHub::setClientGated(CoreAnalyticsUserClient *)::375:adding userClient
+[   47.140236]: IOReturn CoreAnalyticsHub::__newUserClientGated(task_t, void *, UInt32, OSDictionary *, IOUserClient **)::330:Successfully opened
+[   47.140378]: virtual IOReturn CoreAnalyticsUserClient::clientMemoryForType(UInt32, IOOptionBits *, IOMemoryDescriptor **)::285: got memory descriptor with 16432
+[   47.161861]: analyticsd[125] Corpse allowed 2 of 5
+[   47.162060]: virtual IOReturn CoreAnalyticsUserClient::clientDied()::194:external clientDied
+[   47.162066]: virtual IOReturn CoreAnalyticsUserClient::clientClose()::177:clientClose
+[   47.162068]: virtual IOReturn CoreAnalyticsUserClient::clientClose()::180:unregistering from _hub, and clearing _hub reference to CoreAnalyticsUserClient
+[   47.162074]: IOReturn CoreAnalyticsHub::setClientGated(CoreAnalyticsUserClient *)::371:clearing userClient
+[   47.162216]: virtual void CoreAnalyticsUserClient::stop(IOService *)::147:done
+[   47.162277]: virtual void CoreAnalyticsUserClient::free()::95:done
+[   47.272641]: /System/Library/PrivateFrameworks/AXAssetLoader.framework/Support/axassetsd[129] ==> (apply-protobox)Sandbox: no system group container path found for group "systemgroup.com.apple.coreanalytics"/System/Library/PrivateFrameworks/CoreAnalytics.framework/Support/analyticsd[130] ==> analyticsdSandbox: analyticsd(130) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64Corpse released, count at 1
+[   47.355009]: void CoreAnalyticsHub::handleNagTimerExpiry(IOTimerEventSource *)::751:messageClients of 1 available events
+[   47.427868]: NativeUfs: submit cmd 41216 lba 4bf7b4 op 28 dir 2 bytes 4096 db 00000000
+[   47.585645]: NativeUfs: submit cmd 41472 lba 4bf7d1 op 28 dir 2 bytes 4096 db 00000000
+[   47.656789]: axassetsd[129] Corpse allowed 2 of 5
+[   47.725333]: /usr/libexec/fmfd[131] ==> fmfdSandbox: fmfd(131) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64NativeUfs: submit cmd 41728 lba 7349456 op 28 dir 2 bytes 4096 db 00000000
+[   47.737422]: /System/Library/PrivateFrameworks/MobileSoftwareUpdate.framework/XPCServices/com.apple.MobileSoftwareUpdate.CleanupPreparePathService.xpc/com.apple.MobileSoftwareUpdate.CleanupPreparePathService[132] ==> (apply-protobox)/System/Library/Frameworks/Accounts.framework/accountsd[133] ==> (apply-protobox)accountsd[133] Corpse allowed 3 of 5
+[   47.841863]: assistantd[30] Corpse allowed 4 of 5
+[   47.861352]: void CoreAnalyticsHub::handleNagTimerExpiry(IOTimerEventSource *)::751:messageClients of 1 available events
+[   47.982323]: apfs_vnop_reclaim:15641: disk5s1 free'ing 1 iterators
+[   48.034620]: Corpse released, count at 3
+[   48.071398]: /System/Library/PrivateFrameworks/ChronoCore.framework/Support/chronod[136] ==> temporary-sandboxSandbox: chronod(136) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64Sandbox: chronod(136) deny(1) sysctl-read vm.task_no_footprint_for_debugCorpse released, count at 2
+[   48.108577]: chronod[136] Corpse allowed 3 of 5
+[   48.114310]: NativeUfs: submit cmd 41984 lba 39cfab op 28 dir 2 bytes 4096 db 00000000
+[   48.164913]: peopled[28] Corpse allowed 4 of 5
+[   48.179178]: NativeUfs: submit cmd 42240 lba 734fb11 op 2a dir 1 bytes 131072 db 00000000
+[   48.208483]: Corpse released, count at 3
+[   48.357151]: void CoreAnalyticsHub::handleNagTimerExpiry(IOTimerEventSource *)::751:messageClients of 1 available events
+[   48.466331]: NativeUfs: log round 12 t=25s ok 1 errs 0
+[   48.533723]: NativeUfs: submit cmd 42496 lba 4b6069 op 28 dir 2 bytes 12288 db 00000000
+[   48.699865]: Sandbox: no system group container path found for group "systemgroup.com.apple.ReportMemoryException"/System/Library/PrivateFrameworks/HomeKitDaemon.framework/Support/homed[134] ==> com.apple.homedSandbox: homed(134) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64Sandbox: no application group container found for group "group.com.apple.transparency"/usr/libexec/transparencyd[135] ==> transparencydSandbox: transparencyd(135) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64/usr/libexec/rtcreportingd[137] ==> com.apple.rtcreportingdSandbox: rtcreportingd(137) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64NativeUfs: submit cmd 42752 lba 7321fe8 op 2a dir 1 bytes 4096 db 00000000
+[   48.739580]: /System/Library/PrivateFrameworks/MobileAccessoryUpdater.framework/XPCServices/UARPUpdaterServiceHID.xpc/UARPUpdaterServiceHID[138] ==> temporary-sandbox/System/Library/PrivateFrameworks/MobileAccessoryUpdater.framework/XPCServices/UARPUpdaterServiceUSBPD.xpc/UARPUpdaterServiceUSBPD[140] ==> temporary-sandbox/System/Library/PrivateFrameworks/MobileAccessoryUpdater.framework/XPCServices/UARPUpdaterServiceLegacyAudio.xpc/UARPUpdaterServiceLegacyAudio[139] ==> temporary-sandbox/System/Library/PrivateFrameworks/MobileAccessoryUpdater.framework/XPCServices/UARPUpdaterServiceAFU.xpc/UARPUpdaterServiceAFU[141] ==> temporary-sandboxSandbox: UARPUpdaterServiceUSBPD(140) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64Sandbox: UARPUpdaterServiceLegacyAudio(139) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64Sandbox: UARPUpdaterServiceHID(138) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64Corpse released, count at 2
+[   48.828248]: transparencyd[135] Corpse allowed 3 of 5
+[   48.860739]: /System/Library/PrivateFrameworks/CalendarDaemon.framework/Support/calaccessd[142] ==> (apply-protobox)void CoreAnalyticsHub::handleNagTimerExpiry(IOTimerEventSource *)::751:messageClients of 1 available events
+[   48.938535]: calaccessd[142] Corpse allowed 4 of 5
+[   48.952409]: navd[73] Corpse allowed 5 of 5
+[   49.046390]: Protobox: com.apple.MobileSoftwareUpdate.C(132) deny(1) iokit-set-properties iokit-class:IOPlatformDevice property:IONVRAM-SYNCNOW-PROPERTYNativeUfs: submit cmd 43008 lba 2ad2f2 op 28 dir 2 bytes 4096 db 00000000
+[   49.296162]: NativeUfs: submit cmd 43264 lba 7321fe8 op 2a dir 1 bytes 4096 db 00000000
+[   49.359217]: Corpse released, count at 4
+[   49.359299]: void CoreAnalyticsHub::handleNagTimerExpiry(IOTimerEventSource *)::751:messageClients of 1 available events
+[   49.362575]: Corpse released, count at 3
+[   49.373903]: Corpse released, count at 2
+[   49.386607]: NativeUfs: submit cmd 43520 lba 4b6e32 op 28 dir 2 bytes 20480 db 00000000
+[   49.550907]: NativeUfs: submit cmd 43776 lba 4b7a35 op 28 dir 2 bytes 8192 db 00000000
+[   49.600360]: Corpse released, count at 1
+[   49.645831]: /System/Library/CoreServices/SpringBoard.app/SpringBoard[143] ==> (apply-protobox)Corpse released, count at 0
+[   49.836318]: Sandbox: no application group container found for group "group.com.apple.transparency"/usr/libexec/transparencyd[144] ==> transparencydSandbox: transparencyd(144) deny(1) file-read-metadata /private/preboot/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64void CoreAnalyticsHub::handleNagTimerExpiry(IOTimerEventSource *)::751:messageClients of 1 available events
+[   49.954603]: transparencyd[144] Corpse allowed 1 of 5
+[   50.135764]: Corpse released, count at 0
+[   50.157130]: NativeUfs: submit cmd 44032 lba 7348c5b op 2a dir 1 bytes 4096 db 00000000
+[   50.270611]: healthd[36] Corpse allowed 1 of 5
+[   50.361414]: void CoreAnalyticsHub::handleNagTimerExpiry(IOTimerEventSource *)::751:messageClients of 1 available events
+[   50.463264]: SpringBoard[143] Corpse allowed 2 of 5

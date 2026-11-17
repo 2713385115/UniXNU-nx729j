@@ -4,6 +4,18 @@
 （`launchd` 起、Data 挂载），差③显示服务有输出、④启动检查点。详细数字见
 [BOOT-LEDGER](BOOT-LEDGER.md)，历史决策见 [JOURNAL](JOURNAL-2026-11-15_17.md)。
 
+## 零、先拿现成镜像，别急着编译
+
+最新一轮的镜像和原始日志窗口都在 Release 里，不需要自己编内核就能复现结论：
+
+```bash
+gh release download s7-handoff-2026-11-17 -R 2713385115/UniXNU-nx729j -D out/
+sha256sum out/boot-s7pmgr-skip.img      # 应为 aff8b7c2958e0026...
+```
+
+哪颗镜像对应哪条结论、参数差在哪、内嵌内核的哈希，见 [IMAGES](IMAGES.md)。
+只有需要改内核时才进下面的 CI 流程。
+
 ## 一、环境前提（不满足就先解决这些）
 
 | 项 | 事实 |

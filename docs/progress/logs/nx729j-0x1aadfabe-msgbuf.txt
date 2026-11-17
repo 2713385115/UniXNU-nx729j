@@ -1,0 +1,429 @@
+[   21.872015]:  vm_cache_geometry_colors: 0
+[   21.872024]: do_cacheid() - 512 bytes Unknown cache (I:256 D:256 (separate)), 16-way assoc, 64 bytes/line
+[   21.872181]: nx729j kld: __KLD 0xfffffff00c028000+0x4000 __KLDDATA 0xfffffff00c030000+0x4000
+[   21.873029]: kprintf initialized
+[   21.873045]: Serial mode specified: 00000003
+[   21.873059]: initialize_screen: b=B8000000, w=0000045C, h=000009B0, r=00001170, d=00000000
+[   22.474582]: pe_arm_init_interrupts: args: 0xfffffff00c072860
+[   22.474590]: pe_arm_map_interrupt_controller: soc_phys:  0x17000000
+[   22.474596]: pe_arm_map_interrupt_controller: failed to find the interrupt-controller.
+[   22.474605]: pe_arm_init_debug: failed to find cpu-debug-interface
+[   22.474643]: Darwin Kernel Version 23.6.0: Sun Nov 15 14:13:38 UTC 2026; runner:ios-obj/DEVELOPMENT_ARM64_BCM2837
+[   22.577025]: pmap_startup() init/release time: 75877 microsec
+[   22.577062]: pmap_startup() delayed init/release of 0 pages
+[   22.577079]: vm_page_bootstrap: 1189967 free pages, 55217 wired pages, (up to 0 of which are delayed free)
+[   22.585443]: VM boostrap: 51 maps, 153 entries and 128 holes available
+[   22.592374]: Maximum number of VM swap files: 5
+[   22.592597]: zones                   : 0xfffffff17e800000 - 0xfffffff77e800000 (24G)
+[   22.592623]: bufferhdr               : 0xfffffff77e800000 - 0xfffffff77ef84000 (7M)
+[   22.592639]: zone_meta               : 0xfffffff77ef84000 - 0xfffffff785d7d000 (109M)
+[   22.592654]: io_submap               : 0xfffffff785d7d000 - 0xfffffff78657d000 (8M)
+[   22.592674]: bsd_pageable            : 0xfffffff78657d000 - 0xfffffff78763f000 (16M)
+[   22.592696]: gIOKitPageableFixed3    : 0xfffffff78763f000 - 0xfffffff78d63f000 (96M)
+[   22.592712]: compressor              : 0xfffffff78d63f000 - 0xfffffff8e5656000 (5G)
+[   22.592728]: mb                      : 0xfffffff8e5656000 - 0xfffffff8eb656000 (96M)
+[   22.592745]: ipc_kernel_copy_map     : 0xfffffff8eb656000 - 0xfffffff8ebe56000 (8M)
+[   22.592765]: ipc_kernel_map          : 0xfffffff8ebe56000 - 0xfffffff8ede56000 (32M)
+[   22.592780]: kmem_ptr_range          : 0xfffffff8ede56000 - 0xfffffff9add96000 (3071M)
+[   22.592802]: gIOKitPageableFixed0    : 0xfffffff9add96000 - 0xfffffff9b3d96000 (96M)
+[   22.592823]: kmem_data_range         : 0xfffffff9b3d96000 - 0xfffffffb602a5000 (6G)
+[   22.592845]: kmem_ptr_range_meta     : 0xfffffffb602a5000 - 0xfffffffb60335000 (576K)
+[   22.592865]: gIOKitPageableFixed1    : 0xfffffffb60335000 - 0xfffffffb66335000 (96M)
+[   22.592880]: kmem_sprayqtn_range     : 0xfffffffb66335000 - 0xfffffffbf9dfc000 (2362M)
+[   22.592896]: gIOKitPageableFixed2    : 0xfffffffbf9dfc000 - 0xfffffffbffdfc000 (96M)
+[   22.592998]: kmem_large_ranges[1]    : 0 - 0 (0B)
+[   22.593009]: kmem_large_ranges[2]    : 0 - 0 (0B)
+[   22.593018]: kmem_large_ranges[3]    : 0 - 0 (0B)
+[   22.593027]: kmem_large_ranges[4]    : 0xfffffffb78a8de00 - 0xfffffffbf9dfc000 (2067M)
+[   22.593042]: kmem_large_ranges[5]    : 0xfffffff9e9637e00 - 0xfffffffb602a5000 (5G)
+[   22.593084]: "vm_compressor_mode" is 8
+[   22.593093]: mapping deprecated VM_PAGER_FREEZER_DEFAULT to VM_PAGER_FREEZER_COMPRESSOR_NO_SWAP
+[   22.599910]: Unable to find vm tag  for btlog
+[   22.600009]: zone_init: pgzalloc  0xfffffff17e800000:0xfffffff17f13b000 (9M) [1181 slots]
+[   22.600037]: zone_init: map VM    0xfffffff17f13b000:0xfffffff26563e000 (3685M)
+[   22.600061]: zone_init: map RO    0xfffffff26563e000:0xfffffff2b2294000 (1228M)
+[   22.600084]: zone_init: map GEN0  0xfffffff2b2294000:0xfffffff398798000 (3685M)
+[   22.600107]: zone_init: map GEN1  0xfffffff398798000:0xfffffff47ec9c000 (3685M)
+[   22.600129]: zone_init: map GEN2  0xfffffff47ec9c000:0xfffffff5651a0000 (3685M)
+[   22.600151]: zone_init: map GEN3  0xfffffff5651a0000:0xfffffff64b6a4000 (3685M)
+[   22.600172]: zone_init: map DATA  0xfffffff64b6a4000:0xfffffff77e800000 (4913M)
+[   22.600190]: zone_init: metadata  0xfffffff77ef94000:0xfffffff784f94000 (96M)
+[   22.600205]: zone_init: metabits  0xfffffff784f94000:0xfffffff785d6d000 (13M)
+[   22.600218]: zone_init: extra     0:0 (0B)
+[   22.601268]: VM bootstrap done: 39 maps, 112 entries and 116 holes left
+[   22.636858]: IOKit IOMD setownership ENABLED
+[   22.643322]: ATM subsystem is initialized
+[   22.665713]: OSLog stream configured: stream: 8192 bytes, cache: 2112 bytes
+[   22.665729]: OSLog stream verification: 0
+[   22.666193]: Firehose configured: 16 chunks, 8 io pages
+[   22.667229]: Log queues configured: slot count: 64, per-slot size: 32768, total size: 2097152
+[   22.667265]: Long logs support configured: size: 16384
+[   22.678138]: Telemetry: Sampling all tasks once per 1 second
+[   22.691183]: Scheduler: Default of clutch
+[   22.691196]: Setting scheduler priority decay band limit 18
+[   22.691212]: standard timeslicing quantum is 10000 us
+[   22.691231]: standard background quantum is 2500 us
+[   22.702996]: BANK subsystem is initialized
+[   22.703040]: mig_table_max_displ = 54 mach_kobj_count = 372
+[   22.718738]: EXT_PANICLOG: Initializing list
+[   22.818243]: EXT_PANICLOG: Initializing list
+[   22.818260]: kdp_core zlib memory 0x7000
+[   22.818332]: Registered coredump handler for kernel
+[   22.818346]: Serial requested, consistent debug disabled or debug boot arg not present, configuring debugging over serial
+[   22.818367]: Initializing serial KDP
+[   22.819238]: iBoot version: 
+[   22.819246]: iBoot Stage 2 version: 
+[   22.841717]: corecrypto_kext_start (tracing disabled)
+[   22.841733]: FIPSPOST_KEXT [438392880] fipspost_post:154: [FIPSPOST][Module-ID] Apple corecrypto Module v14.0 [Apple ARM, Kernel, Software, SL1]
+[   22.841777]: FIPSPOST_KEXT [438393760] fipspost_post:162: PASSED: (0 ms) - fipspost_post_hmac
+[   22.842212]: FIPSPOST_KEXT [438402025] fipspost_post:166: PASSED: (0 ms) - fipspost_post_integrity
+[   22.842309]: FIPSPOST_KEXT [438403866] fipspost_post:170: PASSED: (0 ms) - fipspost_post_indicator
+[   22.842320]: FIPSPOST_KEXT [438404079] fipspost_post:171: PASSED: (0 ms) - fipspost_post_aes_ecb
+[   22.842328]: FIPSPOST_KEXT [438404231] fipspost_post:172: PASSED: (0 ms) - fipspost_post_aes_cbc
+[   22.854272]: FIPSPOST_KEXT [438631167] fipspost_post:173: PASSED: (11 ms) - fipspost_post_rsa_sig
+[   22.877438]: FIPSPOST_KEXT [439071317] fipspost_post:174: PASSED: (22 ms) - fipspost_post_ecdsa
+[   22.878283]: FIPSPOST_KEXT [439087376] fipspost_post:175: PASSED: (0 ms) - fipspost_post_ecdh
+[   22.878297]: FIPSPOST_KEXT [439087638] fipspost_post:176: PASSED: (0 ms) - fipspost_post_aes_ccm
+[   22.878311]: FIPSPOST_KEXT [439087911] fipspost_post:177: PASSED: (0 ms) - fipspost_post_aes_cmac
+[   22.878339]: FIPSPOST_KEXT [439088445] fipspost_post:178: PASSED: (0 ms) - fipspost_post_hkdf
+[   22.894302]: FIPSPOST_KEXT [439391751] fipspost_post:179: PASSED: (15 ms) - fipspost_post_pbkdf
+[   22.894366]: FIPSPOST_KEXT [439392962] fipspost_post:180: PASSED: (0 ms) - fipspost_post_drbg_hmac
+[   22.894384]: FIPSPOST_KEXT [439393300] fipspost_post:182: PASSED: (0 ms) - fipspost_post_kdf_ctr
+[   22.894396]: FIPSPOST_KEXT [439393518] fipspost_post:183: PASSED: (0 ms) - fipspost_post_kdf_ctr_cmac
+[   22.894405]: FIPSPOST_KEXT [439393703] fipspost_post:184: PASSED: (0 ms) - fipspost_post_aes_gcm
+[   22.894413]: FIPSPOST_KEXT [439393849] fipspost_post:185: PASSED: (0 ms) - fipspost_post_aes_xts
+[   22.894477]: FIPSPOST_KEXT [439395062] fipspost_post:186: PASSED: (0 ms) - fipspost_post_tdes_ecb
+[   22.894494]: FIPSPOST_KEXT [439395387] fipspost_post:187: PASSED: (0 ms) - fipspost_post_drbg_ctr
+[   22.894500]: FIPSPOST_KEXT [439395505] fipspost_post:210: all tests PASSED (52 ms)
+[   22.894572]: corecrypto_kext_start completed successfully
+[   22.895909]: IONVRAM.cpp:initImageFormat:1433 - NVRAM size is 8192 bytes
+[   22.895934]: IONVRAM.cpp:getNVRAMProperties:1244 - _bankSize=0x2000, _bankCount=0x1, _currentBank=0
+[   22.896076]: IONVRAMCHRPHandler.cpp:unserializeImage:479 - NVRAM : commonPartitionOffset - 0x30, commonPartitionSize - 0x800, systemPartitionOffset - 0xffffffff, systemPartitionSize - 0
+[   22.896373]: ulock_initialize>thread_max=5120, ull_hash_buckets=2048
+[   22.897273]: lockdown_mode: lockdown mode in nvram is off
+[   23.195072]: Darwin Image4 Validator Version 6.3.0: Fri Jul 11 17:30:14 PDT 2025; root:AppleImage4-257.140.2~280/AppleImage4/RELEASE_ARM64
+[   23.195086]: calling mpo_policy_init for AppleImage4
+[   23.195091]: Security policy loaded: AppleImage4 hooks (AppleImage4)
+[   23.195194]: AppleImage4: no legacy blob present
+[   23.195222]: AppleImage4: magazine[pdmg]: failed to read nonce slot data: 2
+[   23.195256]: AppleImage4: magazine[cptx]: failed to read nonce slot data: 2
+[   23.195287]: AppleImage4: magazine[dvdi]: failed to read nonce slot data: 2
+[   23.195320]: AppleImage4: magazine[c1bt]: failed to read nonce slot data: 2
+[   23.195349]: AppleImage4: magazine[c1ab]: failed to read nonce slot data: 2
+[   23.195379]: AppleImage4: magazine[c1gn]: failed to read nonce slot data: 2
+[   23.195408]: AppleImage4: magazine[c1sm]: failed to read nonce slot data: 2
+[   23.195437]: AppleImage4: magazine[c1ep]: failed to read nonce slot data: 2
+[   23.195506]: AppleImage4: root power domain not yet available: 19
+[   23.195993]: AMFI: queried model name from device tree: iPad7,1
+[   23.196005]: calling mpo_policy_init for AMFI
+[   23.196012]: Security policy loaded: Apple Mobile File Integrity (AMFI)
+[   23.196585]: calling mpo_policy_init for Sandbox
+[   23.201703]: Security policy loaded: Seatbelt sandbox policy (Sandbox)
+[   23.201749]: attempting to load 2 external trust cache modules
+[   23.201758]: loaded external trust cache module: 0
+[   23.201764]: loaded external trust cache module: 1
+[   23.201768]: completed loading external trust cache modules
+[   23.201905]: No POST boot-arg set.
+[   23.209851]: PMRD: PMTraceWorker 0x5e1d4270b765a9b7
+[   23.210185]: PMRD: changePowerStateWithTagToPriv(ON_STATE, 10001)
+[   23.212596]: AppleARMBootPerf: Error: profile handoff region not found (1)
+[   23.212605]: AppleARMBootPerf: Error: failed to publish profile data (1)
+[   23.212628]: AppleARMSFRManifest: Starting
+[   23.212635]: AppleARMSFRManifest: Error: Failed to open reg-entry /chosen/secure-boot-hashes
+[   23.212647]: AppleARMSFRManifest: Error: Failed to find property boot-manifest-hash
+[   23.212653]: AppleARMSFRManifest: Error: Failed to find manifest hash
+[   23.212658]: AppleARMSFRManifest: Error: Failed to locate manifest information
+[   23.212667]: AppleARMSFRManifest: Error: Failed to find entry /chosen/iBoot
+[   23.212672]: AppleARMSFRManifest: Error: Failed to publish sfr manifest
+[   23.212694]: virtual bool CoreAnalyticsHub::start(IOService *)::139:CoreAnalyticsHub start
+[   23.212702]: virtual bool CoreAnalyticsHub::start(IOService *)::139:CoreAnalyticsHub start
+[   23.213048]: Registered CoreAnalyticsHub functions with xnu.virtual bool CoreAnalyticsHub::start(IOService *)::218:CoreAnalyticsHub start completed
+[   23.213061]: virtual bool CoreAnalyticsHub::start(IOService *)::218:CoreAnalyticsHub start completed
+[   23.213308]: PMRD: power event 7 args 0x5e1d42719dbee647 0x0
+[   23.213321]: PMRD: power event 7 args 0x5e1d42719dbed4c7 0x0
+[   23.215702]: [0]ml_processor_register>pset_find(cluster_id=0) returned pset 0
+[   23.215710]: [0]ml_processor_register>cpu_id 0xfffffff39888f7c0 cluster_id 0 cpu_number 0 is type 0
+[   23.215883]: Copyright (c) 1982, 1986, 1989, 1991, 1993
+	The Regents of the University of California. All rights reserved.
+
+[   23.215915]: MAC Framework successfully initialized
+[   23.223398]: using 16384 buffer headers and 10240 cluster IO buffer headers
+[   23.223919]: clock_initialize_calendar system does not have monotonic clock
+[   23.223927]: clock_initialize_calendar WARNING: UTC time is less then sys time, (0 s 0 u) UTC (23 s 223883 u) sys
+[   23.224205]: ktriage_register_subsystem_strings: set subsystem 8 strings
+[   23.225137]: apfs_module_start:3232: load: com.apple.filesystems.apfs, v2236.140.6, apfs-2236.140.6, 2025/07/11
+[   23.225519]: ktriage_register_subsystem_strings: set subsystem 7 strings
+[   23.230883]: mbinit: done [96 MB total pool size, (96/0) split]
+[   23.231083]: SK: netagent is enabled by default for this platform
+[   23.232501]: DLIL: running SUM16 self-tests ... PASSED
+[   23.234653]: dlil_init: Waiting for all the create dlil kernel threads to get scheduled at least once.
+[   23.238763]: PMRD: PowerChangeOverride (OFF_STATE->ON_STATE, f, 0x2) tag 0x20064
+[   23.238800]: PMRD: sysPowerDownHandler message kIOMessageSystemCapabilityChange
+[   23.238806]: PMRD: sysPowerDownHandler cap f -> f (flags 1)
+[   23.239147]: dlil_init: All the created dlil kernel threads have been scheduled at least once. Proceeding.
+[   23.239510]: igmp_init: initializing
+[   23.239788]: mld_init: initializing
+[   23.240325]: SK[0]: skmem_region_init              seg_size 16384, md_seg_size 16384, drv_buf_seg_size 65536 [eff 81920], usr_buf_seg_size 16384
+[   23.242213]: Skywalk: running self-tests
+[   23.242218]: Skywalk: sk_copy64_8 ... PASSED
+[   23.242224]: Skywalk: sk_copy32_8 ... PASSED
+[   23.242228]: Skywalk: sk_copy64_16 ... PASSED
+[   23.242232]: Skywalk: sk_copy32_16 ... PASSED
+[   23.242237]: Skywalk: sk_copy64_20 ... PASSED
+[   23.242240]: Skywalk: sk_copy64_24 ... PASSED
+[   23.242245]: Skywalk: sk_copy64_32 ... PASSED
+[   23.242250]: Skywalk: sk_copy32_32 ... PASSED
+[   23.242254]: Skywalk: sk_copy64_40 ... PASSED
+[   23.242258]: Skywalk: sk_copy64_64x ... PASSED
+[   23.242263]: Skywalk: sk_copy64_32x ... PASSED
+[   23.242268]: Skywalk: sk_copy64_8x ... PASSED
+[   23.242272]: Skywalk: sk_copy64_4x ... PASSED
+[   23.242277]: Skywalk: sk_zero_16 ... PASSED
+[   23.242281]: Skywalk: sk_zero_32 ... PASSED
+[   23.242286]: Skywalk: sk_zero_48 ... PASSED
+[   23.242291]: Skywalk: sk_zero_128 ... PASSED
+[   23.242301]: Skywalk: memcmp mask ... PASSED
+[   23.242882]: bsd_autoconf: calling kminit
+[   23.246524]: igmp_domifattach: called for ifp lo
+[   23.246534]: igmp_domifattach: allocated igmp_ifinfo for ifp lo
+[   23.246540]: mld_domifattach: called for ifp lo0
+[   23.246546]: mld_domifattach: allocated mld_ifinfo for ifp lo0
+[   23.246551]: ifnet_attach: All kernel threads created for interface lo0 have been scheduled at least once. Proceeding.
+[   23.246715]: kctl_test_init ctl_sendsize 262144 ctl_recvsize 2097152kctl_test_register: OK kctlref 0xb000b kctlid b ctl_sendsize 262144 ctl_recvsize 2097152skip attaching fsw to lo0 using legacy TX modelReinit'd ND information for interface lo0
+[   23.246993]: AMFI: PMGRAON latched to: ffffffff
+[   23.247018]: AMFI: Enabling developer mode since protected data is not available
+[   23.247062]: PMRD: sysPowerDownHandler message kIOMessageSystemCapabilityChange
+[   23.247068]: PMRD: sysPowerDownHandler cap f -> f (flags 2)
+[   23.247079]: PMRD: tellChangeUp OFF_STATE->ON_STATE
+[   23.247094]: PMRD: PowerChangeDone: OFF_STATE->ON_STATE
+[   23.247099]: PMRD: Force re-evaluating aggressiveness
+[   23.247105]: PMRD: changePowerStateWithTagToPriv(ON_STATE, 30002)
+[   23.247125]: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x10001
+[   23.247131]: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+[   23.247138]: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x302) tag 0x40064
+[   23.247151]: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+[   23.247156]: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x302) tag 0x50064
+[   23.247168]: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+[   23.247178]: PMRD: adjustPowerState ON_STATE, asap 0, idleSleepEnabled 0
+[   23.247186]: PMRD: changePowerStateWithTagToPriv(ON_STATE, 60008)
+[   23.247199]: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x30002
+[   23.247205]: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+[   23.247216]: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x60008
+[   23.247221]: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+[   23.247698]: com.apple.AppleFSCompressionTypeZlib kmod start
+[   23.250572]: com.apple.AppleFSCompressionTypeZlib load succeeded
+[   23.250593]: Setting up notifier for CoreAnalyticsHub
+[   23.250678]: install_apfs_vfs_fs:8248: apfs: speculative telemetry feature ENABLED by boot-arg
+[   23.250741]: apfs_sysctl_register:1407: done registering sysctls.
+[   23.251111]: IOSurfaceRoot::installMemoryRegions()
+[   23.253300]: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x70064
+[   23.253310]: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+[   23.253325]: PMRD: joinAggressiveness IOBlockStorageDriver 0x5e1d42719dc4c297
+[   23.254686]: dev_init:303: disk0 device accelerated crypto: 0 (compiled @ Jul 11 2025 17:34:16)
+[   23.254699]: dev_init:306: disk0 device_handle block size 4096 block count 786432 features 0 internal 
+[   23.254771]: nx_mount:1275: disk0 initializing cache w/hash_size 4096 and cache size 10064
+[   23.256686]: IOCPUInterruptController: not registry member at registerService()
+[   23.256874]: [0]ml_processor_register>pset_find(cluster_id=0) returned pset 0
+[   23.256881]: [0]ml_processor_register>cpu_id 0xfffffff3988909c0 cluster_id 0 cpu_number 1 is type 0
+[   23.256975]: [0]ml_processor_register>pset_find(cluster_id=0) returned pset 0
+[   23.256982]: [0]ml_processor_register>cpu_id 0xfffffff39888f6a0 cluster_id 0 cpu_number 2 is type 0
+[   23.257073]: [0]ml_processor_register>pset_find(cluster_id=0) returned pset 0
+[   23.257080]: [0]ml_processor_register>cpu_id 0xfffffff39888fb20 cluster_id 0 cpu_number 3 is type 0
+[   23.257166]: [0]ml_processor_register>pset_find(cluster_id=0) returned pset 0
+[   23.257173]: [0]ml_processor_register>cpu_id 0xfffffff398892b80 cluster_id 0 cpu_number 4 is type 0
+[   23.257257]: [0]ml_processor_register>pset_find(cluster_id=0) returned pset 0
+[   23.257263]: [0]ml_processor_register>cpu_id 0xfffffff39888efe0 cluster_id 0 cpu_number 5 is type 0
+[   23.257346]: [0]ml_processor_register>pset_find(cluster_id=0) returned pset 0
+[   23.257352]: [0]ml_processor_register>cpu_id 0xfffffff398891e00 cluster_id 0 cpu_number 6 is type 0
+[   23.257439]: [0]ml_processor_register>pset_find(cluster_id=0) returned pset 0
+[   23.257445]: [0]ml_processor_register>cpu_id 0xfffffff39888f580 cluster_id 0 cpu_number 7 is type 0
+[   23.257715]: cpu_start() cpu: 1
+[   23.257951]: cpu_start() cpu: 2
+[   23.258119]: cpu_start() cpu: 3
+[   23.258398]: cpu_start() cpu: 4
+[   23.258562]: cpu_start() cpu: 5
+[   23.258734]: cpu_start() cpu: 6
+[   23.258893]: cpu_start() cpu: 7
+[   23.259043]: IOSurface disallowing global lookups
+[   23.259428]: AppleImage4: magazine[cptx]: magazine data cannot be written: 30
+[   23.259439]: AppleImage4: magazine[zine]: magazine write failed; may be expected: 30
+[   23.259463]: [System Event] [446529804] [INFO] [Subsystem: nvram] [Event: sync] triggered
+[   23.259474]: IONVRAMCHRPHandler.cpp:serializeVariables:615 - No _nvramController
+[   23.259481]: IONVRAMCHRPHandler.cpp:sync:894 - serializeVariables failed, ret=0xe00002d8[System Event] [446530308] [INFO] [Subsystem: nvram] [Event: sync] completed with ret=e00002d8
+[   23.260786]: nx_mount:1617: disk0 checkpoint search: largest xid 9, best xid 9 @ 7
+[   23.260806]: nx_mount:1644: disk0 stable checkpoint indices: desc 6 data 11
+[   23.261489]: import_iboot_forwarded_roothash:3491: importing root hash (basesystem ? 0)...
+[   23.261505]: apfs_extract_root_hash_arm:13275: could not retrieve system-volume-auth-blob from device tree
+[   23.261513]: import_iboot_forwarded_roothash:3496: apfs_extract_root_hash_and_manifest failed with error: No such file or directory (2)
+[   23.262707]: Waiting on <dict ID="0"><key>IOProviderClass</key><string ID="1">IOMedia</string><key>IOPropertyMatch</key><dict ID="2"><key>UUID</key><string ID="3">04769D26-2CA0-4825-B443-E2E5F88300F2</string></dict></dict>
+[   23.263056]: arm_cpu_init(): cpu 3 online
+[   23.263334]: arm_cpu_init(): cpu 4 online
+[   23.265483]: arm_cpu_init(): cpu 1 online
+[   23.265724]: arm_cpu_init(): cpu 2 online
+[   23.279954]: arm_cpu_init(): cpu 5 online
+[   23.280321]: arm_cpu_init(): cpu 6 online
+[   23.281506]: arm_cpu_init(): cpu 7 online
+[   23.316262]: NativeUfs: NX729J_V5_STREAM_RING enabled
+[   23.316284]: NativeUfs: boot log window 121765883+8192 blocks, 1019 slots
+[   23.318142]: NativeUfs: NX729J_PON_PROBE psci v10001 reset=0 reset2_32=0 reset2_64=0 | gunyah_wdt status=0 since_ping=22229ms | spmi v70000001 apids=768 open=0 find=0 apid=565 owner=0 sdam48=00 read=0
+[   23.318914]: NativeUfs: log round 1 t=0s ok 1 errs 0
+[   23.355683]: NativeUfs: published SystemOS
+[   23.355861]: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x80064
+[   23.355873]: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+[   23.355890]: PMRD: joinAggressiveness IOBlockStorageDriver 0x5e1d42719dc50627
+[   23.357899]: dev_init:303: disk2 device accelerated crypto: 0 (compiled @ Jul 11 2025 17:34:16)
+[   23.357904]: dev_init:306: disk2 device_handle block size 4096 block count 806400 features 0 internal 
+[   23.358009]: nx_mount:1275: disk2 initializing cache w/hash_size 4096 and cache size 10064
+[   23.361802]: nx_mount:1617: disk2 checkpoint search: largest xid 14, best xid 14 @ 9
+[   23.361813]: nx_mount:1644: disk2 stable checkpoint indices: desc 8 data 16
+[   23.457807]: NativeUfs: SystemOS volume 8846FE78-2910-4297-AF97-D59BB6F8FC16 ready
+[   23.457822]: NativeUfs: published OS
+[   23.457964]: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x90064
+[   23.457974]: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+[   23.457990]: PMRD: joinAggressiveness IOBlockStorageDriver 0x5e1d42719dc4d827
+[   23.459723]: dev_init:303: disk4 device accelerated crypto: 0 (compiled @ Jul 11 2025 17:34:16)
+[   23.459727]: dev_init:306: disk4 device_handle block size 4096 block count 1483784 features 0 internal 
+[   23.459848]: nx_mount:1275: disk4 initializing cache w/hash_size 4096 and cache size 10064
+[   23.464508]: nx_mount:1617: disk4 checkpoint search: largest xid 418, best xid 418 @ 3
+[   23.464529]: nx_mount:1644: disk4 stable checkpoint indices: desc 2 data 4
+[   23.465415]: Got boot device = IOService:/NativeUfs/NativeUfsBlock/IOBlockStorageDriver/Native OS Media/AppleAPFSContainerScheme/AppleAPFSMedia/AppleAPFSContainer/DawnUpdate21H461.J120J121J207J208OS@1
+[   23.465436]: BSD root: disk5s1, major 1, minor 8
+[   23.465648]: spec_open : si_devbsdunit initialized to (4), throttle_mask is (0x30), isssd is (0)
+[   23.465680]: apfs_vfsop_mountroot:2965: apfs: mountroot called!
+[   23.465895]: spec_open : si_devbsdunit initialized to (4), throttle_mask is (0x30), isssd is (0)
+[   23.466275]: dev_init:303: disk5 device accelerated crypto: 0 (compiled @ Jul 11 2025 17:34:16)
+[   23.466286]: dev_init:306: disk5 device_handle block size 4096 block count 1483784 features 0 internal 
+[   23.466494]: nx_mount:1275: disk5 initializing cache w/hash_size 4096 and cache size 10064
+[   23.473445]: nx_mount:1617: disk5 checkpoint search: largest xid 418, best xid 418 @ 3
+[   23.473469]: nx_mount:1644: disk5 stable checkpoint indices: desc 2 data 4
+[   23.474442]: apfs_vfsop_mount:2675: disk5 Promoter has been locked 
+[   23.474513]: fs_lookup_root_snapshot_name:373: disk5s1 failed to get root-snapshot-name from DT
+[   23.474525]: apfs_find_named_root_snapshot_xid:2035: disk5s1 failed to retrieve default root snapshot xid: No such file or directory (2)
+[   23.474535]: apfs_find_named_root_snapshot_xid:2073: disk5s1 The global payload bytes pointer is NULL
+[   23.474544]: apfs_vfsop_mount:2714: disk5s1 failed to find named root snapshot: Need authenticator (81)
+[   23.474561]: apfs_log_op_with_proc:3091: disk5s1 mounting volume DawnUpdate21H461.J120J121J207J208OS, requested by: kernel_task (pid 0); parent: kernel_task (pid 0)
+[   23.474711]: handle_mount:817: disk5s1 vol-uuid: 04769D26-2CA0-4825-B443-E2E5F88300F2 block size: 4096 block count: 1483776 (unencrypted; flags: 0x1; features: 8.0.12)
+[   23.476769]: handle_mount:830: disk5s1 setting dev block size to 4096 from 512
+[   23.476796]: apfs_log_op_with_proc:3091: disk5s1 mount-complete volume DawnUpdate21H461.J120J121J207J208OS, requested by: kernel_task (pid 0); parent: kernel_task (pid 0)
+[   23.477675]: is_root_hash_authentication_required_ios:472: disk5s1 Release kext, booting xid: 0
+[   23.477687]: is_root_hash_authentication_required:555: disk5s1 Root Volume, root hash authentication is required
+[   23.480062]: Serial keyboard started
+[   23.480087]: vm_free_delayed_pages: initialized 0 free pages
+[   23.480092]: No POST boot-arg set.
+[   23.480518]: VM Swap Subsystem is ON
+[   23.480540]: SRT: root probe /private/preboot err=0
+[   23.480557]: SRT: root probe /private/preboot/Cryptexes err=2
+[   23.480561]: SRT: root probe /private/preboot/Cryptexes/OS err=2
+[   23.480563]: SRT: cache mount target /private/preboot
+[   23.480565]: SRT: cache dir DYLD_SHARED_CACHE_DIR=/private/preboot/System/Library/Caches/com.apple.dyld
+[   23.480650]: spec_open : si_devbsdunit initialized to (2), throttle_mask is (0xc), isssd is (0)
+[   23.480696]: spec_open : si_devbsdunit initialized to (2), throttle_mask is (0xc), isssd is (0)
+[   23.480783]: dev_init:303: disk3 device accelerated crypto: 0 (compiled @ Jul 11 2025 17:34:16)
+[   23.480786]: dev_init:306: disk3 device_handle block size 4096 block count 806400 features 0 internal 
+[   23.480980]: Failed to open swap file 30
+[   23.480990]: vm_swap_create_file failed @ 23 secs
+[   23.480993]: vm_swap_create_file failed @ 23 secs
+[   23.481024]: nx_mount:1275: disk3 initializing cache w/hash_size 4096 and cache size 10064
+[   23.481284]: NativeUfs: submit cmd 256 lba 4bee9b op 28 dir 2 bytes 4096 db 00000000
+[   23.484785]: nx_mount:1617: disk3 checkpoint search: largest xid 14, best xid 14 @ 9
+[   23.484805]: nx_mount:1644: disk3 stable checkpoint indices: desc 8 data 16
+[   23.485782]: apfs_log_op_with_proc:3091: disk3s1 mounting volume DawnUpdate21H461.J120J121J207J208SystemCryptex, requested by: init (pid 1); parent: kernel_task (pid 0)
+[   23.485830]: handle_mount:817: disk3s1 vol-uuid: 8846FE78-2910-4297-AF97-D59BB6F8FC16 block size: 4096 block count: 806400 (unencrypted; flags: 0x1; features: 28.0.2)
+[   23.486894]: handle_mount:830: disk3s1 setting dev block size to 4096 from 512
+[   23.486920]: apfs_log_op_with_proc:3091: disk3s1 mount-complete volume DawnUpdate21H461.J120J121J207J208SystemCryptex, requested by: init (pid 1); parent: kernel_task (pid 0)
+[   23.488301]: SRT: probe cache dir err=0
+[   23.488315]: SRT: probe sys dir err=0
+[   23.488334]: SRT: probe cryptexes dir err=2
+[   23.559952]: NativeUfs: OS volume 04769D26-2CA0-4825-B443-E2E5F88300F2 ready
+[   23.947481]: spec_open : si_devbsdunit initialized to (0), throttle_mask is (0x3), isssd is (0)
+[   23.947537]: spec_open : si_devbsdunit initialized to (0), throttle_mask is (0x3), isssd is (0)
+[   23.947633]: dev_init:303: disk1 device accelerated crypto: 0 (compiled @ Jul 11 2025 17:34:16)
+[   23.947635]: dev_init:306: disk1 device_handle block size 4096 block count 786432 features 0 internal 
+[   23.947694]: nx_mount:1275: disk1 initializing cache w/hash_size 4096 and cache size 10064
+[   23.951587]: nx_mount:1617: disk1 checkpoint search: largest xid 319, best xid 318 @ 13
+[   23.951609]: nx_mount:1644: disk1 stable checkpoint indices: desc 12 data 1881
+[   23.951688]: spaceman_metazone_init:111: disk1 no metazone for device 0, of size 3221225472 bytes, block_size 4096
+[   23.952714]: apfs_log_op_with_proc:3091: disk1s1 mounting volume Data, requested by: init (pid 1); parent: kernel_task (pid 0)
+[   23.952753]: handle_mount:817: disk1s1 vol-uuid: C76C5309-AEA7-4AF7-AAD5-9785B87F4822 block size: 4096 block count: 786432 (unencrypted; flags: 0x1; features: 1.0.2)
+[   23.953861]: handle_mount:830: disk1s1 setting dev block size to 4096 from 512
+[   23.953890]: apfs_log_op_with_proc:3091: disk1s1 mount-complete volume Data, requested by: init (pid 1); parent: kernel_task (pid 0)
+[   23.953994]: spaceman_scan_free_blocks:3878: disk1 scan took 0.002243 s (no trims)
+[   23.954007]: spaceman_fxc_print_stats:473: disk1 dev 0 smfree 605235/786432 table 130/130 blocks 604600 2:4650:603671 99.89% range 121456:664976 84.55% scans 1
+[   23.954023]: spaceman_fxc_print_stats:492: disk1 dev 0 scan_stats[2]: foundmax 603671 extents 489 blocks 635 long 2 avg 1 0.10% range 41:182512 23.20%
+[   23.958477]: sheng timezone dir: 17 (0 created, 17 present)
+[   23.962345]: sheng timezone localtime: 17 (0 linked, 17 present)
+[   23.962349]: sheng bring-up watchdogd launch policy: 0 (hardware watchdog not implemented)
+[   23.962361]: load_init_program: attempting to load /usr/appleinternal/sbin/launchd.development
+[   23.962477]: load_init_program: attempting to load /sbin/launchd
+[   23.979477]: shared_region: 0x5e1d426eeae5c13f [1(launchd)] check_np(0x16f922b50) vm_shared_region_start_address() failed
+[   23.983544]: shared_region: 0x5e1d426eeae5c13f [1(launchd)] check_np(0x16f9220f0) vm_shared_region_start_address() failed
+[   23.985366]: NativeUfs: submit cmd 512 lba 4020ce op 28 dir 2 bytes 16384 db 00000000
+[   24.115254]: NativeUfs: submit cmd 768 lba 403b8a op 28 dir 2 bytes 131072 db 00000000
+[   24.266489]: NativeUfs: submit cmd 1024 lba 40582a op 28 dir 2 bytes 131072 db 00000000
+[   24.426935]: NativeUfs: submit cmd 1280 lba 4074aa op 28 dir 2 bytes 131072 db 00000000
+[   24.584955]: NativeUfs: submit cmd 1536 lba 40903e op 28 dir 2 bytes 131072 db 00000000
+[   24.754335]: NativeUfs: submit cmd 1792 lba 40acbe op 28 dir 2 bytes 131072 db 00000000
+[   24.904145]: NativeUfs: submit cmd 2048 lba 40c93e op 28 dir 2 bytes 131072 db 00000000
+[   25.048342]: NativeUfs: submit cmd 2304 lba 40e5de op 28 dir 2 bytes 131072 db 00000000
+[   25.191564]: NativeUfs: submit cmd 2560 lba 410106 op 28 dir 2 bytes 131072 db 00000000
+[   25.359034]: NativeUfs: submit cmd 2816 lba 411d66 op 28 dir 2 bytes 131072 db 00000000
+[   25.513233]: NativeUfs: submit cmd 3072 lba 4139e6 op 28 dir 2 bytes 131072 db 00000000
+[   25.680394]: NativeUfs: submit cmd 3328 lba 415686 op 28 dir 2 bytes 131072 db 00000000
+[   25.725406]: NativeUfs: log round 2 t=2s ok 1 errs 0
+[   25.828910]: NativeUfs: submit cmd 3584 lba 4170f2 op 28 dir 2 bytes 131072 db 00000000
+[   25.980467]: NativeUfs: submit cmd 3840 lba 418d92 op 28 dir 2 bytes 131072 db 00000000
+[   26.105024]: NativeUfs: submit cmd 4096 lba 41aa32 op 28 dir 2 bytes 131072 db 00000000
+[   26.267415]: NativeUfs: submit cmd 4352 lba 41c526 op 28 dir 2 bytes 131072 db 00000000
+[   26.439140]: NativeUfs: submit cmd 4608 lba 41e186 op 28 dir 2 bytes 131072 db 00000000
+[   26.591913]: NativeUfs: submit cmd 4864 lba 41fe26 op 28 dir 2 bytes 131072 db 00000000
+[   26.769747]: NativeUfs: submit cmd 5120 lba 4bd372 op 28 dir 2 bytes 4096 db 00000000
+[   26.925678]: NativeUfs: submit cmd 5376 lba 4235f6 op 28 dir 2 bytes 131072 db 00000000
+[   27.091470]: NativeUfs: submit cmd 5632 lba 425296 op 28 dir 2 bytes 131072 db 00000000
+[   27.248693]: NativeUfs: submit cmd 5888 lba 426ef6 op 28 dir 2 bytes 131072 db 00000000
+[   27.413427]: NativeUfs: submit cmd 6144 lba 428a56 op 28 dir 2 bytes 131072 db 00000000
+[   27.562885]: NativeUfs: submit cmd 6400 lba 42a6d6 op 28 dir 2 bytes 131072 db 00000000
+[   27.726706]: NativeUfs: log round 3 t=4s ok 1 errs 0
+[   27.729839]: NativeUfs: submit cmd 6656 lba 42c2b6 op 28 dir 2 bytes 131072 db 00000000
+[   27.895659]: NativeUfs: submit cmd 6912 lba 42df16 op 28 dir 2 bytes 131072 db 00000000
+[   28.038727]: NativeUfs: submit cmd 7168 lba 42fa6a op 28 dir 2 bytes 131072 db 00000000
+[   28.186648]: NativeUfs: submit cmd 7424 lba 4316ea op 28 dir 2 bytes 131072 db 00000000
+[   28.320324]: NativeUfs: submit cmd 7680 lba 43338a op 28 dir 2 bytes 131072 db 00000000
+[   28.460517]: NativeUfs: submit cmd 7936 lba 434fea op 28 dir 2 bytes 131072 db 00000000
+[   28.639741]: NativeUfs: submit cmd 8192 lba 4bd666 op 28 dir 2 bytes 4096 db 00000000
+[   28.792995]: NativeUfs: submit cmd 8448 lba 438796 op 28 dir 2 bytes 131072 db 00000000
+[   28.938692]: NativeUfs: submit cmd 8704 lba 43a416 op 28 dir 2 bytes 131072 db 00000000
+[   29.105438]: NativeUfs: submit cmd 8960 lba 43c0b6 op 28 dir 2 bytes 131072 db 00000000
+[   29.273896]: NativeUfs: submit cmd 9216 lba 43dbe2 op 28 dir 2 bytes 131072 db 00000000
+[   29.423684]: NativeUfs: submit cmd 9472 lba 43f842 op 28 dir 2 bytes 131072 db 00000000
+[   29.582571]: NativeUfs: submit cmd 9728 lba 4414e2 op 28 dir 2 bytes 131072 db 00000000
+[   29.751637]: NativeUfs: submit cmd 9984 lba 4bef5e op 28 dir 2 bytes 4096 db 00000000
+[   29.906001]: NativeUfs: submit cmd 10240 lba 444ca6 op 28 dir 2 bytes 131072 db 00000000
+[   29.930302]: NativeUfs: log round 4 t=6s ok 1 errs 0
+[   30.070255]: NativeUfs: submit cmd 10496 lba 446886 op 28 dir 2 bytes 131072 db 00000000
+[   30.218589]: NativeUfs: submit cmd 10752 lba 448506 op 28 dir 2 bytes 131072 db 00000000
+[   30.386484]: NativeUfs: submit cmd 11008 lba 44a016 op 28 dir 2 bytes 131072 db 00000000
+[   30.552225]: NativeUfs: submit cmd 11264 lba 44bcb6 op 28 dir 2 bytes 131072 db 00000000
+[   30.737960]: NativeUfs: submit cmd 11520 lba 44d916 op 28 dir 2 bytes 131072 db 00000000
+[   30.875618]: NativeUfs: submit cmd 11776 lba 44f5b6 op 28 dir 2 bytes 131072 db 00000000
+[   30.964032]: process launchd[1] caught waking the CPU 47917 times over ~7 seconds, averaging 6843 wakes / second and violating a limit of 45000 wakes over 300 seconds.
+[   31.040031]: NativeUfs: submit cmd 12032 lba 45111e op 28 dir 2 bytes 131072 db 00000000
+[   31.185595]: NativeUfs: submit cmd 12288 lba 452dbe op 28 dir 2 bytes 131072 db 00000000
+[   31.347635]: NativeUfs: submit cmd 12544 lba 4bf01d op 28 dir 2 bytes 4096 db 00000000
+[   31.513188]: NativeUfs: submit cmd 12800 lba 45669e op 28 dir 2 bytes 131072 db 00000000
+[   31.680573]: NativeUfs: submit cmd 13056 lba 4581be op 28 dir 2 bytes 131072 db 00000000
+[   31.860569]: NativeUfs: submit cmd 13312 lba 459e3e op 28 dir 2 bytes 131072 db 00000000
+[   31.931621]: NativeUfs: log round 5 t=8s ok 1 errs 0
+[   32.022131]: NativeUfs: submit cmd 13568 lba 45ba3e op 28 dir 2 bytes 131072 db 00000000
+[   32.173207]: NativeUfs: submit cmd 13824 lba 45d6de op 28 dir 2 bytes 131072 db 00000000
+[   32.333115]: NativeUfs: submit cmd 14080 lba 7421ff7 op 2a dir 1 bytes 4096 db 00000000
+[   32.487891]: NativeUfs: submit cmd 14336 lba 460e76 op 28 dir 2 bytes 131072 db 00000000
+[   32.653072]: NativeUfs: submit cmd 14592 lba 462b16 op 28 dir 2 bytes 131072 db 00000000
+[   32.830380]: NativeUfs: submit cmd 14848 lba 46466a op 28 dir 2 bytes 65536 db 00000000
+[   32.981961]: NativeUfs: submit cmd 15104 lba 46629a op 28 dir 2 bytes 131072 db 00000000
+[   33.119934]: NativeUfs: submit cmd 15360 lba 467f3a op 28 dir 2 bytes 131072 db 00000000
+[   33.248989]: NativeUfs: submit cmd 15616 lba 4699fe op 28 dir 2 bytes 131072 db 00000000
+[   33.398242]: NativeUfs: submit cmd 15872 lba 46b6be op 28 dir 2 bytes 131072 db 00000000
+[   33.531479]: NativeUfs: submit cmd 16128 lba 46d33e op 28 dir 2 bytes 131072 db 00000000
+[   33.677071]: NativeUfs: submit cmd 16384 lba 46ef9e op 28 dir 2 bytes 131072 db 00000000
+[   33.816841]: NativeUfs: submit cmd 16640 lba 470c1e op 28 dir 2 bytes 131072 db 00000000
+[   33.980301]: NativeUfs: submit cmd 16896 lba 47289e op 28 dir 2 bytes 131072 db 00000000

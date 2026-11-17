@@ -6,9 +6,13 @@
 （`launchd` 从根卷启动、Data 卷挂载），差「显示服务或控制台有输出」与「启动进度层最后检查点」。
 最好的一轮跑了 **2354 秒、零崩溃**，但没有画面。
 
+**要镜像和原始日志**：[Release `s7-handoff-2026-11-17`](https://github.com/2713385115/UniXNU-nx729j/releases/tag/s7-handoff-2026-11-17)，
+五颗镜像 + 四份 32 MiB 窗口，清单与哈希见 [IMAGES](IMAGES.md)。
+
 | 文件 | 作用 |
 |---|---|
 | [BOOT-LEDGER.md](BOOT-LEDGER.md) | 每次启动的 `boot_id`、头部字段、窗口时间与结论；字段读法与已证伪清单 |
+| [IMAGES.md](IMAGES.md) | Release 里的五颗镜像与四份原始窗口：SHA-256、内嵌内核哈希、参数差异、刷哪颗能复现哪条结论 |
 | [JOURNAL-2026-11-15_17.md](JOURNAL-2026-11-15_17.md) | 按时间记「改了什么、怎么验证、结果如何」，含失败的尝试 |
 | [NEXT-STEPS.md](NEXT-STEPS.md) | 接手须知、环境前提、P0–P3 任务与验收标准 |
 
@@ -33,12 +37,17 @@ boot_id  0x267a1232
 3. **同一颗镜像可能一次稳一次不稳**。差别在引导器有没有 arm Gunyah 看门狗，内核从不喂狗；
    补丁已写好（`patches/stage7-wdt-keepalive.patch`），尚未编进内核。
 
-## 原始窗口在哪里
+## 镜像和原始窗口在哪
 
-每次回读的完整产物（`log-window.bin` 33 MiB、`msgbuf.txt`、`slots.bin`、`panic.bin`、
-`failure.bin`、`phase.bin`）留在维护机的 `work/official-decode/nx729j-<boot_id>/`，
-按 `boot_id` 命名。这些二进制太大，没有随仓库发布；需要原始窗口时按台账里的 `boot_id`
-找维护者取，或在设备上重新跑一轮同样的镜像。
+镜像每颗 78–89 MiB、窗口每份 32 MiB，进 git 会把仓库撑成几百 MB，所以都在 Release 里：
+
+```bash
+gh release download s7-handoff-2026-11-17 -R 2713385115/UniXNU-nx729j -D out/
+```
+
+五颗镜像分别对应哪条结论、SHA-256 与参数差异见 [IMAGES](IMAGES.md)。
+最好那一轮 `0x267a1232` 的原始窗口已被之后的回读覆盖，本机无副本 —— 它的字段结论只在本目录的
+台账里；要原始字节就刷 `boot-s7pmgr-skip.img` 重跑一轮。
 
 ## 复现一次取证
 
