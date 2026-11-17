@@ -63,9 +63,13 @@ SHA-256 前 16 位 —— 同一颗内核可以配不同 args，所以镜像 sha
 解析：
 
 ```bash
-python tools/decode-shlog.py nx729j-0x1a5d5b1a-log-window.bin          # 头部 + msgbuf
-python tools/decode-shlog.py nx729j-0x1a5d5b1a-log-window.bin --slots  # 逐槽状态时间线
+python tools/host/decode-shlog.py nx729j-0x1a5d5b1a-log-window.bin          # 头部 + msgbuf
+python tools/host/decode-shlog.py nx729j-0x1a5d5b1a-log-window.bin --slots  # 逐槽状态时间线
 ```
+
+这四轮的 msgbuf 文本也直接进了仓库（`docs/progress/logs/nx729j-0x<boot_id>-msgbuf.txt`，
+每份 35–132 KB），只是想 grep 某条日志时不必下 32 MiB 的窗口；要做严格结论仍然用原始窗口，
+因为文本是解码结果，环形缓冲的覆盖边界只有原始字节能确认。
 
 窗口是环形缓冲，跑久了会覆盖开头。要看全程用 `slots`，不要用「某标记计数为 0」下结论。
 

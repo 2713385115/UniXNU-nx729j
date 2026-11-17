@@ -44,14 +44,14 @@ def drop_existing(release, name):
             print(f'  removed stale {name}', flush=True)
 
 
-def upload(release, path, name, tries=4):
+def upload(release, path, name, tries=4, timeout=240):
     drop_existing(release, name)
     body = path.read_bytes()
     url = f'https://uploads.github.com/repos/{REPO}/releases/{release}/assets?name={name}'
     last = None
     for attempt in range(1, tries + 1):
         started = time.time()
-        result = call('POST', url, body, 'application/octet-stream')
+        result = call('POST', url, body, 'application/octet-stream', timeout=timeout)
         if 'error' not in result:
             dt = time.time() - started
             print(f'  ok {name} {len(body)} B {dt:.0f}s '
@@ -66,12 +66,14 @@ def upload(release, path, name, tries=4):
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument('--release', required=True, help='release id, not tag')
+    ap.add_argument('--timeout', type=int, default=240,
+                    help='per-attempt socket timeout; a stalled POST never returns on its own')
     ap.add_argument('pairs', nargs='+', help='local=asset-name')
     args = ap.parse_args()
     for pair in args.pairs:
         local, name = pair.split('=', 1)
         print(f'upload {local} -> {name}', flush=True)
-        upload(args.release, Path(local), name)
+        upload(args.release, Path(local), name, timeout=args.timeout)
     return 0
 
 
