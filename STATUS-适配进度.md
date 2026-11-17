@@ -1,5 +1,42 @@
 # 适配进度：红魔 8 Pro+ 现在到哪一步了
 
+## 2026-11-17 交接：先读这一节
+
+**结论**：官方 bring-up 阶段 1–6 通过，阶段 7 只过两项判据。目前的阻塞不是存储、不是内核入口，
+而是**用户态没有显示服务产出**，以及**没有启动检查点数据源**。
+
+最好的一轮实测（详细字段见 [docs/progress/BOOT-LEDGER.md](docs/progress/BOOT-LEDGER.md)）：
+
+| 项 | 值 |
+|---|---|
+| 镜像 | `out/boot-s7pmgr-skip.img`，81,309,696 B，SHA-256 `aff8b7c2958e0026d26aa04949f6d1d77d05d6e0002e062db1681d6242ec7f75` |
+| `boot_id` | `0x267a1232` |
+| 头部 | `uptime_s 2354` / `rounds 254` / `phase 5 published` / `write_errors 0` |
+| 窗口 | 1875.7 s → 2388.4 s |
+| 崩溃 | `Too many corpses` 0、`crash` 0、`deny(1)` 0（上一轮分别是 93 / 93 / 68） |
+| 显示 | `backboardd[446]` 于 1894 s 启动，之后无 `WindowServer` / `CARenderServer` / scanout / Metal |
+
+换官方 skip-setup Data seed 是这一轮最大的收益；`boot_a` 回读与该镜像逐块一致。
+
+**三个必须先知道的事实**：
+
+1. 屏幕不是判据 —— 绿条由 DarwinBoot `Entry.S` 在 `br x1` 前自绘，与内核进度无关。
+2. 同一颗镜像可能一次稳一次不稳 —— 差别在引导器有没有 arm Gunyah 看门狗，内核从不喂狗；
+   补丁 `patches/stage7-wdt-keepalive.patch` 已写好、尚未编进内核。
+3. `NativeUfs` 日志里的 `op 0x28 dir 2` 是 **SCSI READ(10)**，不是 union copy-up 写入；
+   之前据此关掉 union 的判断已被推翻（`configs/nx729j_union7_defconfig`）。
+
+**下一步**见 [docs/progress/NEXT-STEPS.md](docs/progress/NEXT-STEPS.md)（P0 喂狗 / P1 判据③ /
+P2 判据④ / P3 仓库迁移）；改动历史见 [docs/progress/JOURNAL-2026-11-15_17.md](docs/progress/JOURNAL-2026-11-15_17.md)。
+
+根目录 `porting.toml` 已按官方记录格式（`schema_version = 1`，13 个必需部分）写好，
+并通过 `python3 scripts/porting-record.py check --device .`；但 `board.toml` 仍是格式 1，
+迁移到 `schema_version = 2` 之后才会被目录工作流采用。
+
+---
+
+> 2026-11-16 的快照保留在下面，其中关于 `0x1f44cebb`（union）与「读流」的表述已被 2026-11-17 的结论取代。
+
 > 当前状态更新：2026-11-16。以下历史记录保留；本节按 UniXNU 官方 bring-up 七阶段和驱动清单汇报。
 
 ## 官方启动阶段

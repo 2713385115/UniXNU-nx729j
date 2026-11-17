@@ -1,0 +1,317 @@
+schema_version = 1
+
+[device]
+name = "nx729j"
+soc = "SM8550"
+os_profile = "ipados-17.7.11-21H461"
+summary = "Nubia RedMagic 8 Pro / 8 Pro+ (SM8550). Bring-up reaches official Stage 7 userspace: launchd starts from the APFS root, the Data volume mounts and the system stays up for 39 minutes with zero process crashes on the best measured build, but no display service produces output yet. This record carries the measured boot ledger, the confirmed root causes and the open Stage 7 criteria."
+
+[[area]]
+id = "configuration"
+status = "implemented"
+components = []
+paths = ["board.toml", "unixnu.lock", "configs/**", "proprietary-files.txt"]
+inputs = ["SM8550-AB with msm-id 0x207, 16 GiB DRAM and 512 GiB UFS.", "iPadOS 17.7.11 (21H461) selected as board.os_profile.", "Panel, touch and firmware data taken from the stock device tree and the stock flash package."]
+configuration = ["board.toml declares board.name = nx729j, board.soc = SM8550 and board.os_profile = ipados-17.7.11-21H461. The file is still the format 1 layout: no schema_version and no [components] table.", "configs/nx729j_stage7_defconfig is the Stage 7 first-look configuration. It carries CONFIG_XNU_SHENG_PMGR=y and the cache-carrier switches documented in the storage area.", "The kernel is built only on the macOS runner of 2713385115/UniXNU. This host has neither clang nor a hypervisor, so every kernel change ships as a CI artifact."]
+procedure = ["Read https://unixnu.com/zh/porting/steps and https://unixnu.com/zh/porting/bring-up before touching a configuration.", "Dispatch a build with python tools/host/ci-dispatch.py --defconfig nx729j_stage7_defconfig --steps kernel --device-repo 2713385115/UniXNU-nx729j --device-ref main.", "Fetch the artifact with tools/host/ci-fetch-parallel.py --block 4 --workers 12 and pack a boot image that changes one FAT member only."]
+findings = ["A single-variable image is the only usable diagnosis. A helper walks the payload FAT, hashes every member and asserts that only EFI/UniXNU/unixnu.toml differs from the previous image.", "The payload caps the argument string at 1000 bytes. The official 45-entry set with sheng-log=1 occupies 990 bytes, so a new diagnostic must replace an existing entry rather than append one.", "Adding a parameter that the kernel does not parse is invisible: build-tag is implemented as sheng-build-tag in BootProgress.c, so build-tag=s7p7 was silently ignored until the kernel strings were counted."]
+completion = ["Every pin resolves, the defconfig builds on the official macOS workflow, and the packed boot image passes the per-member hash comparison."]
+limits = ["board.toml is still format 1. This record passes scripts/porting-record.py check, but the directory workflow only adopts it once board.toml moves to schema_version 2 with a [components] selection and a components.toml feed."]
+next_action = ["Migrate board.toml to schema_version 2 and add the component selection so this record becomes the published device page."]
+
+[[area.evidence]]
+kind = "source"
+reference = "configs/nx729j_stage7_defconfig"
+result = "Stage 7 first-look configuration used by every measured boot in this record."
+
+[[area.evidence]]
+kind = "source"
+reference = "board.toml"
+result = "Board identity, storage geometry, kernel arguments and payload layout read by the packaging scripts."
+
+[[area]]
+id = "firmware"
+status = "implemented"
+components = []
+paths = ["scripts/build-uefi-sheng.sh", "scripts/import-sheng-uefi.py", "scripts/make-nx729j-adt.py", "tools/nx729j-DarwinBoot-diag.c", "unixnu.lock"]
+inputs = ["Stock ABL is EDK2 QcomModulePkg and hands an nx729j device tree to the payload.", "uefi-sheng imported as the firmware source, pinned in unixnu.lock.", "boot_a is 0x6000000 bytes on slot a; the packed image is 81,309,696 bytes."]
+configuration = ["The boot image is a 4096-byte header plus gzip(loader + FAT volume + dtb). The inflated payload is 204,476,416 bytes.", "Diagnostic markers are drawn by DarwinBoot Entry.S and by the entry probes; the green bar is painted before br x1, so its presence says nothing about kernel progress.", "The ADT keeps a 64-entry outside-window exclusion table and the owned memory window used by the kernel."]
+procedure = ["Build or import the UEFI image, build the payload from board.toml, then pack the boot image with the loader, the payload FAT and the dtb.", "Flash with tools/host/edl-flash-boot.py out/<image>.img --port <COM> against LUN4 boot_a and reset with --power=reset,1.", "Verify the write with tools/host/edl-verify-boot.py, which reads boot_a back and compares sha256 block by block."]
+findings = ["A boot that ends without any SHLOG content is not proof that the kernel never reached storage: the v5 writer only opens its window when the root layout is valid. The failure path now records rootFailureRecord into the last slot so a rejected mount still leaves a readable reason.", "Sahara can answer before firehose is up. When the flasher reports that the target is speaking SAHARA protocol, run it once without --no-loader; when it reports a protocol error after the loader, retry with --no-loader.", "The framebuffer console and the SHLOG channel are independent. Every conclusion in this record comes from SHLOG read over 9008, never from a photograph of the screen."]
+completion = ["The image enters UniXNU, publishes the framebuffer, hand off to DarwinBoot and reaches the kernel entry without a panic."]
+limits = ["Stage 7 firmware enrolment is not started. The payload boot-progress layer is the only progress channel on the device side."]
+next_action = ["Keep the entry-probe images available as the fallback for any kernel that stops before the SHLOG window opens."]
+
+[[area.evidence]]
+kind = "source"
+reference = "scripts/make-nx729j-adt.py"
+result = "Builds the nx729j ADT with the owned memory window and the 64-slot exclusion table."
+
+[[area.evidence]]
+kind = "device"
+reference = "docs/progress/BOOT-LEDGER.md"
+command = "python tools/host/edl-verify-boot.py --port 11"
+revision = "fb3f944edec44d8011cf812556970bb0fb5e425c"
+result = "boot_a read back with zero mismatching blocks, sha256 equal to out/boot-s7pmgr-skip.img (aff8b7c2958e0026d26aa04949f6d1d77d05d6e0002e062db1681d6242ec7f75), proving the measured boot ran the image that was packed."
+
+[[area]]
+id = "cpu"
+status = "implemented"
+components = []
+paths = ["package/BootProcessProbe.c", "package/BootFaultProbe.c", "package/BootProgress.c"]
+inputs = ["8 cores in one cluster, GICv3, architected timer.", "Boot arguments carry cpus=1 only on images that predate the PMGR fix."]
+configuration = ["sheng-smp=1 enables the secondary-core release; ml_processor_register must list cpu_number 0..7 for the restriction to be considered lifted.", "armcpu-diagnostics=1 turns on the per-core diagnostics that print the registration lines."]
+procedure = ["Boot an image with sheng-smp=1, wait for userspace, then read the window and count the ml_processor_register lines.", "Compare against an image with cpus=1, which registers cpu 0 only."]
+findings = ["Before the PMGR kit was linked, SMP hung the machine silently. After ShenPlatformPower was built into the kernel, two independent boots registered cpu 0..7 and both passed the old hang point at 34.8 to 37.9 s, so cpus=1 is no longer required.", "SMP alone does not guarantee progress: the two SMP boots were cut short by an early EDL entry at 44.5 s and 54.1 s, so neither proves long-run stability."]
+completion = ["All 8 cores register, the system reaches launchd and stays up for more than 600 s with SMP enabled."]
+limits = ["No long SMP run exists yet. The 2354-second run used cpus=1."]
+next_action = ["Repeat the 39-minute run with sheng-smp=1 and no cpus=1 to confirm SMP stability at userspace."]
+
+[[area.evidence]]
+kind = "source"
+reference = "package/BootProgress.c"
+result = "Progress layer that writes the round heartbeat read back from the SHLOG window."
+
+[[area.evidence]]
+kind = "device"
+reference = "docs/progress/BOOT-LEDGER.md"
+command = "python tools/host/edl-read-log.py --port 11 --scan --slots"
+revision = "fb3f944edec44d8011cf812556970bb0fb5e425c"
+result = "Boot 0x23928262 and boot 0x267949e2 each printed 16 ml_processor_register lines covering cpu_number 0..7 with cluster_id 0, past the previous silent-hang point."
+
+[[area]]
+id = "memory"
+status = "implemented"
+components = []
+paths = ["drivers/NativeUfs/RootLayout.h", "scripts/build-owner-verified-block.py", "scripts/build-verified-root-bundle.py"]
+inputs = ["16 GiB DRAM in two banks, a fixed ADT owned window and a reserved panic region.", "The owned window is published through the ADT and excluded ranges."]
+configuration = ["memory-outside and the owned window size come from board.toml and the ADT generator.", "The kernel panic log is kept in a reserved DRAM region, not on the screen, so a panic is only readable if something copies it out."]
+procedure = ["Pack the ADT with the owned window, boot, then read the panic region and the failure slot over 9008.", "Use the header fields of the SHLOG window to tell a stalled writer from a missing window."]
+findings = ["The panic region is memory-backed. Firehose cannot peek at arbitrary DRAM, so a panic that is not written to UFS is unreachable; the failure record in the last window slot exists for exactly that case.", "The window header state field is a constant written by the driver and carries no information about which Data store was resumed."]
+completion = ["The owned window matches the ADT, the kernel survives the memory hand-off and the panic region stays empty on a healthy boot."]
+limits = ["No dump of a userspace-era panic has been captured yet, so the reset cause after 30 s of userspace is still unattributed."]
+next_action = ["Add a reset-cause record written to UFS during the last publishing round so a watchdog or PMIC reset leaves a trace."]
+
+[[area.evidence]]
+kind = "source"
+reference = "drivers/NativeUfs/RootLayout.h"
+result = "Defines the root layout, the manifest block and the window geometry used by both the packer and the driver."
+
+[[area]]
+id = "storage"
+status = "device-verified"
+components = []
+paths = ["drivers/NativeUfs/**", "configs/nx729j_stage7_defconfig", "scripts/build-userdata-root-image.py", "seeds/data-seed.dbr"]
+inputs = ["UFS LUN0 GPT, LUN4 boot_a and the userdata partition starting at LBA 2712360.", "OS window at offset 0x100000 (6,077,580,800 bytes), SystemOS window at 0x16A600000 (3,303,014,400 bytes) inside the userdata image.", "Official skip-setup Data seed, 540,816 bytes, sha256 8f88eac83c7e7d3bf1414b8b002e04fbdc5dcf26c9a34d7221e5b4b152398e."]
+configuration = ["The SHLOG window lives in the last 32 MiB of userdata, first LBA 121765883, version 5 header with msg_mode=1 and 8192 log blocks.", "sheng-log=1 opens the window; the driver refuses to open it while the root layout is invalid, so a failed mount leaves no log.", "sheng-data-persist=2 keeps the Data store across boots; the overlay header carries the seed digest and rebuilds when the seed changes."]
+procedure = ["Pack the boot image with the Data seed in Payloads/scratch-data.img, flash boot_a only, then reset with --power=reset,1.", "After the run, enter 9008 and read the window with python tools/host/edl-read-log.py --port 11 --scan --slots.", "Decode the slots and the header with scripts/read-sheng-log.py to get boot_id, uptime_s, rounds and the per-round phase."]
+findings = ["The UFS stack is sound. The APFS root mounts, the Data volume mounts and the official skip-setup seed removed the container failures entirely: Too many corpses went from 93 to 0, deny(1) from 68 to 0, SpringBoard from 34 to 0 on boot 0x267a1232.", "The single largest measured improvement in the port came from replacing the hand-built Data seed with the official one; the image content changed by 221,200 bytes and nothing else did.", "A rejected manifest still needs a window to report itself. The GPT geometry is now used to open the window temporarily so a manifest rejection is readable instead of silent.", "The op 0x28 codes in the transfer log are SCSI READ(10) with direction 2 to host, not copy-up writes. A 2.36 GB read stream in boot 0x1f44cebb was originally read as a write storm; the same stream appears with union disabled, so it is dyld pulling the shared cache."]
+completion = ["Root, Data and preboot are all reachable, the window opens on every boot and the per-round heartbeat advances without write errors."]
+limits = ["/private/preboot/Cryptexes and /private/preboot/Cryptexes/OS both return ENOENT (err=2) on this device, so the sealed-root cryptex pair does not exist yet.", "storage-probe and log=1 checkpoint recording described by the debugging guide are not implemented in this kernel; the binary contains zero occurrences of storage-probe."]
+next_action = ["Decide the cache path that every process may read: either allow the preboot cache path in the sandbox profile, or finish the union composition so /System/Library/Caches/com.apple.dyld resolves for pid 1 first."]
+
+[[area.evidence]]
+kind = "source"
+reference = "drivers/NativeUfs/NativeUfs.cpp"
+result = "UFS bring-up, root layout discovery, root plan, window open and the version 5 log writer with the round heartbeat."
+
+[[area.evidence]]
+kind = "device"
+reference = "docs/progress/BOOT-LEDGER.md"
+command = "python tools/host/edl-read-log.py --port 11 --scan --slots"
+revision = "fb3f944edec44d8011cf812556970bb0fb5e425c"
+result = "Boot 0x267a1232 on out/boot-s7pmgr-skip.img: header uptime_s 2354, rounds 254, phase 5 published, write_errors 0, 254 slots written; the log window covers 1875.7 s to 2388.4 s with zero Too many corpses, zero crash rows and zero dyld cache denies."
+
+[[area.evidence]]
+kind = "device"
+reference = "docs/progress/BOOT-LEDGER.md"
+command = "python tools/host/edl-read-log.py --port 11 --scan --slots"
+revision = "fb3f944edec44d8011cf812556970bb0fb5e425c"
+result = "Boot 0x266eff40 after a reset with the same image and the same seed: header uptime_s 1115, rounds 130, phase 5 published, write_errors 0, proving the persisted Data store resumes instead of being rebuilt."
+
+[[area]]
+id = "display"
+status = "implemented"
+components = []
+paths = ["package/BootProgressDisplay.h", "package/LegacyDisplayProbe.cpp", "package/FramebufferGeometryDiagnostic.cpp", "package/FramebufferPowerDiagnostic.cpp", "package/FramebufferProtocolDiagnostic.cpp"]
+inputs = ["6.8-inch AMOLED panel, panel timings extracted into docs/reference/panel/nx729j-panel.json.", "Stock device tree supplies the display and backlight nodes."]
+configuration = ["sheng-fb-gpu=1 and sheng-gpu-power=9 keep the framebuffer path through the GPU power domain.", "boot-progress=2 selects the highest progress layer the payload supports."]
+procedure = ["Boot, then read the window and count the framebuffer, scanout and boot-progress lines.", "A display service that never appears leaves no line at all, so the absence of backboardd or WindowServer is itself the measurement."]
+findings = ["The payload side draws the progress layer and the colour bars; those are not proof of kernel display progress, and the green bar in particular is painted before the kernel is entered.", "On the best boot, /usr/libexec/backboardd started at 1894 s as pid 446 after one allowed corpse, and then nothing: no WindowServer, no CARenderServer, no scanout and no Metal line appeared until the run ended at 2388 s."]
+completion = ["A display service or a console produces output that the SHLOG window records, which is official Stage 7 criterion three."]
+limits = ["Criterion three is not met. backboardd starting is not composition: the Adreno Metal plugin data is missing from the best seed, so the render server has no device to composite with."]
+next_action = ["Combine the 39-minute stable base with the GPU plugin data and sheng-gpu-addon=1, then look for WindowServer or CARenderServer in the window instead of on the screen."]
+
+[[area.evidence]]
+kind = "source"
+reference = "package/LegacyDisplayProbe.cpp"
+result = "Framebuffer and display probing used to decide whether the kernel-side display path is reached."
+
+[[area.evidence]]
+kind = "device"
+reference = "docs/progress/BOOT-LEDGER.md"
+command = "python tools/host/edl-read-log.py --port 11 --scan --slots"
+revision = "fb3f944edec44d8011cf812556970bb0fb5e425c"
+result = "Boot 0x267a1232 records backboardd[412] with one allowed corpse at 1894.155 s and /usr/libexec/backboardd[446] at 1894.207 s, then no WindowServer, CARenderServer or Metal line for the remaining 494 s."
+
+[[area]]
+id = "input"
+status = "planned"
+components = []
+paths = ["drivers/NativeGoodixTouch/README.md", "package/TouchProbe.cpp", "package/TouchBoard.h", "package/TouchBoardTests.c"]
+inputs = ["Goodix GT9916 touch controller on the SPI bus, with the reset and interrupt lines from the stock device tree.", "Touch firmware is not redistributable and must be generated from the stock partition with scripts/gen-touch-firmware.py."]
+configuration = ["offline-key-events=1 and offline-hid-home=1 enable the offline key probes; neither is needed for the Stage 7 display criteria."]
+procedure = ["Read https://unixnu.com/zh/porting/drivers item four, then collect the SPI, GPIO and interrupt resources from the stock device tree.", "Host-check the protocol with scripts/check-touch-host.py before any device attempt."]
+findings = ["Only the hardware and protocol description exists. No touch contact has been reported by this port, and no key event has been observed on the device.", "The offline key probes were removed from the Stage 7 diagnostic arguments because the Stage 7 criteria do not depend on input."]
+completion = ["A contact reported by the driver reaches the input stack and produces an event in userspace."]
+limits = ["No device evidence. The controller has not been powered or addressed by this port."]
+next_action = ["Bring up the SPI controller and read the Goodix product id before attempting the firmware download."]
+
+[[area.evidence]]
+kind = "source"
+reference = "package/TouchProbe.cpp"
+result = "Touch probing scaffold with the Goodix command set, compiled but never exercised on the device."
+
+[[area]]
+id = "gpu"
+status = "implemented"
+components = []
+paths = ["package/OfflineMetalAddon.h", "package/GpuPowerProbe.cpp", "package/ShengGmu.c", "package/ShengGpuSmmu.c", "scripts/build-native-adreno-kits.py"]
+inputs = ["Adreno 740 with its GMU firmware and the SMMU stream used by the GPU.", "NativeAdrenoMetal plugin bundle plus libvulkan_freedreno, 9 files in total, packed into a 2 MiB sidecar."]
+configuration = ["sheng-gpu-power=9, sheng-gpu-metal=1 and sheng-gpu-addon=1 are the three parameters the plugin path needs; without sheng-gpu-addon=1 the kernel never looks at the sidecar.", "The addon is stored as Payloads/kernel.macho.gpuaddon with an ADT GpuAddon property and a three-entry owner trust bundle."]
+procedure = ["Build the addon with the official macOS workflow, inject it with tools/host/inject-gpu-addon.py and verify that the sidecar, the ADT property and the trust cache all report true.", "Boot, then grep the window for NativeAdrenoMetal.publish and for the metal device discovery lines."]
+findings = ["An image can carry the parameter without the payload: the boot 0x1b6783fe run had sheng-gpu-metal=1 but no NGPUADD2 container, so the GPU counters stayed at zero and the parameter was inert.", "The injection has three independent failure points (ADT property length, long filename termination, owner trust validation); all three are asserted by the injector before it writes an image.", "The 39-minute stable image has no addon at all. Its seed is the plain skip-setup seed, which is why the render server had nothing to composite with."]
+completion = ["The plugin publishes a Metal device, backboardd hands it to the render server and a draw reaches the panel."]
+limits = ["No device evidence that the plugin loads. Metal remains deferred until the userspace boot is stable with the addon present."]
+next_action = ["Rebuild the stable base with the addon and the plugin data in the Data seed, then judge by the window instead of the screen."]
+
+[[area.evidence]]
+kind = "source"
+reference = "package/OfflineMetalAddon.h"
+result = "Addon container format, including the NGPUADD2 magic and the file table the injector writes."
+
+[[area.evidence]]
+kind = "source"
+reference = "docs/progress/JOURNAL-2026-11-15_17.md"
+result = "Records the addon build chain, the CI repair rounds and the byte comparison that proves only the sidecar changed."
+
+[[area]]
+id = "network"
+status = "planned"
+components = []
+paths = ["proprietary-files.txt"]
+inputs = ["Wi-Fi and Bluetooth firmware from the stock partitions.", "No driver source is selected yet."]
+configuration = ["No network component is built into the current kernel and no network parameter is present in the argument set."]
+procedure = ["Follow https://unixnu.com/zh/porting/drivers item six, starting with the bus and firmware ownership before any OS interface work."]
+findings = ["Network has not been attempted. The Stage 7 criteria do not require it, and adding it now would make the single-variable comparisons unusable."]
+completion = ["The bus enumerates the controller, firmware loads and the OS interface binds."]
+limits = ["No implementation and no device evidence."]
+next_action = ["Collect the firmware files and the bus resources after Stage 7 passes."]
+
+[[area.evidence]]
+kind = "source"
+reference = "proprietary-files.txt"
+result = "Lists the stock files that would be needed, none of which is currently consumed by a driver."
+
+[[area]]
+id = "audio"
+status = "planned"
+components = []
+paths = ["proprietary-files.txt"]
+inputs = ["ADSP firmware and the codec configuration from the stock device tree."]
+configuration = ["No DSP or codec component is selected; the payload does not stage any audio firmware."]
+procedure = ["Follow https://unixnu.com/zh/porting/drivers item seven after the display path produces output."]
+findings = ["Audio is out of scope for bring-up. Attempting it now would add a second unknown to every boot."]
+completion = ["The DSP starts, the codec is configured and a route produces playback or capture."]
+limits = ["No implementation and no device evidence."]
+next_action = ["Keep audio deferred until Stage 7 criteria three and four are met."]
+
+[[area.evidence]]
+kind = "source"
+reference = "proprietary-files.txt"
+result = "Placeholder inventory for the audio firmware, not yet staged by any build step."
+
+[[area]]
+id = "power"
+status = "implemented"
+components = []
+paths = ["kits/sheng/ShengPlatformPower.cpp", "package/ShengPlatformPower.cpp", "package/BootReset.c", "package/BootWatchdogPolicy.c"]
+inputs = ["PMIC over SPMI, PMGR nub expected by AMFI, Gunyah watchdog armed by the bootloader."]
+configuration = ["sheng-pmgr=2 publishes the ApplePMGRNub that AMFI waits for; mode 1 releases the unpublished object and mode 3 tests the power-off refusal.", "The Gunyah vendor calls are 0x86000005 control, 0x86000006 status, 0x86000007 ping and 0x86000008 set time."]
+procedure = ["Read https://unixnu.com/zh/porting/drivers item seven, then build the kit with scripts/build-sheng-platform-power.py.", "Probe the watchdog and PMIC read-only before changing anything: the probe reports psci reset flags, gunyah_wdt status and since_ping, and the SPMI slave presence."]
+findings = ["AMFI panicked with No PMGR before the kit was linked; after the kit was built into the kernel the string disappeared and the boot passed the platform expert stage.", "The bootloader arms the Gunyah watchdog on some resets. Boot 0x1aadfabe ended at 33.98 s with the probe reporting gunyah_wdt status=0 since_ping=22229ms, and the kernel never pings it, so the reset is consistent with a watchdog expiry rather than a panic.", "The same image ran for 39 minutes on a reset where the watchdog was not armed, which is why the same image can look stable and unstable on different boots.", "PMIC reboot reason is still unreadable: the SPMI probe reports apids=768 open=0 find=0 apid=565 owner=0 sdam48=00 read=0, so the slave was never opened and sdam48 is a placeholder, not a reason code."]
+completion = ["The platform power object is published, the watchdog is pinged while userspace runs and no reset is left unattributed."]
+limits = ["The keepalive patch is written and host-checked but has never been built on the macOS runner or run on the device.", "The PMIC reboot reason path needs the SPMI slave to be opened, which requires a driver change beyond a read-only probe."]
+next_action = ["Build patches/stage7-wdt-keepalive.patch into the Stage 7 kernel, then confirm the ping marker and a run longer than 600 s on an armed-watchdog reset."]
+
+[[area.evidence]]
+kind = "source"
+reference = "kits/sheng/ShengPlatformPower.cpp"
+result = "The PMGR nub implementation that AMFI waits for, built into the kernel from the Stage 7 configuration."
+
+[[area.evidence]]
+kind = "source"
+reference = "patches/stage7-wdt-keepalive.patch"
+result = "Probes the Gunyah watchdog once and pings it only when the hypervisor reports status zero, leaving every other status untouched."
+
+[[area.evidence]]
+kind = "device"
+reference = "docs/progress/BOOT-LEDGER.md"
+command = "python tools/host/edl-read-log.py --port 11 --scan --slots"
+revision = "fb3f944edec44d8011cf812556970bb0fb5e425c"
+result = "Boot 0x1aadfabe: the PON probe reads psci v10001 reset=0 reset2_32=0 reset2_64=0, gunyah_wdt status=0 since_ping=22229ms, spmi v70000001 apids=768 open=0 find=0 apid=565 owner=0 sdam48=00 read=0, and the log stops at 33.98 s inside a page read."
+
+[[area]]
+id = "packaging"
+status = "device-verified"
+components = []
+paths = ["scripts/package-sheng-boot.py", "scripts/build-session-image.sh", "package/unixnu.toml", "unixnu.lock"]
+inputs = ["A boot image of 81,309,696 bytes for the good base and 93,380,608 bytes for the GPU sidecar build.", "The payload FAT with kernel.macho, ADT, dtb, trust cache, scratch-data.img and the optional addon sidecar."]
+configuration = ["EFI/UniXNU/unixnu.toml carries the argument string; 990 bytes is the official set, 1000 is the hard cap.", "The image is written to LUN4 boot_a at sector 114054, inside a 24576-sector window taken from the GPT."]
+procedure = ["Swap one FAT member with tools/host/build-boot-swap-kernel.py, then rebuild the argument string with tools/host/build-stage7-trace.py which enforces the 1000-byte cap.", "Assert the single-variable property with tools/host/verify-p7-image.py, then flash and read boot_a back."]
+findings = ["Every image in this record differs from its predecessor in exactly one FAT member. The verifier prints per-member sha256 and refuses to claim a change when the set of changed members is not the one expected.", "The FAT chain limit in the packing tool was raised from 65536 to 4,000,000 bytes because the seeded scratch-data image outgrew the old limit and the extension silently truncated.", "The GPU sidecar build grows the image to 93,380,608 bytes; the extra 12 MiB is all sidecar and the rest of the payload is byte-identical."]
+completion = ["The image flashes, boot_a reads back identical and the boot produces a new boot_id in the window."]
+limits = ["The packer runs on Windows and writes CRLF working copies; any patch that must reach the repository is pushed as exact bytes through the contents API."]
+next_action = ["Add a CI job that produces the boot image directly so the Windows packing step stops being a manual single point of failure."]
+
+[[area.evidence]]
+kind = "device"
+reference = "docs/progress/BOOT-LEDGER.md"
+command = "python tools/host/edl-flash-boot.py out/boot-s7pmgr-skip.img --port 11"
+revision = "fb3f944edec44d8011cf812556970bb0fb5e425c"
+result = "Wrote 81,309,696 bytes to LUN4 boot_a at sector 114054 in 2.812 s at 27.58 MBps, reset with --power=reset,1 and left 9008 within 4 s."
+
+[[area.evidence]]
+kind = "source"
+reference = "scripts/package-sheng-boot.py"
+result = "Packing step that assembles the 4096-byte header, the gzip payload and the dtb."
+
+[[area]]
+id = "diagnostics"
+status = "device-verified"
+components = []
+paths = ["package/BootLog.c", "drivers/NativeUfs/NativeUfs.cpp", "scripts/read-sheng-log.py", "docs/progress/BOOT-LEDGER.md"]
+inputs = ["32 MiB SHLOG window with a 512-byte version 5 header and 8192 log blocks.", "9008 firehose access for reads; there is no serial console on this device."]
+configuration = ["sheng-log=1 opens the window, boot-progress=2 selects the progress layer and sheng-build-tag names the build in the header.", "The header carries boot_id, uptime_s, rounds, slots_written, write_errors, msg_mode and a phase/phase_round pair; the phase is a property of the log writer, not of the official boot stage."]
+procedure = ["Enter 9008, then read the whole window with python tools/host/edl-read-log.py --port 11 --scan --slots; the tool writes log-window.bin, msgbuf.txt, slots.bin, panic.bin, failure.bin and phase.bin.", "Compare the boot_id against the previous run before reading anything else: a stale window means the boot never happened.", "Decode the slots with scripts/read-sheng-log.py --decode to get a per-round timeline."]
+findings = ["A zero log is the most misread signal in this project. Before the failure record existed, a rejected root left the window all zeroes and the driver looked broken; the fix was to write rootDiagnosticFailure into the last slot on every failure path.", "The header uptime is the uptime at the last publish, not the time the device died. Boot 0x12c714bd reports 490 s in the header while the window runs to 496.5 s, and the 39-minute boot reports 2354 s while its window runs to 2388.4 s.", "The message buffer is a ring. A long run overwrites its own early lines, so an early-phase count of zero is not evidence that nothing happened; only slot snapshots and the header survive a full lap.", "Per-round lines of the form NativeUfs: log round N t=<seconds> ok <n> errs <n> are the cheapest liveness signal: the round that never prints is the round that stalled."]
+completion = ["Every boot yields a boot_id, a header, a decodable msgbuf and a per-round timeline, and a failure of any kind leaves a readable reason in UFS."]
+limits = ["The official storage-probe and log=1 checkpoint recording described by the debugging guide is not implemented, so official criterion four has no data source on this device yet.", "The checkpoint export helper that the guide mentions by name does not exist in this fork of the reader."]
+next_action = ["Implement the PID 1 checkpoint ring behind storage-probe=1 in the driver, then export it as the guide expects so criterion four becomes measurable."]
+
+[[area.evidence]]
+kind = "source"
+reference = "package/BootLog.c"
+result = "Persistent log writer, including the round heartbeat and the process-exit rows added for Stage 7 diagnosis."
+
+[[area.evidence]]
+kind = "source"
+reference = "scripts/read-sheng-log.py"
+result = "Reads the version 5 header, decodes the message ring and the slot snapshots."
+
+[[area.evidence]]
+kind = "device"
+reference = "docs/progress/BOOT-LEDGER.md"
+command = "python tools/host/edl-read-log.py --port 11 --scan --slots"
+revision = "fb3f944edec44d8011cf812556970bb0fb5e425c"
+result = "Eleven boots decoded from this device with boot_id, header and slot snapshots; two of them exceed 1100 s of uptime and one reaches 2354 s with zero write errors."

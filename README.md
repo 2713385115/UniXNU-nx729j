@@ -13,7 +13,16 @@
   <a href="https://x.com/unixnu"><img alt="X" src="https://img.shields.io/badge/X-@unixnu-000000?logo=x&logoColor=white"></a>
 </p>
 
-# UniXNU-sheng
+> **本仓库是 NX729J（努比亚红魔 8 Pro / 8 Pro+，SM8550）的设备移植分支。**
+>
+> 状态（2026-11-17）：官方 bring-up 阶段 1–6 通过；阶段 7 四项判据过两项
+> （`launchd` 从根卷启动、Data 卷挂载），最好的一轮跑 **2354 秒、零崩溃**，
+> 但**显示服务仍无输出**，官方判据③④未通过。
+>
+> 接手请先读 [docs/progress/](docs/progress/README.md)：启动台账（每次 `boot_id` 的字段与结论）、
+> 工作记录、交接与下一步。下面这段文字来自上游 sheng 参考设备，不代表本分支。
+
+# UniXNU-nx729j
 
 Device repository for the Xiaomi Pad 6S Pro (sheng, SM8550). It holds the board file, kernel defconfig, device scripts, drivers and package.
 
