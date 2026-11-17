@@ -53,12 +53,12 @@ SHA-256 前 16 位 —— 同一颗内核可以配不同 args，所以镜像 sha
 
 `nx729j-<boot_id>-log-window.bin`，每份 33,554,432 B，是 `userdata` 尾部 32 MiB 窗口的原始回读：
 
-| 资产 | boot_id | 头部 | 为什么留它 |
-|---|---|---|---|
-| `nx729j-0x1a5d5b1a-log-window.bin` | `0x1a5d5b1a` | 27 s / 12 轮 | **唯一一次 `SRT: setup` 全绿**，判据③ 的参考样本 |
-| `nx729j-0x12c714bd-log-window.bin` | `0x12c714bd` | 490 s / 73 轮 / phase 5 | 推到 SpringBoard，pid 397；corpse 66 全因 sandbox 拒读 `/private/preboot/.../dyld_shared_cache_arm64` |
-| `nx729j-0x1f44cebb-log-window.bin` | `0x1f44cebb` | 12 s / 6 轮 | union 生效但 `SRT: setup` 0 条，39.4 s 结束 |
-| `nx729j-0x1aadfabe-log-window.bin` | `0x1aadfabe` | 10 s / 5 轮 | 看门狗 armed 的证据：`gunyah_wdt status=0 since_ping=22229ms` |
+| 资产 | boot_id | 头部 | 为什么留它 | SHA-256 |
+|---|---|---|---|---|
+| `nx729j-0x1a5d5b1a-log-window.bin` | `0x1a5d5b1a` | 27 s / 12 轮 | **唯一一次 `SRT: setup` 全绿**，判据③ 的参考样本 | `7287ee81c35416d404221261aec366c373530039868154e263156178033e2c27` |
+| `nx729j-0x12c714bd-log-window.bin` | `0x12c714bd` | 490 s / 73 轮 / phase 5 | 推到 SpringBoard，pid 397；corpse 66 全因 sandbox 拒读 `/private/preboot/.../dyld_shared_cache_arm64` | `dc8bb492277398a74e5e036be33f88683495d72de55cc42b5998660e28d535a0` |
+| `nx729j-0x1f44cebb-log-window.bin` | `0x1f44cebb` | 12 s / 6 轮 | union 生效但 `SRT: setup` 0 条，39.4 s 结束 | `cf2aa62889e8326cd7af12c3e364f0e98aa18ed9e31484796f36f2ab73e29df5` |
+| `nx729j-0x1aadfabe-log-window.bin` | `0x1aadfabe` | 10 s / 5 轮 | 看门狗 armed 的证据：`gunyah_wdt status=0 since_ping=22229ms` | `2d227f8d1aae26c142f3f628e202d98e291ff97a219cdeb03b806817ef3978f3` |
 
 解析：
 
